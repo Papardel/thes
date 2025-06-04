@@ -1,0 +1,66 @@
+{
+  "bug_id": "16",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.mixins.MixinsWithBundlesTest": [
+      {
+        "methodName": "testMixinWithBundles",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{\"[bar]\":\"result\"}> but was:<{\"[stuff]\":\"result\"}>",
+        "fail_line": "        assertEquals(\"{\\\"bar\\\":\\\"result\\\"}\", result);",
+        "test_source": "  public void testMixinWithBundles() throws Exception {\n  ObjectMapper mapper = new ObjectMapper().addMixIn(Foo.class, FooMixin.class);\n  String result = mapper.writeValueAsString(new Foo(\"result\"));\n  assertEquals(\"{\\\"bar\\\":\\\"result\\\"}\", result);\n  }",
+        "stack": [
+          "MixinsWithBundlesTest.testMixinWithBundles line 41"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/introspect/AnnotationMap.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.introspect;\n\nimport java.lang.annotation.Annotation;\nimport java.util.*;\n\nimport com.fasterxml.jackson.databind.util.Annotations;\n\n\npublic final class AnnotationMap implements Annotations { protected HashMap<Class<? extends Annotation>,Annotation> _annotations; public AnnotationMap() { }\n    \n    private AnnotationMap(HashMap<Class<? extends Annotation>,Annotation> a) {\n        _annotations = a;\n    }\n\n    @SuppressWarnings(\"unchecked\")\n    @Override\n    public <A extends Annotation> A get(Class<A> cls) {\n        if (_annotations == null) {\n            return null;\n        }\n        return (A) _annotations.get(cls);\n    }\n\n    \n    public Iterable<Annotation> annotations() {\n        if (_annotations == null || _annotations.size() == 0) {\n            return Collections.emptyList();\n        }\n        return _annotations.values();\n    }\n    \n    public static AnnotationMap merge(AnnotationMap primary, AnnotationMap secondary) {\n        if (primary == null || primary._annotations == null || primary._annotations.isEmpty()) {\n            return secondary;\n        }\n        if (secondary == null || secondary._annotations == null || secondary._annotations.isEmpty()) {\n            return primary;\n        }\n        HashMap<Class<? extends Annotation>,Annotation> annotations\n            = new HashMap<Class<? extends Annotation>,Annotation>();\n        \n        for (Annotation ann : secondary._annotations.values()) {\n            annotations.put(ann.annotationType(), ann);\n        }\n        \n        for (Annotation ann : primary._annotations.values()) {\n            annotations.put(ann.annotationType(), ann);\n        }\n        return new AnnotationMap(annotations);\n    }\n    \n    @Override\n    public int size() {\n        return (_annotations == null) ? 0 : _annotations.size();\n    }\n\n    \n    public boolean addIfNotPresent(Annotation ann) {\n        if (_annotations == null || !_annotations.containsKey(ann.annotationType())) {\n            _add(ann);\n            return true;\n        }\n        return false;\n    }\n\n    \n    public boolean add(Annotation ann) {\n        return _add(ann);\n    }\n\n    @Override\n    public String toString() {\n        if (_annotations == null) {\n            return \"[null]\";\n        }\n        return _annotations.toString();\n    }\n\n    \n\n    protected final boolean _add(Annotation ann) {\n        if (_annotations == null) {\n            _annotations = new HashMap<Class<? extends Annotation>,Annotation>();\n        }\n        Annotation previous = _annotations.put(ann.annotationType(), ann);\n        return (previous != null) && previous.equals(ann);\n    }\n}\n\n\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.introspect;\n\nimport java.lang.annotation.Annotation;\nimport java.util.*;\n\nimport com.fasterxml.jackson.databind.util.Annotations;\n\n\npublic final class AnnotationMap implements Annotations { protected HashMap<Class<? extends Annotation>,Annotation> _annotations; public AnnotationMap() { }\n    \n    private AnnotationMap(HashMap<Class<? extends Annotation>,Annotation> a) {\n        _annotations = a;\n    }\n\n    @SuppressWarnings(\"unchecked\")\n    @Override\n    public <A extends Annotation> A get(Class<A> cls) {\n        if (_annotations == null) {\n            return null;\n        }\n        return (A) _annotations.get(cls);\n    }\n\n    \n    public Iterable<Annotation> annotations() {\n        if (_annotations == null || _annotations.size() == 0) {\n            return Collections.emptyList();\n        }\n        return _annotations.values();\n    }\n    \n    public static AnnotationMap merge(AnnotationMap primary, AnnotationMap secondary) {\n        if (primary == null || primary._annotations == null || primary._annotations.isEmpty()) {\n            return secondary;\n        }\n        if (secondary == null || secondary._annotations == null || secondary._annotations.isEmpty()) {\n            return primary;\n        }\n        HashMap<Class<? extends Annotation>,Annotation> annotations\n            = new HashMap<Class<? extends Annotation>,Annotation>();\n        \n        for (Annotation ann : secondary._annotations.values()) {\n            annotations.put(ann.annotationType(), ann);\n        }\n        \n        for (Annotation ann : primary._annotations.values()) {\n            annotations.put(ann.annotationType(), ann);\n        }\n        return new AnnotationMap(annotations);\n    }\n    \n    @Override\n    public int size() {\n        return (_annotations == null) ? 0 : _annotations.size();\n    }\n\n    \n    public boolean addIfNotPresent(Annotation ann) {\n        if (_annotations == null || !_annotations.containsKey(ann.annotationType())) {\n            _add(ann);\n            return true;\n        }\n        return false;\n    }\n\n    \n    public boolean add(Annotation ann) {\n        return _add(ann);\n    }\n\n    @Override\n    public String toString() {\n        if (_annotations == null) {\n            return \"[null]\";\n        }\n        return _annotations.toString();\n    }\n\n    \n\n    protected final boolean _add(Annotation ann) {\n        if (_annotations == null) {\n            _annotations = new HashMap<Class<? extends Annotation>,Annotation>();\n        }\n        Annotation previous = _annotations.put(ann.annotationType(), ann);\n        return (previous == null) || !previous.equals(ann);\n    }\n}\n\n\n",
+      "buggy_signatures": [
+        "public final class AnnotationMap implements Annotations { protected HashMap<Class<? extends Annotation>,Annotation> _annotations; public AnnotationMap()",
+        "private AnnotationMap(HashMap<Class<? extends Annotation>,Annotation> a)",
+        "public <A extends Annotation> A get(Class<A> cls)",
+        "public Iterable<Annotation> annotations()",
+        "public static AnnotationMap merge(AnnotationMap primary, AnnotationMap secondary)",
+        "public int size()",
+        "public boolean addIfNotPresent(Annotation ann)",
+        "public boolean add(Annotation ann)",
+        "public String toString()",
+        "protected final boolean _add(Annotation ann)"
+      ],
+      "fixed_signatures": [
+        "public final class AnnotationMap implements Annotations { protected HashMap<Class<? extends Annotation>,Annotation> _annotations; public AnnotationMap()",
+        "private AnnotationMap(HashMap<Class<? extends Annotation>,Annotation> a)",
+        "public <A extends Annotation> A get(Class<A> cls)",
+        "public Iterable<Annotation> annotations()",
+        "public static AnnotationMap merge(AnnotationMap primary, AnnotationMap secondary)",
+        "public int size()",
+        "public boolean addIfNotPresent(Annotation ann)",
+        "public boolean add(Annotation ann)",
+        "public String toString()",
+        "protected final boolean _add(Annotation ann)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected final boolean _add(Annotation ann) {\n  if (_annotations == null) {\n  _annotations = new HashMap<Class<? extends Annotation>,Annotation>();\n  }\n  Annotation previous = _annotations.put(ann.annotationType(), ann);\n  return (previous != null) && previous.equals(ann);\n  }",
+          "fixed_method": "  protected final boolean _add(Annotation ann) {\n  if (_annotations == null) {\n  _annotations = new HashMap<Class<? extends Annotation>,Annotation>();\n  }\n  Annotation previous = _annotations.put(ann.annotationType(), ann);\n  return (previous == null) || !previous.equals(ann);\n  }",
+          "diff": [
+            "@@ -109,7 +109,7 @@",
+            "             _annotations = new HashMap<Class<? extends Annotation>,Annotation>();\n",
+            "         }\n",
+            "         Annotation previous = _annotations.put(ann.annotationType(), ann);\n",
+            "-        return (previous != null) && previous.equals(ann);\n",
+            "+        return (previous == null) || !previous.equals(ann);\n",
+            "     }\n",
+            " }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

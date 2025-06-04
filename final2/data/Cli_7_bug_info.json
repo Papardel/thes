@@ -1,0 +1,75 @@
+{
+  "bug_id": "7",
+  "failed_tests": {
+    "org.apache.commons.cli2.bug.Bug27575Test": [
+      {
+        "methodName": "testRequiredOptions",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<[[-h]]> but was:<[-c <arg>]>",
+        "fail_line": "\t\tassertEquals(\"[-h]\",i.next().toString());",
+        "test_source": "\tpublic void testRequiredOptions() {\n\t\tPatternBuilder builder = new PatternBuilder();\n\t\tbuilder.withPattern(\"hc!<\");\n\t\tOption option = builder.create();\n\t\tassertTrue(option instanceof GroupImpl);\n\t\t\n\t\tGroupImpl group = (GroupImpl)option;\n\t\tIterator i = group.getOptions().iterator();\n\t\tassertEquals(\"[-h]\",i.next().toString());\n\t\tassertEquals(\"-c <arg>\",i.next().toString());\n\t\tassertFalse(i.hasNext());\n\t}",
+        "stack": [
+          "Bug27575Test.testRequiredOptions line 37"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli2/builder/PatternBuilder.java",
+      "buggy_full_code": "\npackage org.apache.commons.cli2.builder;\n\nimport java.util.HashSet;\nimport java.util.Iterator;\nimport java.util.Set;\n\nimport org.apache.commons.cli2.Argument;\nimport org.apache.commons.cli2.Option;\nimport org.apache.commons.cli2.validation.ClassValidator;\nimport org.apache.commons.cli2.validation.DateValidator;\nimport org.apache.commons.cli2.validation.FileValidator;\nimport org.apache.commons.cli2.validation.NumberValidator;\nimport org.apache.commons.cli2.validation.UrlValidator;\nimport org.apache.commons.cli2.validation.Validator;\n\n\n\npublic class PatternBuilder { private final GroupBuilder gbuilder; private final DefaultOptionBuilder obuilder; private final ArgumentBuilder abuilder; public PatternBuilder() {\n        this(\n            new GroupBuilder(),\n            new DefaultOptionBuilder(),\n            new ArgumentBuilder());\n    }\n\n    \n    public PatternBuilder( final GroupBuilder gbuilder, final DefaultOptionBuilder obuilder, final ArgumentBuilder abuilder) {\n        this.gbuilder = gbuilder;\n        this.obuilder = obuilder;\n        this.abuilder = abuilder;\n    }\n\n    private final Set options = new HashSet(); public Option create() {\n        final Option option;\n\n        if (options.size() == 1) {\n            option = (Option)options.iterator().next();\n        }\n        else {\n            gbuilder.reset();\n            for (final Iterator i = options.iterator(); i.hasNext();) {\n                gbuilder.withOption((Option)i.next());\n            }\n            option = gbuilder.create();\n        }\n\n        reset();\n\n        return option;\n    }\n\n    \n    public PatternBuilder reset() {\n        options.clear();\n        return this;\n    }\n\n    private void createOption( final char type, final boolean required, final char opt) {\n        final Argument argument;\n        if (type != ' ') {\n            abuilder.reset();\n            abuilder.withValidator(validator(type));\n            if (required) {\n                abuilder.withMinimum(1);\n            }\n            if (type != '*') {\n                abuilder.withMaximum(1);\n            }\n            argument = abuilder.create();\n        }\n        else {\n            argument = null;\n        }\n\n        obuilder.reset();\n        obuilder.withArgument(argument);\n        obuilder.withShortName(String.valueOf(opt));\n        obuilder.withRequired(required);\n\n        options.add(obuilder.create());\n    }\n\n    \n    public void withPattern(final String pattern) {\n        int sz = pattern.length();\n\n        char opt = ' ';\n        char ch = ' ';\n        char type = ' ';\n        boolean required = false;\n\n        for (int i = 0; i < sz; i++) {\n            ch = pattern.charAt(i);\n\n            switch (ch) {\n                case '!' :\n                    required = true;\n                    break;\n                case '@' :\n                case ':' :\n                case '%' :\n                case '+' :\n                case '#' :\n                case '<' :\n                case '>' :\n                case '*' :\n                case '/' :\n                    type = ch;\n                    break;\n                default :\n                    if (opt != ' ') {\n                        createOption(type, required, opt);\n                        required = false;\n                        type = ' ';\n                    }\n\n                    opt = ch;\n            }\n        }\n\n        if (opt != ' ') {\n            createOption(type, required, opt);\n        }\n    }\n\n    private static Validator validator(final char c) {\n        switch (c) {\n            case '@' :\n                final ClassValidator classv = new ClassValidator();\n                classv.setInstance(true);\n                return classv;\n            case '+' :\n                final ClassValidator instancev = new ClassValidator();\n                return instancev;\n                \n            case '%' :\n                return NumberValidator.getNumberInstance();\n            case '#' :\n                return DateValidator.getDateInstance();\n            case '<' :\n                final FileValidator existingv = new FileValidator();\n                existingv.setExisting(true);\n                existingv.setFile(true);\n                return existingv;\n            case '>' :\n            case '*' :\n                return new FileValidator();\n            case '/' :\n                return new UrlValidator();\n            default :\n                return null;\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.cli2.builder;\n\nimport java.util.Iterator;\nimport java.util.LinkedHashSet;\nimport java.util.Set;\n\nimport org.apache.commons.cli2.Argument;\nimport org.apache.commons.cli2.Option;\nimport org.apache.commons.cli2.validation.ClassValidator;\nimport org.apache.commons.cli2.validation.DateValidator;\nimport org.apache.commons.cli2.validation.FileValidator;\nimport org.apache.commons.cli2.validation.NumberValidator;\nimport org.apache.commons.cli2.validation.UrlValidator;\nimport org.apache.commons.cli2.validation.Validator;\n\n\n\npublic class PatternBuilder { private final GroupBuilder gbuilder; private final DefaultOptionBuilder obuilder; private final ArgumentBuilder abuilder; public PatternBuilder() {\n        this(\n            new GroupBuilder(),\n            new DefaultOptionBuilder(),\n            new ArgumentBuilder());\n    }\n\n    \n    public PatternBuilder( final GroupBuilder gbuilder, final DefaultOptionBuilder obuilder, final ArgumentBuilder abuilder) {\n        this.gbuilder = gbuilder;\n        this.obuilder = obuilder;\n        this.abuilder = abuilder;\n    }\n\n    private final Set options = new LinkedHashSet(); public Option create() {\n        final Option option;\n\n        if (options.size() == 1) {\n            option = (Option)options.iterator().next();\n        }\n        else {\n            gbuilder.reset();\n            for (final Iterator i = options.iterator(); i.hasNext();) {\n                gbuilder.withOption((Option)i.next());\n            }\n            option = gbuilder.create();\n        }\n\n        reset();\n\n        return option;\n    }\n\n    \n    public PatternBuilder reset() {\n        options.clear();\n        return this;\n    }\n\n    private void createOption( final char type, final boolean required, final char opt) {\n        final Argument argument;\n        if (type != ' ') {\n            abuilder.reset();\n            abuilder.withValidator(validator(type));\n            if (required) {\n                abuilder.withMinimum(1);\n            }\n            if (type != '*') {\n                abuilder.withMaximum(1);\n            }\n            argument = abuilder.create();\n        }\n        else {\n            argument = null;\n        }\n\n        obuilder.reset();\n        obuilder.withArgument(argument);\n        obuilder.withShortName(String.valueOf(opt));\n        obuilder.withRequired(required);\n\n        options.add(obuilder.create());\n    }\n\n    \n    public void withPattern(final String pattern) {\n        int sz = pattern.length();\n\n        char opt = ' ';\n        char ch = ' ';\n        char type = ' ';\n        boolean required = false;\n\n        for (int i = 0; i < sz; i++) {\n            ch = pattern.charAt(i);\n\n            switch (ch) {\n                case '!' :\n                    required = true;\n                    break;\n                case '@' :\n                case ':' :\n                case '%' :\n                case '+' :\n                case '#' :\n                case '<' :\n                case '>' :\n                case '*' :\n                case '/' :\n                    type = ch;\n                    break;\n                default :\n                    if (opt != ' ') {\n                        createOption(type, required, opt);\n                        required = false;\n                        type = ' ';\n                    }\n\n                    opt = ch;\n            }\n        }\n\n        if (opt != ' ') {\n            createOption(type, required, opt);\n        }\n    }\n\n    private static Validator validator(final char c) {\n        switch (c) {\n            case '@' :\n                final ClassValidator classv = new ClassValidator();\n                classv.setInstance(true);\n                return classv;\n            case '+' :\n                final ClassValidator instancev = new ClassValidator();\n                return instancev;\n                \n            case '%' :\n                return NumberValidator.getNumberInstance();\n            case '#' :\n                return DateValidator.getDateInstance();\n            case '<' :\n                final FileValidator existingv = new FileValidator();\n                existingv.setExisting(true);\n                existingv.setFile(true);\n                return existingv;\n            case '>' :\n            case '*' :\n                return new FileValidator();\n            case '/' :\n                return new UrlValidator();\n            default :\n                return null;\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public class PatternBuilder { private final GroupBuilder gbuilder; private final DefaultOptionBuilder obuilder; private final ArgumentBuilder abuilder; public PatternBuilder()",
+        "public PatternBuilder( final GroupBuilder gbuilder, final DefaultOptionBuilder obuilder, final ArgumentBuilder abuilder)",
+        "public PatternBuilder reset()",
+        "private void createOption( final char type, final boolean required, final char opt)",
+        "public void withPattern(final String pattern)",
+        "private static Validator validator(final char c)"
+      ],
+      "fixed_signatures": [
+        "public class PatternBuilder { private final GroupBuilder gbuilder; private final DefaultOptionBuilder obuilder; private final ArgumentBuilder abuilder; public PatternBuilder()",
+        "public PatternBuilder( final GroupBuilder gbuilder, final DefaultOptionBuilder obuilder, final ArgumentBuilder abuilder)",
+        "public PatternBuilder reset()",
+        "private void createOption( final char type, final boolean required, final char opt)",
+        "public void withPattern(final String pattern)",
+        "private static Validator validator(final char c)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -16,8 +16,8 @@",
+            "  */\n",
+            " package org.apache.commons.cli2.builder;\n",
+            " \n",
+            "-import java.util.HashSet;\n",
+            " import java.util.Iterator;\n",
+            "+import java.util.LinkedHashSet;\n",
+            " import java.util.Set;\n",
+            " \n",
+            " import org.apache.commons.cli2.Argument;\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  private final Set options = new HashSet(); public Option create() {\n  final Option option;\n\n  if (options.size() == 1) {\n  option = (Option)options.iterator().next();\n  }\n  else {\n  gbuilder.reset();\n  for (final Iterator i = options.iterator(); i.hasNext();) {\n  gbuilder.withOption((Option)i.next());\n  }\n  option = gbuilder.create();\n  }\n\n  reset();\n\n  return option;\n  }",
+          "fixed_method": "  private final Set options = new LinkedHashSet(); public Option create() {\n  final Option option;\n\n  if (options.size() == 1) {\n  option = (Option)options.iterator().next();\n  }\n  else {\n  gbuilder.reset();\n  for (final Iterator i = options.iterator(); i.hasNext();) {\n  gbuilder.withOption((Option)i.next());\n  }\n  option = gbuilder.create();\n  }\n\n  reset();\n\n  return option;\n  }",
+          "diff": [
+            "@@ -64,7 +64,7 @@",
+            "         this.abuilder = abuilder;\n",
+            "     }\n",
+            " \n",
+            "-    private final Set options = new HashSet();\n",
+            "+    private final Set options = new LinkedHashSet();\n",
+            " \n",
+            "     /**\n",
+            "      * Creates a new Option instance.\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

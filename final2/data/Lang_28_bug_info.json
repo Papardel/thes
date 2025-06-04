@@ -1,0 +1,53 @@
+{
+  "bug_id": "28",
+  "failed_tests": {
+    "org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest": [
+      {
+        "methodName": "testSupplementaryUnescaping",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "Failed to unescape numeric entities supplementary characters expected:<[𐰢]> but was:<[ఢ]>",
+        "fail_line": "        assertEquals(\"Failed to unescape numeric entities supplementary characters\", expected, result);",
+        "test_source": "  public void testSupplementaryUnescaping() {\n  NumericEntityUnescaper neu = new NumericEntityUnescaper();\n  String input = \"&#68642;\";\n  String expected = \"\\uD803\\uDC22\";\n\n  String result = neu.translate(input);\n  assertEquals(\"Failed to unescape numeric entities supplementary characters\", expected, result);\n  }",
+        "stack": [
+          "NumericEntityUnescaperTest.testSupplementaryUnescaping line 33"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang3.text.translate;\n\nimport java.io.IOException;\nimport java.io.Writer;\n\n\npublic class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException {\n        \n        if(input.charAt(index) == '&' && input.charAt(index + 1) == '#') {\n            int start = index + 2;\n            boolean isHex = false;\n\n            char firstChar = input.charAt(start);\n            if(firstChar == 'x' || firstChar == 'X') {\n                start++;\n                isHex = true;\n            }\n\n            int end = start;\n            while(input.charAt(end) != ';') {\n                end++;\n            }\n\n            int entityValue;\n            try {\n                if(isHex) {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n                } else {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n                }\n            } catch(NumberFormatException nfe) {\n                return 0;\n            }\n\n                out.write(entityValue);\n            return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n        }\n        return 0;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang3.text.translate;\n\nimport java.io.IOException;\nimport java.io.Writer;\n\n\npublic class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException {\n        \n        if(input.charAt(index) == '&' && input.charAt(index + 1) == '#') {\n            int start = index + 2;\n            boolean isHex = false;\n\n            char firstChar = input.charAt(start);\n            if(firstChar == 'x' || firstChar == 'X') {\n                start++;\n                isHex = true;\n            }\n\n            int end = start;\n            while(input.charAt(end) != ';') {\n                end++;\n            }\n\n            int entityValue;\n            try {\n                if(isHex) {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n                } else {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n                }\n            } catch(NumberFormatException nfe) {\n                return 0;\n            }\n\n            if(entityValue > 0xFFFF) {\n                char[] chrs = Character.toChars(entityValue);\n                out.write(chrs[0]);\n                out.write(chrs[1]);\n            } else {\n                out.write(entityValue);\n            }\n            return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n        }\n        return 0;\n    }\n}\n",
+      "buggy_signatures": [
+        "public class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int translate(CharSequence input, int index, Writer out) throws IOException {\n  \n  if(input.charAt(index) == '&' && input.charAt(index + 1) == '#') {\n  int start = index + 2;\n  boolean isHex = false;\n\n  char firstChar = input.charAt(start);\n  if(firstChar == 'x' || firstChar == 'X') {\n  start++;\n  isHex = true;\n  }\n\n  int end = start;\n  while(input.charAt(end) != ';') {\n  end++;\n  }\n\n  int entityValue;\n  try {\n  if(isHex) {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n  } else {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n  }\n  } catch(NumberFormatException nfe) {\n  return 0;\n  }\n\n  out.write(entityValue);\n  return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n  }\n  return 0;\n  }",
+          "fixed_method": "  public int translate(CharSequence input, int index, Writer out) throws IOException {\n  \n  if(input.charAt(index) == '&' && input.charAt(index + 1) == '#') {\n  int start = index + 2;\n  boolean isHex = false;\n\n  char firstChar = input.charAt(start);\n  if(firstChar == 'x' || firstChar == 'X') {\n  start++;\n  isHex = true;\n  }\n\n  int end = start;\n  while(input.charAt(end) != ';') {\n  end++;\n  }\n\n  int entityValue;\n  try {\n  if(isHex) {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n  } else {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n  }\n  } catch(NumberFormatException nfe) {\n  return 0;\n  }\n\n  if(entityValue > 0xFFFF) {\n  char[] chrs = Character.toChars(entityValue);\n  out.write(chrs[0]);\n  out.write(chrs[1]);\n  } else {\n  out.write(entityValue);\n  }\n  return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n  }\n  return 0;\n  }",
+          "diff": [
+            "@@ -60,7 +60,13 @@",
+            "                 return 0;\n",
+            "             }\n",
+            " \n",
+            "+            if(entityValue > 0xFFFF) {\n",
+            "+                char[] chrs = Character.toChars(entityValue);\n",
+            "+                out.write(chrs[0]);\n",
+            "+                out.write(chrs[1]);\n",
+            "+            } else {\n",
+            "                 out.write(entityValue);\n",
+            "+            }\n",
+            "             return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n",
+            "         }\n",
+            "         return 0;\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

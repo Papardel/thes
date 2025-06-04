@@ -1,0 +1,72 @@
+{
+  "bug_id": "20",
+  "failed_tests": {
+    "org.apache.commons.cli.PosixParserTest": [
+      {
+        "methodName": "testStop3",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Confirm  3 extra args: 7",
+        "fail_line": "        assertTrue(\"Confirm  3 extra args: \" + cl.getArgList().size(), cl.getArgList().size() == 3);",
+        "test_source": "  public void testStop3() throws Exception {\n  String[] args = new String[]{\"--zop==1\",\n  \"-abtoast\",\n  \"--b=bar\"};\n\n  CommandLine cl = parser.parse(options, args, true);\n\n  assertFalse(\"Confirm -a is not set\", cl.hasOption(\"a\"));\n  assertFalse(\"Confirm -b is not set\", cl.hasOption(\"b\"));\n  assertTrue(\"Confirm  3 extra args: \" + cl.getArgList().size(), cl.getArgList().size() == 3);\n  }",
+        "stack": [
+          "PosixParserTest.testStop3 line 169"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/PosixParser.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.Iterator;\nimport java.util.List;\n\n\npublic class PosixParser extends Parser { private List tokens = new ArrayList(); private boolean eatTheRest; private Option currentOption; private Options options; private void init() {\n        eatTheRest = false;\n        tokens.clear();\n        currentOption = null;\n    }\n\n    \n    protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n        init();\n        this.options = options;\n\n        \n        Iterator iter = Arrays.asList(arguments).iterator();\n\n        \n        while (iter.hasNext())\n        {\n            \n            String token = (String) iter.next();\n\n            \n            if (token.startsWith(\"--\"))\n            {\n                if (token.indexOf('=') != -1)\n                {\n                    tokens.add(token.substring(0, token.indexOf('=')));\n                    tokens.add(token.substring(token.indexOf('=') + 1, token.length()));\n                }\n                else\n                {\n                    tokens.add(token);\n                }\n            }\n\n            \n            else if (\"-\".equals(token))\n            {\n                tokens.add(token);\n            }\n            else if (token.startsWith(\"-\"))\n            {\n                if (token.length() == 2)\n                {\n                    processOptionToken(token, stopAtNonOption);\n                }\n                else if (options.hasOption(token))\n                {\n                    tokens.add(token);\n                }\n                \n                else\n                {\n                    burstToken(token, stopAtNonOption);\n                }\n            }\n            else if (stopAtNonOption)\n            {\n                process(token);\n            }\n            else\n            {\n                tokens.add(token);\n            }\n\n            gobble(iter);\n        }\n\n        return (String[]) tokens.toArray(new String[tokens.size()]);\n    }\n\n    \n    private void gobble(Iterator iter) {\n        if (eatTheRest)\n        {\n            while (iter.hasNext())\n            {\n                tokens.add(iter.next());\n            }\n        }\n    }\n\n    \n    private void process(String value) {\n        if (currentOption != null && currentOption.hasArg())\n        {\n            if (currentOption.hasArg())\n            {\n                tokens.add(value);\n                currentOption = null;\n            }\n            else if (currentOption.hasArgs())\n            {\n                tokens.add(value);\n            }\n        }\n        else\n        {\n            eatTheRest = true;\n            tokens.add(\"--\");\n            tokens.add(value);\n        }\n    }\n\n    \n    private void processOptionToken(String token, boolean stopAtNonOption) {\n        if (options.hasOption(token))\n        {\n            currentOption = options.getOption(token);\n        }\n        else if (stopAtNonOption)\n        {\n            eatTheRest = true;\n        }\n\n        tokens.add(token);\n    }\n\n    \n    protected void burstToken(String token, boolean stopAtNonOption) {\n        for (int i = 1; i < token.length(); i++)\n        {\n            String ch = String.valueOf(token.charAt(i));\n\n            if (options.hasOption(ch))\n            {\n                tokens.add(\"-\" + ch);\n                currentOption = options.getOption(ch);\n\n                if (currentOption.hasArg() && (token.length() != (i + 1)))\n                {\n                    tokens.add(token.substring(i + 1));\n\n                    break;\n                }\n            }\n            else if (stopAtNonOption)\n            {\n                process(token.substring(i));\n                break;\n            }\n            else\n            {\n                tokens.add(token);\n                break;\n            }\n        }\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.Iterator;\nimport java.util.List;\n\n\npublic class PosixParser extends Parser { private List tokens = new ArrayList(); private boolean eatTheRest; private Option currentOption; private Options options; private void init() {\n        eatTheRest = false;\n        tokens.clear();\n        currentOption = null;\n    }\n\n    \n    protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n        init();\n        this.options = options;\n\n        \n        Iterator iter = Arrays.asList(arguments).iterator();\n\n        \n        while (iter.hasNext())\n        {\n            \n            String token = (String) iter.next();\n\n            \n            if (token.startsWith(\"--\"))\n            {\n                int pos = token.indexOf('=');\n                String opt = pos == -1 ? token : token.substring(0, pos); \n\n                if (!options.hasOption(opt) && stopAtNonOption)\n                {\n                    process(token);\n                }\n                else\n                {\n                    tokens.add(opt);\n                    if (pos != -1) {\n                        tokens.add(token.substring(pos + 1));\n                    }\n                }\n            }\n\n            \n            else if (\"-\".equals(token))\n            {\n                tokens.add(token);\n            }\n            else if (token.startsWith(\"-\"))\n            {\n                if (token.length() == 2)\n                {\n                    processOptionToken(token, stopAtNonOption);\n                }\n                else if (options.hasOption(token))\n                {\n                    tokens.add(token);\n                }\n                \n                else\n                {\n                    burstToken(token, stopAtNonOption);\n                }\n            }\n            else if (stopAtNonOption)\n            {\n                process(token);\n            }\n            else\n            {\n                tokens.add(token);\n            }\n\n            gobble(iter);\n        }\n\n        return (String[]) tokens.toArray(new String[tokens.size()]);\n    }\n\n    \n    private void gobble(Iterator iter) {\n        if (eatTheRest)\n        {\n            while (iter.hasNext())\n            {\n                tokens.add(iter.next());\n            }\n        }\n    }\n\n    \n    private void process(String value) {\n        if (currentOption != null && currentOption.hasArg())\n        {\n            if (currentOption.hasArg())\n            {\n                tokens.add(value);\n                currentOption = null;\n            }\n            else if (currentOption.hasArgs())\n            {\n                tokens.add(value);\n            }\n        }\n        else\n        {\n            eatTheRest = true;\n            tokens.add(\"--\");\n            tokens.add(value);\n        }\n    }\n\n    \n    private void processOptionToken(String token, boolean stopAtNonOption) {\n        if (options.hasOption(token))\n        {\n            currentOption = options.getOption(token);\n        }\n        else if (stopAtNonOption)\n        {\n            eatTheRest = true;\n        }\n\n        tokens.add(token);\n    }\n\n    \n    protected void burstToken(String token, boolean stopAtNonOption) {\n        for (int i = 1; i < token.length(); i++)\n        {\n            String ch = String.valueOf(token.charAt(i));\n\n            if (options.hasOption(ch))\n            {\n                tokens.add(\"-\" + ch);\n                currentOption = options.getOption(ch);\n\n                if (currentOption.hasArg() && (token.length() != (i + 1)))\n                {\n                    tokens.add(token.substring(i + 1));\n\n                    break;\n                }\n            }\n            else if (stopAtNonOption)\n            {\n                process(token.substring(i));\n                break;\n            }\n            else\n            {\n                tokens.add(token);\n                break;\n            }\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)",
+        "private void gobble(Iterator iter)",
+        "private void process(String value)",
+        "private void processOptionToken(String token, boolean stopAtNonOption)",
+        "protected void burstToken(String token, boolean stopAtNonOption)"
+      ],
+      "fixed_signatures": [
+        "protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)",
+        "private void gobble(Iterator iter)",
+        "private void process(String value)",
+        "private void processOptionToken(String token, boolean stopAtNonOption)",
+        "protected void burstToken(String token, boolean stopAtNonOption)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n  init();\n  this.options = options;\n\n  \n  Iterator iter = Arrays.asList(arguments).iterator();\n\n  \n  while (iter.hasNext())\n  {\n  \n  String token = (String) iter.next();\n\n  \n  if (token.startsWith(\"--\"))\n  {\n  if (token.indexOf('=') != -1)\n  {\n  tokens.add(token.substring(0, token.indexOf('=')));\n  tokens.add(token.substring(token.indexOf('=') + 1, token.length()));\n  }\n  else\n  {\n  tokens.add(token);\n  }\n  }\n\n  \n  else if (\"-\".equals(token))\n  {\n  tokens.add(token);\n  }\n  else if (token.startsWith(\"-\"))\n  {\n  if (token.length() == 2)\n  {\n  processOptionToken(token, stopAtNonOption);\n  }\n  else if (options.hasOption(token))\n  {\n  tokens.add(token);\n  }\n  \n  else\n  {\n  burstToken(token, stopAtNonOption);\n  }\n  }\n  else if (stopAtNonOption)\n  {\n  process(token);\n  }\n  else\n  {\n  tokens.add(token);\n  }\n\n  gobble(iter);\n  }\n\n  return (String[]) tokens.toArray(new String[tokens.size()]);\n  }",
+          "fixed_method": "  protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n  init();\n  this.options = options;\n\n  \n  Iterator iter = Arrays.asList(arguments).iterator();\n\n  \n  while (iter.hasNext())\n  {\n  \n  String token = (String) iter.next();\n\n  \n  if (token.startsWith(\"--\"))\n  {\n  int pos = token.indexOf('=');\n  String opt = pos == -1 ? token : token.substring(0, pos); \n\n  if (!options.hasOption(opt) && stopAtNonOption)\n  {\n  process(token);\n  }\n  else\n  {\n  tokens.add(opt);\n  if (pos != -1) {\n  tokens.add(token.substring(pos + 1));\n  }\n  }\n  }\n\n  \n  else if (\"-\".equals(token))\n  {\n  tokens.add(token);\n  }\n  else if (token.startsWith(\"-\"))\n  {\n  if (token.length() == 2)\n  {\n  processOptionToken(token, stopAtNonOption);\n  }\n  else if (options.hasOption(token))\n  {\n  tokens.add(token);\n  }\n  \n  else\n  {\n  burstToken(token, stopAtNonOption);\n  }\n  }\n  else if (stopAtNonOption)\n  {\n  process(token);\n  }\n  else\n  {\n  tokens.add(token);\n  }\n\n  gobble(iter);\n  }\n\n  return (String[]) tokens.toArray(new String[tokens.size()]);\n  }",
+          "diff": [
+            "@@ -111,14 +111,19 @@",
+            "             // handle long option --foo or --foo=bar\n",
+            "             if (token.startsWith(\"--\"))\n",
+            "             {\n",
+            "-                if (token.indexOf('=') != -1)\n",
+            "-                {\n",
+            "-                    tokens.add(token.substring(0, token.indexOf('=')));\n",
+            "-                    tokens.add(token.substring(token.indexOf('=') + 1, token.length()));\n",
+            "+                int pos = token.indexOf('=');\n",
+            "+                String opt = pos == -1 ? token : token.substring(0, pos); // --foo\n",
+            "+\n",
+            "+                if (!options.hasOption(opt) && stopAtNonOption)\n",
+            "+                {\n",
+            "+                    process(token);\n",
+            "                 }\n",
+            "                 else\n",
+            "                 {\n",
+            "-                    tokens.add(token);\n",
+            "+                    tokens.add(opt);\n",
+            "+                    if (pos != -1) {\n",
+            "+                        tokens.add(token.substring(pos + 1));\n",
+            "+                    }\n",
+            "                 }\n",
+            "             }\n",
+            " \n"
+          ],
+          "changed_lines": 15
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "bug_id": "43",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.objectid.TestObjectIdSerialization": [
+      {
+        "methodName": "testNullStringPropertyId",
+        "error": "com.fasterxml.jackson.databind.JsonMappingException",
+        "message": "Can not deserialize instance of java.lang.String out of VALUE_NULL token",
+        "fail_line": "                (aposToQuotes(\"{'value':3, 'next':null, 'id':null}\"), IdentifiableStringId.class);",
+        "test_source": "  public void testNullStringPropertyId() throws Exception {\n  IdentifiableStringId value = MAPPER.readValue\n  (aposToQuotes(\"{'value':3, 'next':null, 'id':null}\"), IdentifiableStringId.class);\n  assertNotNull(value);\n  assertEquals(3, value.value);\n  }  ",
+        "stack": [
+          "JsonMappingException.from line 216, DeserializationContext.mappingException line 873, StringDeserializer.deserialize line 61, StringDeserializer.deserialize line 11, ObjectIdValueProperty.deserializeSetAndReturn line 78, ObjectIdValueProperty.deserializeAndSet line 71, BeanDeserializer.deserializeFromObject line 341, BeanDeserializerBase.deserializeWithObjectId line 1094, BeanDeserializer.deserialize line 131, ObjectMapper._readMapAndClose line 3789, ObjectMapper.readValue line 2779, TestObjectIdSerialization.testNullStringPropertyId line 317"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.deser.impl;\n\nimport java.io.IOException;\nimport java.lang.annotation.Annotation;\n\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.deser.*;\nimport com.fasterxml.jackson.databind.introspect.AnnotatedMember;\n\n\npublic final class ObjectIdValueProperty extends SettableBeanProperty { private static final long serialVersionUID = 1L; protected final ObjectIdReader _objectIdReader; public ObjectIdValueProperty(ObjectIdReader objectIdReader, PropertyMetadata metadata) {\n        super(objectIdReader.propertyName, objectIdReader.getIdType(), metadata,\n                objectIdReader.getDeserializer());\n        _objectIdReader = objectIdReader;\n    }\n\n    protected ObjectIdValueProperty(ObjectIdValueProperty src, JsonDeserializer<?> deser) {\n        super(src, deser);\n        _objectIdReader = src._objectIdReader;\n    }\n\n    protected ObjectIdValueProperty(ObjectIdValueProperty src, PropertyName newName) {\n        super(src, newName);\n        _objectIdReader = src._objectIdReader;\n    }\n\n    @Override\n    public ObjectIdValueProperty withName(PropertyName newName) {\n        return new ObjectIdValueProperty(this, newName);\n    }\n\n    @Override\n    public ObjectIdValueProperty withValueDeserializer(JsonDeserializer<?> deser) {\n        return new ObjectIdValueProperty(this, deser);\n    }\n    \n    \n    \n    @Override\n    public <A extends Annotation> A getAnnotation(Class<A> acls) {\n        return null;\n    }\n\n    @Override public AnnotatedMember getMember() {  return null; }\n\n    \n\n    @Override\n    public void deserializeAndSet(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n        deserializeSetAndReturn(p, ctxt, instance);\n    }\n\n    @Override\n    public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n        Object id = _valueDeserializer.deserialize(p, ctxt);\n        \n        \n        if (id == null) {\n            return null;\n        }\n        ReadableObjectId roid = ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n        roid.bindItem(instance);\n        \n        SettableBeanProperty idProp = _objectIdReader.idProperty;\n        if (idProp != null) {\n            return idProp.setAndReturn(instance, id);\n        }\n        return instance;\n    }\n\n    @Override\n    public void set(Object instance, Object value) throws IOException {\n        setAndReturn(instance, value);\n    }\n\n    @Override\n    public Object setAndReturn(Object instance, Object value) throws IOException {\n        SettableBeanProperty idProp = _objectIdReader.idProperty;\n        if (idProp == null) {\n            throw new UnsupportedOperationException(\n                    \"Should not call set() on ObjectIdProperty that has no SettableBeanProperty\");\n        }\n        return idProp.setAndReturn(instance, value);\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.deser.impl;\n\nimport java.io.IOException;\nimport java.lang.annotation.Annotation;\n\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.core.JsonToken;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.deser.*;\nimport com.fasterxml.jackson.databind.introspect.AnnotatedMember;\n\n\npublic final class ObjectIdValueProperty extends SettableBeanProperty { private static final long serialVersionUID = 1L; protected final ObjectIdReader _objectIdReader; public ObjectIdValueProperty(ObjectIdReader objectIdReader, PropertyMetadata metadata) {\n        super(objectIdReader.propertyName, objectIdReader.getIdType(), metadata,\n                objectIdReader.getDeserializer());\n        _objectIdReader = objectIdReader;\n    }\n\n    protected ObjectIdValueProperty(ObjectIdValueProperty src, JsonDeserializer<?> deser) {\n        super(src, deser);\n        _objectIdReader = src._objectIdReader;\n    }\n\n    protected ObjectIdValueProperty(ObjectIdValueProperty src, PropertyName newName) {\n        super(src, newName);\n        _objectIdReader = src._objectIdReader;\n    }\n\n    @Override\n    public ObjectIdValueProperty withName(PropertyName newName) {\n        return new ObjectIdValueProperty(this, newName);\n    }\n\n    @Override\n    public ObjectIdValueProperty withValueDeserializer(JsonDeserializer<?> deser) {\n        return new ObjectIdValueProperty(this, deser);\n    }\n    \n    \n    \n    @Override\n    public <A extends Annotation> A getAnnotation(Class<A> acls) {\n        return null;\n    }\n\n    @Override public AnnotatedMember getMember() {  return null; }\n\n    \n\n    @Override\n    public void deserializeAndSet(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n        deserializeSetAndReturn(p, ctxt, instance);\n    }\n\n    @Override\n    public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n        \n        \n        if (p.hasToken(JsonToken.VALUE_NULL)) {\n            return null;\n        }\n        Object id = _valueDeserializer.deserialize(p, ctxt);\n        ReadableObjectId roid = ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n        roid.bindItem(instance);\n        \n        SettableBeanProperty idProp = _objectIdReader.idProperty;\n        if (idProp != null) {\n            return idProp.setAndReturn(instance, id);\n        }\n        return instance;\n    }\n\n    @Override\n    public void set(Object instance, Object value) throws IOException {\n        setAndReturn(instance, value);\n    }\n\n    @Override\n    public Object setAndReturn(Object instance, Object value) throws IOException {\n        SettableBeanProperty idProp = _objectIdReader.idProperty;\n        if (idProp == null) {\n            throw new UnsupportedOperationException(\n                    \"Should not call set() on ObjectIdProperty that has no SettableBeanProperty\");\n        }\n        return idProp.setAndReturn(instance, value);\n    }\n}\n",
+      "buggy_signatures": [
+        "protected ObjectIdValueProperty(ObjectIdValueProperty src, JsonDeserializer<?> deser)",
+        "protected ObjectIdValueProperty(ObjectIdValueProperty src, PropertyName newName)",
+        "public ObjectIdValueProperty withName(PropertyName newName)",
+        "public ObjectIdValueProperty withValueDeserializer(JsonDeserializer<?> deser)",
+        "public <A extends Annotation> A getAnnotation(Class<A> acls)",
+        "public AnnotatedMember getMember()",
+        "public void deserializeAndSet(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException",
+        "public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException",
+        "public void set(Object instance, Object value) throws IOException",
+        "public Object setAndReturn(Object instance, Object value) throws IOException"
+      ],
+      "fixed_signatures": [
+        "protected ObjectIdValueProperty(ObjectIdValueProperty src, JsonDeserializer<?> deser)",
+        "protected ObjectIdValueProperty(ObjectIdValueProperty src, PropertyName newName)",
+        "public ObjectIdValueProperty withName(PropertyName newName)",
+        "public ObjectIdValueProperty withValueDeserializer(JsonDeserializer<?> deser)",
+        "public <A extends Annotation> A getAnnotation(Class<A> acls)",
+        "public AnnotatedMember getMember()",
+        "public void deserializeAndSet(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException",
+        "public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException",
+        "public void set(Object instance, Object value) throws IOException",
+        "public Object setAndReturn(Object instance, Object value) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -4,6 +4,7 @@",
+            " import java.lang.annotation.Annotation;\n",
+            " \n",
+            " import com.fasterxml.jackson.core.JsonParser;\n",
+            "+import com.fasterxml.jackson.core.JsonToken;\n",
+            " import com.fasterxml.jackson.databind.*;\n",
+            " import com.fasterxml.jackson.databind.deser.*;\n",
+            " import com.fasterxml.jackson.databind.introspect.AnnotatedMember;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n  Object id = _valueDeserializer.deserialize(p, ctxt);\n  \n  \n  if (id == null) {\n  return null;\n  }\n  ReadableObjectId roid = ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n  roid.bindItem(instance);\n  \n  SettableBeanProperty idProp = _objectIdReader.idProperty;\n  if (idProp != null) {\n  return idProp.setAndReturn(instance, id);\n  }\n  return instance;\n  }",
+          "fixed_method": "  public Object deserializeSetAndReturn(JsonParser p, DeserializationContext ctxt, Object instance) throws IOException {\n  \n  \n  if (p.hasToken(JsonToken.VALUE_NULL)) {\n  return null;\n  }\n  Object id = _valueDeserializer.deserialize(p, ctxt);\n  ReadableObjectId roid = ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n  roid.bindItem(instance);\n  \n  SettableBeanProperty idProp = _objectIdReader.idProperty;\n  if (idProp != null) {\n  return idProp.setAndReturn(instance, id);\n  }\n  return instance;\n  }",
+          "diff": [
+            "@@ -75,16 +76,16 @@",
+            "     public Object deserializeSetAndReturn(JsonParser p,\n",
+            "     \t\tDeserializationContext ctxt, Object instance) throws IOException\n",
+            "     {\n",
+            "-        Object id = _valueDeserializer.deserialize(p, ctxt);\n",
+            "         /* 02-Apr-2015, tatu: Actually, as per [databind#742], let it be;\n",
+            "          *  missing or null id is needed for some cases, such as cases where id\n",
+            "          *  will be generated externally, at a later point, and is not available\n",
+            "          *  quite yet. Typical use case is with DB inserts.\n",
+            "          */\n",
+            "         // note: no null checks (unlike usually); deserializer should fail if one found\n",
+            "-        if (id == null) {\n",
+            "+        if (p.hasToken(JsonToken.VALUE_NULL)) {\n",
+            "             return null;\n",
+            "         }\n",
+            "+        Object id = _valueDeserializer.deserialize(p, ctxt);\n",
+            "         ReadableObjectId roid = ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n",
+            "         roid.bindItem(instance);\n",
+            "         // also: may need to set a property value as well\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "bug_id": "40",
+  "failed_tests": {
+    "org.apache.commons.cli.TypeHandlerTest": [
+      {
+        "methodName": "testCreateValueInteger_failure",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: org.apache.commons.cli.ParseException",
+        "fail_line": "",
+        "test_source": "  public void testCreateValueInteger_failure() throws Exception {\n  TypeHandler.createValue(\"just-a-string\", Integer.class);\n  }",
+        "stack": [
+          ""
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/TypeHandler.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.File;\nimport java.io.FileInputStream;\nimport java.io.FileNotFoundException;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\n\nimport java.util.Date;\n\n\npublic class TypeHandler { public static Object createValue(final String str, final Object obj) throws ParseException {\n        return createValue(str, (Class<?>) obj);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\") \n    public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException {\n        if (PatternOptionBuilder.STRING_VALUE == clazz)\n        {\n            return (T) str;\n        }\n        else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n        {\n            return (T) createObject(str);\n        }\n        else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n        {\n            return (T) createNumber(str);\n        }\n        else if (PatternOptionBuilder.DATE_VALUE == clazz)\n        {\n            return (T) createDate(str);\n        }\n        else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n        {\n            return (T) createClass(str);\n        }\n        else if (PatternOptionBuilder.FILE_VALUE == clazz)\n        {\n            return (T) createFile(str);\n        }\n        else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n        {\n            return (T) openFile(str);\n        }\n        else if (PatternOptionBuilder.FILES_VALUE == clazz)\n        {\n            return (T) createFiles(str);\n        }\n        else if (PatternOptionBuilder.URL_VALUE == clazz)\n        {\n            return (T) createURL(str);\n        }\n        else\n        {\n            return null;\n        }\n    }\n\n    \n    public static Object createObject(final String classname) throws ParseException {\n        Class<?> cl;\n\n        try\n        {\n            cl = Class.forName(classname);\n        }\n        catch (final ClassNotFoundException cnfe)\n        {\n            throw new ParseException(\"Unable to find the class: \" + classname);\n        }\n        \n        try\n        {\n            return cl.newInstance();\n        }\n        catch (final Exception e)\n        {\n            throw new ParseException(e.getClass().getName() + \"; Unable to create an instance of: \" + classname);\n        }\n    }\n\n    \n    public static Number createNumber(final String str) throws ParseException {\n        try\n        {\n            if (str.indexOf('.') != -1)\n            {\n                return Double.valueOf(str);\n            }\n            return Long.valueOf(str);\n        }\n        catch (final NumberFormatException e)\n        {\n            throw new ParseException(e.getMessage());\n        }\n    }\n\n    \n    public static Class<?> createClass(final String classname) throws ParseException {\n        try\n        {\n            return Class.forName(classname);\n        }\n        catch (final ClassNotFoundException e)\n        {\n            throw new ParseException(\"Unable to find the class: \" + classname);\n        }\n    }\n\n    \n    public static Date createDate(final String str) {\n        throw new UnsupportedOperationException(\"Not yet implemented\");\n    }\n\n    \n    public static URL createURL(final String str) throws ParseException {\n        try\n        {\n            return new URL(str);\n        }\n        catch (final MalformedURLException e)\n        {\n            throw new ParseException(\"Unable to parse the URL: \" + str);\n        }\n    }\n\n    \n    public static File createFile(final String str) {\n        return new File(str);\n    }\n\n    \n    public static FileInputStream openFile(String str) throws ParseException {\n        try\n        {\n            return new FileInputStream(str);\n        }\n        catch (FileNotFoundException e)\n        {\n            throw new ParseException(\"Unable to find file: \" + str);\n        }\n    }\n\n    \n    public static File[] createFiles(final String str) {\n        \n        \n        throw new UnsupportedOperationException(\"Not yet implemented\");\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.File;\nimport java.io.FileInputStream;\nimport java.io.FileNotFoundException;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\n\nimport java.util.Date;\n\n\npublic class TypeHandler { public static Object createValue(final String str, final Object obj) throws ParseException {\n        return createValue(str, (Class<?>) obj);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\") \n    public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException {\n        if (PatternOptionBuilder.STRING_VALUE == clazz)\n        {\n            return (T) str;\n        }\n        else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n        {\n            return (T) createObject(str);\n        }\n        else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n        {\n            return (T) createNumber(str);\n        }\n        else if (PatternOptionBuilder.DATE_VALUE == clazz)\n        {\n            return (T) createDate(str);\n        }\n        else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n        {\n            return (T) createClass(str);\n        }\n        else if (PatternOptionBuilder.FILE_VALUE == clazz)\n        {\n            return (T) createFile(str);\n        }\n        else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n        {\n            return (T) openFile(str);\n        }\n        else if (PatternOptionBuilder.FILES_VALUE == clazz)\n        {\n            return (T) createFiles(str);\n        }\n        else if (PatternOptionBuilder.URL_VALUE == clazz)\n        {\n            return (T) createURL(str);\n        }\n        else\n        {\n            throw new ParseException(\"Unable to handle the class: \" + clazz);\n        }\n    }\n\n    \n    public static Object createObject(final String classname) throws ParseException {\n        Class<?> cl;\n\n        try\n        {\n            cl = Class.forName(classname);\n        }\n        catch (final ClassNotFoundException cnfe)\n        {\n            throw new ParseException(\"Unable to find the class: \" + classname);\n        }\n        \n        try\n        {\n            return cl.newInstance();\n        }\n        catch (final Exception e)\n        {\n            throw new ParseException(e.getClass().getName() + \"; Unable to create an instance of: \" + classname);\n        }\n    }\n\n    \n    public static Number createNumber(final String str) throws ParseException {\n        try\n        {\n            if (str.indexOf('.') != -1)\n            {\n                return Double.valueOf(str);\n            }\n            return Long.valueOf(str);\n        }\n        catch (final NumberFormatException e)\n        {\n            throw new ParseException(e.getMessage());\n        }\n    }\n\n    \n    public static Class<?> createClass(final String classname) throws ParseException {\n        try\n        {\n            return Class.forName(classname);\n        }\n        catch (final ClassNotFoundException e)\n        {\n            throw new ParseException(\"Unable to find the class: \" + classname);\n        }\n    }\n\n    \n    public static Date createDate(final String str) {\n        throw new UnsupportedOperationException(\"Not yet implemented\");\n    }\n\n    \n    public static URL createURL(final String str) throws ParseException {\n        try\n        {\n            return new URL(str);\n        }\n        catch (final MalformedURLException e)\n        {\n            throw new ParseException(\"Unable to parse the URL: \" + str);\n        }\n    }\n\n    \n    public static File createFile(final String str) {\n        return new File(str);\n    }\n\n    \n    public static FileInputStream openFile(String str) throws ParseException {\n        try\n        {\n            return new FileInputStream(str);\n        }\n        catch (FileNotFoundException e)\n        {\n            throw new ParseException(\"Unable to find file: \" + str);\n        }\n    }\n\n    \n    public static File[] createFiles(final String str) {\n        \n        \n        throw new UnsupportedOperationException(\"Not yet implemented\");\n    }\n}\n",
+      "buggy_signatures": [
+        "public class TypeHandler { public static Object createValue(final String str, final Object obj) throws ParseException",
+        "public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException",
+        "public static Object createObject(final String classname) throws ParseException",
+        "public static Number createNumber(final String str) throws ParseException",
+        "public static Class<?> createClass(final String classname) throws ParseException",
+        "public static Date createDate(final String str)",
+        "public static URL createURL(final String str) throws ParseException",
+        "public static File createFile(final String str)",
+        "public static FileInputStream openFile(String str) throws ParseException",
+        "public static File[] createFiles(final String str)"
+      ],
+      "fixed_signatures": [
+        "public class TypeHandler { public static Object createValue(final String str, final Object obj) throws ParseException",
+        "public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException",
+        "public static Object createObject(final String classname) throws ParseException",
+        "public static Number createNumber(final String str) throws ParseException",
+        "public static Class<?> createClass(final String classname) throws ParseException",
+        "public static Date createDate(final String str)",
+        "public static URL createURL(final String str) throws ParseException",
+        "public static File createFile(final String str)",
+        "public static FileInputStream openFile(String str) throws ParseException",
+        "public static File[] createFiles(final String str)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException {\n  if (PatternOptionBuilder.STRING_VALUE == clazz)\n  {\n  return (T) str;\n  }\n  else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n  {\n  return (T) createObject(str);\n  }\n  else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n  {\n  return (T) createNumber(str);\n  }\n  else if (PatternOptionBuilder.DATE_VALUE == clazz)\n  {\n  return (T) createDate(str);\n  }\n  else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n  {\n  return (T) createClass(str);\n  }\n  else if (PatternOptionBuilder.FILE_VALUE == clazz)\n  {\n  return (T) createFile(str);\n  }\n  else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n  {\n  return (T) openFile(str);\n  }\n  else if (PatternOptionBuilder.FILES_VALUE == clazz)\n  {\n  return (T) createFiles(str);\n  }\n  else if (PatternOptionBuilder.URL_VALUE == clazz)\n  {\n  return (T) createURL(str);\n  }\n  else\n  {\n  return null;\n  }\n  }",
+          "fixed_method": "  public static <T> T createValue(final String str, final Class<T> clazz) throws ParseException {\n  if (PatternOptionBuilder.STRING_VALUE == clazz)\n  {\n  return (T) str;\n  }\n  else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n  {\n  return (T) createObject(str);\n  }\n  else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n  {\n  return (T) createNumber(str);\n  }\n  else if (PatternOptionBuilder.DATE_VALUE == clazz)\n  {\n  return (T) createDate(str);\n  }\n  else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n  {\n  return (T) createClass(str);\n  }\n  else if (PatternOptionBuilder.FILE_VALUE == clazz)\n  {\n  return (T) createFile(str);\n  }\n  else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n  {\n  return (T) openFile(str);\n  }\n  else if (PatternOptionBuilder.FILES_VALUE == clazz)\n  {\n  return (T) createFiles(str);\n  }\n  else if (PatternOptionBuilder.URL_VALUE == clazz)\n  {\n  return (T) createURL(str);\n  }\n  else\n  {\n  throw new ParseException(\"Unable to handle the class: \" + clazz);\n  }\n  }",
+          "diff": [
+            "@@ -100,7 +100,7 @@",
+            "         }\n",
+            "         else\n",
+            "         {\n",
+            "-            return null;\n",
+            "+            throw new ParseException(\"Unable to handle the class: \" + clazz);\n",
+            "         }\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  "bug_id": "35",
+  "failed_tests": {
+    "org.mockitousage.bugs.NPEWithCertainMatchersTest": [
+      {
+        "methodName": "shouldNotThrowNPEWhenIntPassed",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        verify(mock).intArgumentMethod(isA(Integer.class));",
+        "test_source": "  public void shouldNotThrowNPEWhenIntPassed() {\n  mock.intArgumentMethod(100);\n  \n  verify(mock).intArgumentMethod(isA(Integer.class));\n  }",
+        "stack": [
+          "NPEWithCertainMatchersTest.shouldNotThrowNPEWhenIntPassed line 38"
+        ]
+      },
+      {
+        "methodName": "shouldNotThrowNPEWhenIntegerPassed",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        verify(mock).intArgumentMethod(isA(Integer.class));",
+        "test_source": "  public void shouldNotThrowNPEWhenIntegerPassed() {\n  mock.intArgumentMethod(100);\n\n  verify(mock).intArgumentMethod(isA(Integer.class));\n  }",
+        "stack": [
+          "NPEWithCertainMatchersTest.shouldNotThrowNPEWhenIntegerPassed line 31"
+        ]
+      },
+      {
+        "methodName": "shouldNotThrowNPEWhenIntegerPassedToEq",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        verify(mock).intArgumentMethod(eq(new Integer(100)));",
+        "test_source": "  public void shouldNotThrowNPEWhenIntegerPassedToEq() {\n  mock.intArgumentMethod(100);\n  \n  verify(mock).intArgumentMethod(eq(new Integer(100)));\n  }",
+        "stack": [
+          "NPEWithCertainMatchersTest.shouldNotThrowNPEWhenIntegerPassedToEq line 45"
+        ]
+      },
+      {
+        "methodName": "shouldNotThrowNPEWhenIntegerPassedToSame",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        verify(mock, never()).intArgumentMethod(same(new Integer(100)));",
+        "test_source": "  public void shouldNotThrowNPEWhenIntegerPassedToSame() {\n  mock.intArgumentMethod(100);\n\n  verify(mock, never()).intArgumentMethod(same(new Integer(100)));\n  }",
+        "stack": [
+          "NPEWithCertainMatchersTest.shouldNotThrowNPEWhenIntegerPassedToSame line 52"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/Matchers.java",
+      "buggy_full_code": "\npackage org.mockito;\n\nimport java.util.Collection;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.matchers.apachecommons.ReflectionEquals;\nimport org.mockito.internal.progress.HandyReturnValues;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Matchers { private static MockingProgress mockingProgress = new ThreadSafeMockingProgress(); public static boolean anyBoolean() {\n        return reportMatcher(Any.ANY).returnFalse();\n    }\n\n    \n    public static byte anyByte() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static char anyChar() {\n        return reportMatcher(Any.ANY).returnChar();\n    }\n\n    \n    public static int anyInt() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static long anyLong() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static float anyFloat() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static double anyDouble() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static short anyShort() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static <T> T anyObject() {\n        return (T) reportMatcher(Any.ANY).returnNull();\n    }\n    \n\n    \n    public static <T> T anyVararg() {\n        return (T) reportMatcher(AnyVararg.ANY_VARARG).returnNull();\n    }\n    \n    \n    public static <T> T any(Class<T> clazz) {\n        return (T) anyObject();\n    }\n    \n    \n    public static <T> T any() {\n        return (T) anyObject();\n    }\n\n    \n    public static String anyString() {\n        return reportMatcher(Any.ANY).returnString();\n    }\n    \n    \n    public static List anyList() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> List<T> anyListOf(Class<T> clazz) {\n        return (List) reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static Set anySet() {\n        return reportMatcher(Any.ANY).returnSet();\n    }\n    \n    \n    public static <T> Set<T> anySetOf(Class<T> clazz) {\n        return (Set) reportMatcher(Any.ANY).returnSet();\n    }\n\n    \n    public static Map anyMap() {\n        return reportMatcher(Any.ANY).returnMap();\n    }    \n    \n    \n    public static Collection anyCollection() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n        return (Collection) reportMatcher(Any.ANY).returnList();\n    }    \n\n    \n    public static <T> T isA(Class<T> clazz) {\n        return reportMatcher(new InstanceOf(clazz)).<T>returnNull();\n    }\n\n    \n    public static boolean eq(boolean value) {\n        return reportMatcher(new Equals(value)).returnFalse();\n    }\n\n    \n    public static byte eq(byte value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static char eq(char value) {\n        return reportMatcher(new Equals(value)).returnChar();\n    }\n\n    \n    public static double eq(double value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static float eq(float value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n    \n    \n    public static int eq(int value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static long eq(long value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static short eq(short value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static <T> T eq(T value) {\n        return reportMatcher(new Equals(value)).<T>returnNull();\n    }  \n\n    \n    public static <T> T refEq(T value, String... excludeFields) {\n        return reportMatcher(new ReflectionEquals(value, excludeFields)).<T>returnNull();\n    }\n    \n    \n    public static <T> T same(T value) {\n        return reportMatcher(new Same(value)).<T>returnNull();\n    }\n\n    \n    public static Object isNull() {\n        return reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static Object notNull() {\n        return reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n    \n    \n    public static Object isNotNull() {\n        return notNull();\n    }\n\n    \n    public static String contains(String substring) {\n        return reportMatcher(new Contains(substring)).returnString();\n    }\n\n    \n    public static String matches(String regex) {\n        return reportMatcher(new Matches(regex)).returnString();\n    }\n\n    \n    public static String endsWith(String suffix) {\n        return reportMatcher(new EndsWith(suffix)).returnString();\n    }\n\n    \n    public static String startsWith(String prefix) {\n        return reportMatcher(new StartsWith(prefix)).returnString();\n    }\n\n    \n    public static <T> T argThat(Matcher<T> matcher) {\n        return reportMatcher(matcher).<T>returnNull();\n    }\n    \n    \n    public static char charThat(Matcher<Character> matcher) {\n        return reportMatcher(matcher).returnChar();\n    }\n    \n    \n    public static boolean booleanThat(Matcher<Boolean> matcher) {\n        return reportMatcher(matcher).returnFalse();\n    }\n    \n    \n    public static byte byteThat(Matcher<Byte> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static short shortThat(Matcher<Short> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static int intThat(Matcher<Integer> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    \n    public static long longThat(Matcher<Long> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static float floatThat(Matcher<Float> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static double doubleThat(Matcher<Double> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    private static HandyReturnValues reportMatcher(Matcher<?> matcher) {\n        return mockingProgress.getArgumentMatcherStorage().reportMatcher(matcher);\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito;\n\nimport java.util.Collection;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.matchers.apachecommons.ReflectionEquals;\nimport org.mockito.internal.progress.HandyReturnValues;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Matchers { private static MockingProgress mockingProgress = new ThreadSafeMockingProgress(); public static boolean anyBoolean() {\n        return reportMatcher(Any.ANY).returnFalse();\n    }\n\n    \n    public static byte anyByte() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static char anyChar() {\n        return reportMatcher(Any.ANY).returnChar();\n    }\n\n    \n    public static int anyInt() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static long anyLong() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static float anyFloat() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static double anyDouble() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static short anyShort() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static <T> T anyObject() {\n        return (T) reportMatcher(Any.ANY).returnNull();\n    }\n    \n\n    \n    public static <T> T anyVararg() {\n        return (T) reportMatcher(AnyVararg.ANY_VARARG).returnNull();\n    }\n    \n    \n    public static <T> T any(Class<T> clazz) {\n        return (T) anyObject();\n    }\n    \n    \n    public static <T> T any() {\n        return (T) anyObject();\n    }\n\n    \n    public static String anyString() {\n        return reportMatcher(Any.ANY).returnString();\n    }\n    \n    \n    public static List anyList() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> List<T> anyListOf(Class<T> clazz) {\n        return (List) reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static Set anySet() {\n        return reportMatcher(Any.ANY).returnSet();\n    }\n    \n    \n    public static <T> Set<T> anySetOf(Class<T> clazz) {\n        return (Set) reportMatcher(Any.ANY).returnSet();\n    }\n\n    \n    public static Map anyMap() {\n        return reportMatcher(Any.ANY).returnMap();\n    }    \n    \n    \n    public static Collection anyCollection() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n        return (Collection) reportMatcher(Any.ANY).returnList();\n    }    \n\n    \n    public static <T> T isA(Class<T> clazz) {\n        return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);\n    }\n\n    \n    public static boolean eq(boolean value) {\n        return reportMatcher(new Equals(value)).returnFalse();\n    }\n\n    \n    public static byte eq(byte value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static char eq(char value) {\n        return reportMatcher(new Equals(value)).returnChar();\n    }\n\n    \n    public static double eq(double value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static float eq(float value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n    \n    \n    public static int eq(int value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static long eq(long value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static short eq(short value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static <T> T eq(T value) {\n        return (T) reportMatcher(new Equals(value)).<T>returnFor((Class) value.getClass());\n    }  \n\n    \n    public static <T> T refEq(T value, String... excludeFields) {\n        return reportMatcher(new ReflectionEquals(value, excludeFields)).<T>returnNull();\n    }\n    \n    \n    public static <T> T same(T value) {\n        return (T) reportMatcher(new Same(value)).<T>returnFor((Class) value.getClass());\n    }\n\n    \n    public static Object isNull() {\n        return reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static Object notNull() {\n        return reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n    \n    \n    public static Object isNotNull() {\n        return notNull();\n    }\n\n    \n    public static String contains(String substring) {\n        return reportMatcher(new Contains(substring)).returnString();\n    }\n\n    \n    public static String matches(String regex) {\n        return reportMatcher(new Matches(regex)).returnString();\n    }\n\n    \n    public static String endsWith(String suffix) {\n        return reportMatcher(new EndsWith(suffix)).returnString();\n    }\n\n    \n    public static String startsWith(String prefix) {\n        return reportMatcher(new StartsWith(prefix)).returnString();\n    }\n\n    \n    public static <T> T argThat(Matcher<T> matcher) {\n        return reportMatcher(matcher).<T>returnNull();\n    }\n    \n    \n    public static char charThat(Matcher<Character> matcher) {\n        return reportMatcher(matcher).returnChar();\n    }\n    \n    \n    public static boolean booleanThat(Matcher<Boolean> matcher) {\n        return reportMatcher(matcher).returnFalse();\n    }\n    \n    \n    public static byte byteThat(Matcher<Byte> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static short shortThat(Matcher<Short> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static int intThat(Matcher<Integer> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    \n    public static long longThat(Matcher<Long> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static float floatThat(Matcher<Float> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static double doubleThat(Matcher<Double> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    private static HandyReturnValues reportMatcher(Matcher<?> matcher) {\n        return mockingProgress.getArgumentMatcherStorage().reportMatcher(matcher);\n    }\n}",
+      "buggy_signatures": [
+        "public static byte anyByte()",
+        "public static char anyChar()",
+        "public static int anyInt()",
+        "public static long anyLong()",
+        "public static float anyFloat()",
+        "public static double anyDouble()",
+        "public static short anyShort()",
+        "public static <T> T anyObject()",
+        "public static <T> T anyVararg()",
+        "public static <T> T any(Class<T> clazz)",
+        "public static <T> T any()",
+        "public static String anyString()",
+        "public static List anyList()",
+        "public static <T> List<T> anyListOf(Class<T> clazz)",
+        "public static Set anySet()",
+        "public static <T> Set<T> anySetOf(Class<T> clazz)",
+        "public static Map anyMap()",
+        "public static Collection anyCollection()",
+        "public static <T> Collection<T> anyCollectionOf(Class<T> clazz)",
+        "public static <T> T isA(Class<T> clazz)",
+        "public static boolean eq(boolean value)",
+        "public static byte eq(byte value)",
+        "public static char eq(char value)",
+        "public static double eq(double value)",
+        "public static float eq(float value)",
+        "public static int eq(int value)",
+        "public static long eq(long value)",
+        "public static short eq(short value)",
+        "public static <T> T eq(T value)",
+        "public static <T> T refEq(T value, String... excludeFields)",
+        "public static <T> T same(T value)",
+        "public static Object isNull()",
+        "public static Object notNull()",
+        "public static Object isNotNull()",
+        "public static String contains(String substring)",
+        "public static String matches(String regex)",
+        "public static String endsWith(String suffix)",
+        "public static String startsWith(String prefix)",
+        "public static <T> T argThat(Matcher<T> matcher)",
+        "public static char charThat(Matcher<Character> matcher)",
+        "public static boolean booleanThat(Matcher<Boolean> matcher)",
+        "public static byte byteThat(Matcher<Byte> matcher)",
+        "public static short shortThat(Matcher<Short> matcher)",
+        "public static int intThat(Matcher<Integer> matcher)",
+        "public static long longThat(Matcher<Long> matcher)",
+        "public static float floatThat(Matcher<Float> matcher)",
+        "public static double doubleThat(Matcher<Double> matcher)",
+        "private static HandyReturnValues reportMatcher(Matcher<?> matcher)"
+      ],
+      "fixed_signatures": [
+        "public static byte anyByte()",
+        "public static char anyChar()",
+        "public static int anyInt()",
+        "public static long anyLong()",
+        "public static float anyFloat()",
+        "public static double anyDouble()",
+        "public static short anyShort()",
+        "public static <T> T anyObject()",
+        "public static <T> T anyVararg()",
+        "public static <T> T any(Class<T> clazz)",
+        "public static <T> T any()",
+        "public static String anyString()",
+        "public static List anyList()",
+        "public static <T> List<T> anyListOf(Class<T> clazz)",
+        "public static Set anySet()",
+        "public static <T> Set<T> anySetOf(Class<T> clazz)",
+        "public static Map anyMap()",
+        "public static Collection anyCollection()",
+        "public static <T> Collection<T> anyCollectionOf(Class<T> clazz)",
+        "public static <T> T isA(Class<T> clazz)",
+        "public static boolean eq(boolean value)",
+        "public static byte eq(byte value)",
+        "public static char eq(char value)",
+        "public static double eq(double value)",
+        "public static float eq(float value)",
+        "public static int eq(int value)",
+        "public static long eq(long value)",
+        "public static short eq(short value)",
+        "public static <T> T eq(T value)",
+        "public static <T> T refEq(T value, String... excludeFields)",
+        "public static <T> T same(T value)",
+        "public static Object isNull()",
+        "public static Object notNull()",
+        "public static Object isNotNull()",
+        "public static String contains(String substring)",
+        "public static String matches(String regex)",
+        "public static String endsWith(String suffix)",
+        "public static String startsWith(String prefix)",
+        "public static <T> T argThat(Matcher<T> matcher)",
+        "public static char charThat(Matcher<Character> matcher)",
+        "public static boolean booleanThat(Matcher<Boolean> matcher)",
+        "public static byte byteThat(Matcher<Byte> matcher)",
+        "public static short shortThat(Matcher<Short> matcher)",
+        "public static int intThat(Matcher<Integer> matcher)",
+        "public static long longThat(Matcher<Long> matcher)",
+        "public static float floatThat(Matcher<Float> matcher)",
+        "public static double doubleThat(Matcher<Double> matcher)",
+        "private static HandyReturnValues reportMatcher(Matcher<?> matcher)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static <T> T isA(Class<T> clazz) {\n  return reportMatcher(new InstanceOf(clazz)).<T>returnNull();\n  }",
+          "fixed_method": "  public static <T> T isA(Class<T> clazz) {\n  return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);\n  }",
+          "diff": [
+            "@@ -359,7 +359,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T isA(Class<T> clazz) {\n",
+            "-        return reportMatcher(new InstanceOf(clazz)).<T>returnNull();\n",
+            "+        return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T eq(T value) {\n  return reportMatcher(new Equals(value)).<T>returnNull();\n  }  ",
+          "fixed_method": "  public static <T> T eq(T value) {\n  return (T) reportMatcher(new Equals(value)).<T>returnFor((Class) value.getClass());\n  }  ",
+          "diff": [
+            "@@ -476,7 +476,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T eq(T value) {\n",
+            "-        return reportMatcher(new Equals(value)).<T>returnNull();\n",
+            "+        return (T) reportMatcher(new Equals(value)).<T>returnFor((Class) value.getClass());\n",
+            "     }  \n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T same(T value) {\n  return reportMatcher(new Same(value)).<T>returnNull();\n  }",
+          "fixed_method": "  public static <T> T same(T value) {\n  return (T) reportMatcher(new Same(value)).<T>returnFor((Class) value.getClass());\n  }",
+          "diff": [
+            "@@ -513,7 +513,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T same(T value) {\n",
+            "-        return reportMatcher(new Same(value)).<T>returnNull();\n",
+            "+        return (T) reportMatcher(new Same(value)).<T>returnFor((Class) value.getClass());\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "bug_id": "Time_18_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-signature> \n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 18\n Chosen Methods\n\n### Method 1\nSignature: org.joda.time.chrono.GJChronology.public long getDateTimeMillis(int year, int monthOfYear, int dayOfMonth,\n```java\n// \u203c signature public long getDateTimeMillis(int year, int monthOfYear, int dayOfMonth, not found\n```\n\n### Method 2\nSignature: org.joda.time.chrono.GJChronology.public int hashCode()\n```java\npublic int hashCode() {\n        return \"GJ\".hashCode() * 11 + iJulianChronology.hashCode() +\n            iGregorianChronology.hashCode() + iCutoverInstant.hashCode();\n    }\n```\n\n### Method 3\nSignature: org.joda.time.chrono.GJChronology.public DurationField getRangeDurationField()\n```java\npublic DurationField getRangeDurationField() {\n            return iRangeDurationField;\n        }\n```\n\n### Method 4\nSignature: org.joda.time.chrono.GJChronology.public int getDifference(long minuendInstant, long subtrahendInstant)\n```java\npublic int getDifference(long minuendInstant, long subtrahendInstant) {\n            return iGregorianField.getDifference(minuendInstant, subtrahendInstant);\n        }\n```\n\n### Method 5\nSignature: org.joda.time.chrono.GJChronology.public long add(long instant, long value)\n```java\npublic long add(long instant, long value) {\n            return iGregorianField.add(instant, value);\n        }\n```\nAnalyse the candidate methods above and determine the one most likely to cause the bug.\n",
+      "response": "Bug ID: 18\nRESPONSE: org.joda.time.chrono.GJChronology.public long getDateTimeMillis(int year, int monthOfYear, int dayOfMonth)"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "bug_id": "75",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.struct.EnumFormatShapeTest": [
+      {
+        "methodName": "testEnumPropertyAsNumber",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{\"color\":[2]}> but was:<{\"color\":[\"GREEN\"]}>",
+        "fail_line": "        assertEquals(String.format(aposToQuotes(\"{'color':%s}\"), Color.GREEN.ordinal()),",
+        "test_source": "  public void testEnumPropertyAsNumber() throws Exception {\n  assertEquals(String.format(aposToQuotes(\"{'color':%s}\"), Color.GREEN.ordinal()),\n  MAPPER.writeValueAsString(new ColorWrapper(Color.GREEN)));\n  }",
+        "stack": [
+          "EnumFormatShapeTest.testEnumPropertyAsNumber line 113"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/ser/std/EnumSerializer.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.util.*;\n\nimport com.fasterxml.jackson.annotation.JsonFormat;\nimport com.fasterxml.jackson.annotation.JsonFormat.Shape;\n\nimport com.fasterxml.jackson.core.*;\n\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonStringFormatVisitor;\nimport com.fasterxml.jackson.databind.node.ArrayNode;\nimport com.fasterxml.jackson.databind.node.ObjectNode;\nimport com.fasterxml.jackson.databind.ser.ContextualSerializer;\nimport com.fasterxml.jackson.databind.util.EnumValues;\n\n\n@JacksonStdImpl\npublic class EnumSerializer extends StdScalarSerializer<Enum<?>> implements ContextualSerializer { private static final long serialVersionUID = 1L; protected final EnumValues _values; protected final Boolean _serializeAsIndex; @Deprecated public EnumSerializer(EnumValues v) {\n        this(v, null);\n    }\n\n    public EnumSerializer(EnumValues v, Boolean serializeAsIndex) {\n        super(v.getEnumClass(), false);\n        _values = v;\n        _serializeAsIndex = serializeAsIndex;\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format) {\n        \n        EnumValues v = EnumValues.constructFromName(config, (Class<Enum<?>>) enumClass);\n        Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true);\n        return new EnumSerializer(v, serializeAsIndex);\n    }\n\n    \n    @Override\n    public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException {\n        if (property != null) {\n            JsonFormat.Value format = findFormatOverrides(serializers,\n                    property, handledType());\n            if (format != null) {\n                Boolean serializeAsIndex = _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n                        format, false);\n                if (serializeAsIndex != _serializeAsIndex) {\n                    return new EnumSerializer(_values, serializeAsIndex);\n                }\n            }\n        }\n        return this;\n    }\n\n    \n    \n    public EnumValues getEnumValues() { return _values; }\n\n    \n    \n    @Override\n    public final void serialize(Enum<?> en, JsonGenerator gen, SerializerProvider serializers) throws IOException {\n        \n        if (_serializeAsIndex(serializers)) {\n            gen.writeNumber(en.ordinal());\n            return;\n        }\n        \n        if (serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n            gen.writeString(en.toString());\n            return;\n        }\n        gen.writeString(_values.serializedValueFor(en));\n    }\n\n    \n\n    @Override\n    public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n        if (_serializeAsIndex(provider)) {\n            return createSchemaNode(\"integer\", true);\n        }\n        ObjectNode objectNode = createSchemaNode(\"string\", true);\n        if (typeHint != null) {\n            JavaType type = provider.constructType(typeHint);\n            if (type.isEnumType()) {\n                ArrayNode enumNode = objectNode.putArray(\"enum\");\n                for (SerializableString value : _values.values()) {\n                    enumNode.add(value.getValue());\n                }\n            }\n        }\n        return objectNode;\n    }\n    \n    @Override\n    public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n        SerializerProvider serializers = visitor.getProvider();\n        if (_serializeAsIndex(serializers)) {\n            visitIntFormat(visitor, typeHint, JsonParser.NumberType.INT);\n            return;\n        }\n        JsonStringFormatVisitor stringVisitor = visitor.expectStringFormat(typeHint);\n        if (stringVisitor != null) {\n            Set<String> enums = new LinkedHashSet<String>();\n            \n            \n            if ((serializers != null) && \n                    serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n                for (Enum<?> e : _values.enums()) {\n                    enums.add(e.toString());\n                }\n            } else {\n                \n                for (SerializableString value : _values.values()) {\n                    enums.add(value.getValue());\n                }\n            }\n            stringVisitor.enumTypes(enums);\n        }\n    }\n\n    \n    \n    protected final boolean _serializeAsIndex(SerializerProvider serializers) {\n        if (_serializeAsIndex != null) {\n            return _serializeAsIndex.booleanValue();\n        }\n        return serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_INDEX);\n    }\n\n    \n    protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass) {\n        JsonFormat.Shape shape = (format == null) ? null : format.getShape();\n        if (shape == null) {\n            return null;\n        }\n        \n        if (shape == Shape.ANY || shape == Shape.SCALAR) {\n            return null;\n        }\n        \n        if (shape == Shape.STRING || shape == Shape.NATURAL) {\n            return Boolean.FALSE;\n        }\n        \n        if (shape.isNumeric() || (shape == Shape.ARRAY)) {\n            return Boolean.TRUE;\n        }\n        \n        throw new IllegalArgumentException(String.format(\n                \"Unsupported serialization shape (%s) for Enum %s, not supported as %s annotation\",\n                    shape, enumClass.getName(), (fromClass? \"class\" : \"property\")));\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.util.*;\n\nimport com.fasterxml.jackson.annotation.JsonFormat;\nimport com.fasterxml.jackson.annotation.JsonFormat.Shape;\n\nimport com.fasterxml.jackson.core.*;\n\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonStringFormatVisitor;\nimport com.fasterxml.jackson.databind.node.ArrayNode;\nimport com.fasterxml.jackson.databind.node.ObjectNode;\nimport com.fasterxml.jackson.databind.ser.ContextualSerializer;\nimport com.fasterxml.jackson.databind.util.EnumValues;\n\n\n@JacksonStdImpl\npublic class EnumSerializer extends StdScalarSerializer<Enum<?>> implements ContextualSerializer { private static final long serialVersionUID = 1L; protected final EnumValues _values; protected final Boolean _serializeAsIndex; @Deprecated public EnumSerializer(EnumValues v) {\n        this(v, null);\n    }\n\n    public EnumSerializer(EnumValues v, Boolean serializeAsIndex) {\n        super(v.getEnumClass(), false);\n        _values = v;\n        _serializeAsIndex = serializeAsIndex;\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format) {\n        \n        EnumValues v = EnumValues.constructFromName(config, (Class<Enum<?>>) enumClass);\n        Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true, null);\n        return new EnumSerializer(v, serializeAsIndex);\n    }\n\n    \n    @Override\n    public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException {\n        if (property != null) {\n            JsonFormat.Value format = findFormatOverrides(serializers,\n                    property, handledType());\n            if (format != null) {\n                Boolean serializeAsIndex = _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n                        format, false, _serializeAsIndex);\n                if (serializeAsIndex != _serializeAsIndex) {\n                    return new EnumSerializer(_values, serializeAsIndex);\n                }\n            }\n        }\n        return this;\n    }\n\n    \n    \n    public EnumValues getEnumValues() { return _values; }\n\n    \n    \n    @Override\n    public final void serialize(Enum<?> en, JsonGenerator gen, SerializerProvider serializers) throws IOException {\n        \n        if (_serializeAsIndex(serializers)) {\n            gen.writeNumber(en.ordinal());\n            return;\n        }\n        \n        if (serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n            gen.writeString(en.toString());\n            return;\n        }\n        gen.writeString(_values.serializedValueFor(en));\n    }\n\n    \n\n    @Override\n    public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n        if (_serializeAsIndex(provider)) {\n            return createSchemaNode(\"integer\", true);\n        }\n        ObjectNode objectNode = createSchemaNode(\"string\", true);\n        if (typeHint != null) {\n            JavaType type = provider.constructType(typeHint);\n            if (type.isEnumType()) {\n                ArrayNode enumNode = objectNode.putArray(\"enum\");\n                for (SerializableString value : _values.values()) {\n                    enumNode.add(value.getValue());\n                }\n            }\n        }\n        return objectNode;\n    }\n    \n    @Override\n    public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n        SerializerProvider serializers = visitor.getProvider();\n        if (_serializeAsIndex(serializers)) {\n            visitIntFormat(visitor, typeHint, JsonParser.NumberType.INT);\n            return;\n        }\n        JsonStringFormatVisitor stringVisitor = visitor.expectStringFormat(typeHint);\n        if (stringVisitor != null) {\n            Set<String> enums = new LinkedHashSet<String>();\n            \n            \n            if ((serializers != null) && \n                    serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n                for (Enum<?> e : _values.enums()) {\n                    enums.add(e.toString());\n                }\n            } else {\n                \n                for (SerializableString value : _values.values()) {\n                    enums.add(value.getValue());\n                }\n            }\n            stringVisitor.enumTypes(enums);\n        }\n    }\n\n    \n    \n    protected final boolean _serializeAsIndex(SerializerProvider serializers) {\n        if (_serializeAsIndex != null) {\n            return _serializeAsIndex.booleanValue();\n        }\n        return serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_INDEX);\n    }\n\n    \n    protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass, Boolean defaultValue) {\n        JsonFormat.Shape shape = (format == null) ? null : format.getShape();\n        if (shape == null) {\n            return defaultValue;\n        }\n        \n        if (shape == Shape.ANY || shape == Shape.SCALAR) {\n            return defaultValue;\n        }\n        \n        if (shape == Shape.STRING || shape == Shape.NATURAL) {\n            return Boolean.FALSE;\n        }\n        \n        if (shape.isNumeric() || (shape == Shape.ARRAY)) {\n            return Boolean.TRUE;\n        }\n        \n        throw new IllegalArgumentException(String.format(\n                \"Unsupported serialization shape (%s) for Enum %s, not supported as %s annotation\",\n                    shape, enumClass.getName(), (fromClass? \"class\" : \"property\")));\n    }\n}\n",
+      "buggy_signatures": [
+        "public EnumSerializer(EnumValues v, Boolean serializeAsIndex)",
+        "public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format)",
+        "public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException",
+        "public EnumValues getEnumValues()",
+        "public final void serialize(Enum<?> en, JsonGenerator gen, SerializerProvider serializers) throws IOException",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException",
+        "protected final boolean _serializeAsIndex(SerializerProvider serializers)",
+        "protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass)"
+      ],
+      "fixed_signatures": [
+        "public EnumSerializer(EnumValues v, Boolean serializeAsIndex)",
+        "public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format)",
+        "public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException",
+        "public EnumValues getEnumValues()",
+        "public final void serialize(Enum<?> en, JsonGenerator gen, SerializerProvider serializers) throws IOException",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException",
+        "protected final boolean _serializeAsIndex(SerializerProvider serializers)",
+        "protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass, Boolean defaultValue)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format) {\n  \n  EnumValues v = EnumValues.constructFromName(config, (Class<Enum<?>>) enumClass);\n  Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true);\n  return new EnumSerializer(v, serializeAsIndex);\n  }",
+          "fixed_method": "  public static EnumSerializer construct(Class<?> enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format) {\n  \n  EnumValues v = EnumValues.constructFromName(config, (Class<Enum<?>>) enumClass);\n  Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true, null);\n  return new EnumSerializer(v, serializeAsIndex);\n  }",
+          "diff": [
+            "@@ -83,7 +83,7 @@",
+            "          *   handle toString() case dynamically (for example)\n",
+            "          */\n",
+            "         EnumValues v = EnumValues.constructFromName(config, (Class<Enum<?>>) enumClass);\n",
+            "-        Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true);\n",
+            "+        Boolean serializeAsIndex = _isShapeWrittenUsingIndex(enumClass, format, true, null);\n",
+            "         return new EnumSerializer(v, serializeAsIndex);\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException {\n  if (property != null) {\n  JsonFormat.Value format = findFormatOverrides(serializers,\n  property, handledType());\n  if (format != null) {\n  Boolean serializeAsIndex = _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n  format, false);\n  if (serializeAsIndex != _serializeAsIndex) {\n  return new EnumSerializer(_values, serializeAsIndex);\n  }\n  }\n  }\n  return this;\n  }",
+          "fixed_method": "  public JsonSerializer<?> createContextual(SerializerProvider serializers, BeanProperty property) throws JsonMappingException {\n  if (property != null) {\n  JsonFormat.Value format = findFormatOverrides(serializers,\n  property, handledType());\n  if (format != null) {\n  Boolean serializeAsIndex = _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n  format, false, _serializeAsIndex);\n  if (serializeAsIndex != _serializeAsIndex) {\n  return new EnumSerializer(_values, serializeAsIndex);\n  }\n  }\n  }\n  return this;\n  }",
+          "diff": [
+            "@@ -101,7 +101,7 @@",
+            "                     property, handledType());\n",
+            "             if (format != null) {\n",
+            "                 Boolean serializeAsIndex = _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n",
+            "-                        format, false);\n",
+            "+                        format, false, _serializeAsIndex);\n",
+            "                 if (serializeAsIndex != _serializeAsIndex) {\n",
+            "                     return new EnumSerializer(_values, serializeAsIndex);\n",
+            "                 }\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass) {\n  JsonFormat.Shape shape = (format == null) ? null : format.getShape();\n  if (shape == null) {\n  return null;\n  }\n  \n  if (shape == Shape.ANY || shape == Shape.SCALAR) {\n  return null;\n  }\n  \n  if (shape == Shape.STRING || shape == Shape.NATURAL) {\n  return Boolean.FALSE;\n  }\n  \n  if (shape.isNumeric() || (shape == Shape.ARRAY)) {\n  return Boolean.TRUE;\n  }\n  \n  throw new IllegalArgumentException(String.format(\n  \"Unsupported serialization shape (%s) for Enum %s, not supported as %s annotation\",\n  shape, enumClass.getName(), (fromClass? \"class\" : \"property\")));\n  }",
+          "fixed_method": "  protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass, JsonFormat.Value format, boolean fromClass, Boolean defaultValue) {\n  JsonFormat.Shape shape = (format == null) ? null : format.getShape();\n  if (shape == null) {\n  return defaultValue;\n  }\n  \n  if (shape == Shape.ANY || shape == Shape.SCALAR) {\n  return defaultValue;\n  }\n  \n  if (shape == Shape.STRING || shape == Shape.NATURAL) {\n  return Boolean.FALSE;\n  }\n  \n  if (shape.isNumeric() || (shape == Shape.ARRAY)) {\n  return Boolean.TRUE;\n  }\n  \n  throw new IllegalArgumentException(String.format(\n  \"Unsupported serialization shape (%s) for Enum %s, not supported as %s annotation\",\n  shape, enumClass.getName(), (fromClass? \"class\" : \"property\")));\n  }",
+          "diff": [
+            "@@ -214,15 +214,16 @@",
+            "      * index (number) or not.\n",
+            "      */\n",
+            "     protected static Boolean _isShapeWrittenUsingIndex(Class<?> enumClass,\n",
+            "-            JsonFormat.Value format, boolean fromClass)\n",
+            "+            JsonFormat.Value format, boolean fromClass,\n",
+            "+            Boolean defaultValue)\n",
+            "     {\n",
+            "         JsonFormat.Shape shape = (format == null) ? null : format.getShape();\n",
+            "         if (shape == null) {\n",
+            "-            return null;\n",
+            "+            return defaultValue;\n",
+            "         }\n",
+            "         // i.e. \"default\", check dynamically\n",
+            "         if (shape == Shape.ANY || shape == Shape.SCALAR) {\n",
+            "-            return null;\n",
+            "+            return defaultValue;\n",
+            "         }\n",
+            "         // 19-May-2016, tatu: also consider \"natural\" shape\n",
+            "         if (shape == Shape.STRING || shape == Shape.NATURAL) {\n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

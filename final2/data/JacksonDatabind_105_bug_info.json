@@ -1,0 +1,66 @@
+{
+  "bug_id": "105",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.deser.jdk.JDKScalarsTest": [
+      {
+        "methodName": "testVoidDeser",
+        "error": "com.fasterxml.jackson.databind.exc.MismatchedInputException",
+        "message": "Cannot construct instance of `java.lang.Void` (although at least one Creator exists): no int/Int-argument constructor/factory method to deserialize from Number value (123)",
+        "fail_line": "        VoidBean bean = MAPPER.readValue(aposToQuotes(\"{'value' : 123 }\"),",
+        "test_source": "  public void testVoidDeser() throws Exception {\n  VoidBean bean = MAPPER.readValue(aposToQuotes(\"{'value' : 123 }\"),\n  VoidBean.class);\n  assertNull(bean.value);\n  }",
+        "stack": [
+          "MismatchedInputException.from line 63, DeserializationContext.reportInputMismatch line 1343, DeserializationContext.handleMissingInstantiator line 1032, ValueInstantiator.createFromInt line 262, StdValueInstantiator.createFromInt line 356, BeanDeserializerBase.deserializeFromNumber line 1324, BeanDeserializer._deserializeOther line 173, BeanDeserializer.deserialize line 161, FieldProperty.deserializeAndSet line 136, BeanDeserializer.vanillaDeserialize line 288, BeanDeserializer.deserialize line 151, ObjectMapper._readMapAndClose line 4013, ObjectMapper.readValue line 3004, JDKScalarsTest.testVoidDeser line 863"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.deser.std;\n\nimport java.nio.ByteBuffer;\nimport java.util.*;\nimport java.util.concurrent.atomic.AtomicBoolean;\n\nimport com.fasterxml.jackson.databind.*;\n\n\npublic class JdkDeserializers { private final static HashSet<String> _classNames = new HashSet<String>(); static {\n        \n        Class<?>[] types = new Class<?>[] {\n                UUID.class,\n                AtomicBoolean.class,\n                StackTraceElement.class,\n                ByteBuffer.class\n        };\n        for (Class<?> cls : types) { _classNames.add(cls.getName()); }\n        for (Class<?> cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n    }\n\n    public static JsonDeserializer<?> find(Class<?> rawType, String clsName) {\n        if (_classNames.contains(clsName)) {\n            JsonDeserializer<?> d = FromStringDeserializer.findDeserializer(rawType);\n            if (d != null) {\n                return d;\n            }\n            if (rawType == UUID.class) {\n                return new UUIDDeserializer();\n            }\n            if (rawType == StackTraceElement.class) {\n                return new StackTraceElementDeserializer();\n            }\n            if (rawType == AtomicBoolean.class) {\n                \n                return new AtomicBooleanDeserializer();\n            }\n            if (rawType == ByteBuffer.class) {\n                return new ByteBufferDeserializer();\n            }\n        }\n        return null;\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.deser.std;\n\nimport java.nio.ByteBuffer;\nimport java.util.*;\nimport java.util.concurrent.atomic.AtomicBoolean;\n\nimport com.fasterxml.jackson.databind.*;\n\n\npublic class JdkDeserializers { private final static HashSet<String> _classNames = new HashSet<String>(); static {\n        \n        Class<?>[] types = new Class<?>[] {\n                UUID.class,\n                AtomicBoolean.class,\n                StackTraceElement.class,\n                ByteBuffer.class,\n                Void.class\n        };\n        for (Class<?> cls : types) { _classNames.add(cls.getName()); }\n        for (Class<?> cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n    }\n\n    public static JsonDeserializer<?> find(Class<?> rawType, String clsName) {\n        if (_classNames.contains(clsName)) {\n            JsonDeserializer<?> d = FromStringDeserializer.findDeserializer(rawType);\n            if (d != null) {\n                return d;\n            }\n            if (rawType == UUID.class) {\n                return new UUIDDeserializer();\n            }\n            if (rawType == StackTraceElement.class) {\n                return new StackTraceElementDeserializer();\n            }\n            if (rawType == AtomicBoolean.class) {\n                \n                return new AtomicBooleanDeserializer();\n            }\n            if (rawType == ByteBuffer.class) {\n                return new ByteBufferDeserializer();\n            }\n            if (rawType == Void.class) {\n                return NullifyingDeserializer.instance;\n            }\n        }\n        return null;\n    }\n}\n",
+      "buggy_signatures": [
+        "public static JsonDeserializer<?> find(Class<?> rawType, String clsName)"
+      ],
+      "fixed_signatures": [
+        "public static JsonDeserializer<?> find(Class<?> rawType, String clsName)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private final static HashSet<String> _classNames = new HashSet<String>(); static {\n  \n  Class<?>[] types = new Class<?>[] {\n  UUID.class,\n  AtomicBoolean.class,\n  StackTraceElement.class,\n  ByteBuffer.class\n  };\n  for (Class<?> cls : types) { _classNames.add(cls.getName()); }\n  for (Class<?> cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n  }",
+          "fixed_method": "  private final static HashSet<String> _classNames = new HashSet<String>(); static {\n  \n  Class<?>[] types = new Class<?>[] {\n  UUID.class,\n  AtomicBoolean.class,\n  StackTraceElement.class,\n  ByteBuffer.class,\n  Void.class\n  };\n  for (Class<?> cls : types) { _classNames.add(cls.getName()); }\n  for (Class<?> cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n  }",
+          "diff": [
+            "@@ -19,7 +19,8 @@",
+            "                 UUID.class,\n",
+            "                 AtomicBoolean.class,\n",
+            "                 StackTraceElement.class,\n",
+            "-                ByteBuffer.class\n",
+            "+                ByteBuffer.class,\n",
+            "+                Void.class\n",
+            "         };\n",
+            "         for (Class<?> cls : types) { _classNames.add(cls.getName()); }\n",
+            "         for (Class<?> cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  public static JsonDeserializer<?> find(Class<?> rawType, String clsName) {\n  if (_classNames.contains(clsName)) {\n  JsonDeserializer<?> d = FromStringDeserializer.findDeserializer(rawType);\n  if (d != null) {\n  return d;\n  }\n  if (rawType == UUID.class) {\n  return new UUIDDeserializer();\n  }\n  if (rawType == StackTraceElement.class) {\n  return new StackTraceElementDeserializer();\n  }\n  if (rawType == AtomicBoolean.class) {\n  \n  return new AtomicBooleanDeserializer();\n  }\n  if (rawType == ByteBuffer.class) {\n  return new ByteBufferDeserializer();\n  }\n  }\n  return null;\n  }",
+          "fixed_method": "  public static JsonDeserializer<?> find(Class<?> rawType, String clsName) {\n  if (_classNames.contains(clsName)) {\n  JsonDeserializer<?> d = FromStringDeserializer.findDeserializer(rawType);\n  if (d != null) {\n  return d;\n  }\n  if (rawType == UUID.class) {\n  return new UUIDDeserializer();\n  }\n  if (rawType == StackTraceElement.class) {\n  return new StackTraceElementDeserializer();\n  }\n  if (rawType == AtomicBoolean.class) {\n  \n  return new AtomicBooleanDeserializer();\n  }\n  if (rawType == ByteBuffer.class) {\n  return new ByteBufferDeserializer();\n  }\n  if (rawType == Void.class) {\n  return NullifyingDeserializer.instance;\n  }\n  }\n  return null;\n  }",
+          "diff": [
+            "@@ -45,6 +46,9 @@",
+            "             if (rawType == ByteBuffer.class) {\n",
+            "                 return new ByteBufferDeserializer();\n",
+            "             }\n",
+            "+            if (rawType == Void.class) {\n",
+            "+                return NullifyingDeserializer.instance;\n",
+            "+            }\n",
+            "         }\n",
+            "         return null;\n",
+            "     }\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

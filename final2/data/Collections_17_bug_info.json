@@ -1,0 +1,75 @@
+{
+  "bug_id": "17",
+  "failed_tests": {
+    "org.apache.commons.collections.functors.TestEqualPredicate": [
+      {
+        "methodName": "objectFactoryUsesEqualsForTest",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertFalse(predicate, FALSE_OBJECT);",
+        "test_source": "  public void objectFactoryUsesEqualsForTest() throws Exception {\n  Predicate<EqualsTestObject> predicate = equalPredicate(FALSE_OBJECT);\n  assertFalse(predicate, FALSE_OBJECT);\n  assertTrue(equalPredicate(TRUE_OBJECT), TRUE_OBJECT);\n  }",
+        "stack": [
+          "BasicPredicateTestBase.assertFalse line 48, TestEqualPredicate.objectFactoryUsesEqualsForTest line 44"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/functors/EqualPredicate.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.functors;\n\nimport static org.apache.commons.collections.functors.NullPredicate.nullPredicate; import java.io.Serializable; import org.apache.commons.collections.Predicate; public final class EqualPredicate<T> implements Predicate<T>, Serializable { private static final long serialVersionUID = 5633766978029907089L; private final T iValue; private final Equator<T> equator; public static <T> Predicate<T> equalPredicate(T object) {\n        if (object == null) {\n            return nullPredicate();\n        }\n        return new EqualPredicate<T>(object);\n    }\n\n    \n    public static <T> Predicate<T> equalPredicate(T object, Equator<T> equator) {\n        if (object == null) {\n            return nullPredicate();\n        }\n        return new EqualPredicate<T>(object, equator);\n    }\n\n    \n    public EqualPredicate(T object) {\n        \n        \n        this(object, new DefaultEquator<T>());\n    }\n\n    \n    public EqualPredicate(T object, Equator<T> equator) {\n        super();\n        iValue = object;\n        this.equator = equator;\n    }\n\n    \n    public boolean evaluate(T object) {\n            return equator.equate(iValue, object);\n    }\n\n    \n    public Object getValue() {\n        return iValue;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.functors;\n\nimport static org.apache.commons.collections.functors.NullPredicate.nullPredicate; import java.io.Serializable; import org.apache.commons.collections.Predicate; public final class EqualPredicate<T> implements Predicate<T>, Serializable { private static final long serialVersionUID = 5633766978029907089L; private final T iValue; private final Equator<T> equator; public static <T> Predicate<T> equalPredicate(T object) {\n        if (object == null) {\n            return nullPredicate();\n        }\n        return new EqualPredicate<T>(object);\n    }\n\n    \n    public static <T> Predicate<T> equalPredicate(T object, Equator<T> equator) {\n        if (object == null) {\n            return nullPredicate();\n        }\n        return new EqualPredicate<T>(object, equator);\n    }\n\n    \n    public EqualPredicate(T object) {\n        \n        \n        this(object, null);\n    }\n\n    \n    public EqualPredicate(T object, Equator<T> equator) {\n        super();\n        iValue = object;\n        this.equator = equator;\n    }\n\n    \n    public boolean evaluate(T object) {\n        if (equator != null) {\n            return equator.equate(iValue, object);\n        } else {\n            return iValue.equals(object);\n        }\n    }\n\n    \n    public Object getValue() {\n        return iValue;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public static <T> Predicate<T> equalPredicate(T object, Equator<T> equator)",
+        "public EqualPredicate(T object)",
+        "public EqualPredicate(T object, Equator<T> equator)",
+        "public boolean evaluate(T object)",
+        "public Object getValue()"
+      ],
+      "fixed_signatures": [
+        "public static <T> Predicate<T> equalPredicate(T object, Equator<T> equator)",
+        "public EqualPredicate(T object)",
+        "public EqualPredicate(T object, Equator<T> equator)",
+        "public boolean evaluate(T object)",
+        "public Object getValue()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public EqualPredicate(T object) {\n  \n  \n  this(object, new DefaultEquator<T>());\n  }",
+          "fixed_method": "  public EqualPredicate(T object) {\n  \n  \n  this(object, null);\n  }",
+          "diff": [
+            "@@ -81,7 +81,7 @@",
+            "     public EqualPredicate(T object) {\n",
+            "         // do not use the DefaultEquator to keep backwards compatibility\n",
+            "         // the DefaultEquator returns also true if the two object references are equal\n",
+            "-        this(object, new DefaultEquator<T>());\n",
+            "+        this(object, null);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public boolean evaluate(T object) {\n  return equator.equate(iValue, object);\n  }",
+          "fixed_method": "  public boolean evaluate(T object) {\n  if (equator != null) {\n  return equator.equate(iValue, object);\n  } else {\n  return iValue.equals(object);\n  }\n  }",
+          "diff": [
+            "@@ -105,7 +105,11 @@",
+            "      * @return true if input object equals stored value\n",
+            "      */\n",
+            "     public boolean evaluate(T object) {\n",
+            "+        if (equator != null) {\n",
+            "             return equator.equate(iValue, object);\n",
+            "+        } else {\n",
+            "+            return iValue.equals(object);\n",
+            "+        }\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

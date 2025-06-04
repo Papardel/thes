@@ -1,0 +1,57 @@
+{
+  "bug_id": "26",
+  "failed_tests": {
+    "org.jsoup.safety.CleanerTest": [
+      {
+        "methodName": "handlesFramesets",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        Document cleanDoc = new Cleaner(Whitelist.basic()).clean(dirtyDoc);",
+        "test_source": "",
+        "stack": [
+          "Cleaner.copySafeNodes line 73, Cleaner.clean line 43, CleanerTest.handlesFramesets line 176"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/safety/Cleaner.java",
+      "buggy_full_code": "package org.jsoup.safety;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\nimport org.jsoup.parser.Tag;\n\nimport java.util.List;\n\n\npublic class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist) {\n        Validate.notNull(whitelist);\n        this.whitelist = whitelist;\n    }\n\n    \n    public Document clean(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n            copySafeNodes(dirtyDocument.body(), clean.body());\n\n        return clean;\n    }\n\n    \n    public boolean isValid(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        int numDiscarded = copySafeNodes(dirtyDocument.body(), clean.body());\n        return numDiscarded == 0;\n    }\n\n    \n    private int copySafeNodes(Element source, Element dest) {\n        List<Node> sourceChildren = source.childNodes();\n        int numDiscarded = 0;\n\n        for (Node sourceChild : sourceChildren) {\n            if (sourceChild instanceof Element) {\n                Element sourceEl = (Element) sourceChild;\n\n                if (whitelist.isSafeTag(sourceEl.tagName())) { \n                    ElementMeta meta = createSafeElement(sourceEl);\n                    Element destChild = meta.el;\n                    dest.appendChild(destChild);\n\n                    numDiscarded += meta.numAttribsDiscarded;\n                    numDiscarded += copySafeNodes(sourceEl, destChild); \n                } else { \n                    numDiscarded++;\n                    numDiscarded += copySafeNodes(sourceEl, dest);\n                }\n            } else if (sourceChild instanceof TextNode) {\n                TextNode sourceText = (TextNode) sourceChild;\n                TextNode destText = new TextNode(sourceText.getWholeText(), sourceChild.baseUri());\n                dest.appendChild(destText);\n            } \n        }\n        return numDiscarded;\n    }\n\n    private ElementMeta createSafeElement(Element sourceEl) {\n        String sourceTag = sourceEl.tagName();\n        Attributes destAttrs = new Attributes();\n        Element dest = new Element(Tag.valueOf(sourceTag), sourceEl.baseUri(), destAttrs);\n        int numDiscarded = 0;\n\n        Attributes sourceAttrs = sourceEl.attributes();\n        for (Attribute sourceAttr : sourceAttrs) {\n            if (whitelist.isSafeAttribute(sourceTag, sourceEl, sourceAttr))\n                destAttrs.put(sourceAttr);\n            else\n                numDiscarded++;\n        }\n        Attributes enforcedAttrs = whitelist.getEnforcedAttributes(sourceTag);\n        destAttrs.addAll(enforcedAttrs);\n\n        return new ElementMeta(dest, numDiscarded);\n    }\n\n    private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded) {\n            this.el = el;\n            this.numAttribsDiscarded = numAttribsDiscarded;\n        }\n    }\n\n}\n",
+      "fixed_full_code": "package org.jsoup.safety;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\nimport org.jsoup.parser.Tag;\n\nimport java.util.List;\n\n\npublic class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist) {\n        Validate.notNull(whitelist);\n        this.whitelist = whitelist;\n    }\n\n    \n    public Document clean(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        if (dirtyDocument.body() != null) \n            copySafeNodes(dirtyDocument.body(), clean.body());\n\n        return clean;\n    }\n\n    \n    public boolean isValid(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        int numDiscarded = copySafeNodes(dirtyDocument.body(), clean.body());\n        return numDiscarded == 0;\n    }\n\n    \n    private int copySafeNodes(Element source, Element dest) {\n        List<Node> sourceChildren = source.childNodes();\n        int numDiscarded = 0;\n\n        for (Node sourceChild : sourceChildren) {\n            if (sourceChild instanceof Element) {\n                Element sourceEl = (Element) sourceChild;\n\n                if (whitelist.isSafeTag(sourceEl.tagName())) { \n                    ElementMeta meta = createSafeElement(sourceEl);\n                    Element destChild = meta.el;\n                    dest.appendChild(destChild);\n\n                    numDiscarded += meta.numAttribsDiscarded;\n                    numDiscarded += copySafeNodes(sourceEl, destChild); \n                } else { \n                    numDiscarded++;\n                    numDiscarded += copySafeNodes(sourceEl, dest);\n                }\n            } else if (sourceChild instanceof TextNode) {\n                TextNode sourceText = (TextNode) sourceChild;\n                TextNode destText = new TextNode(sourceText.getWholeText(), sourceChild.baseUri());\n                dest.appendChild(destText);\n            } \n        }\n        return numDiscarded;\n    }\n\n    private ElementMeta createSafeElement(Element sourceEl) {\n        String sourceTag = sourceEl.tagName();\n        Attributes destAttrs = new Attributes();\n        Element dest = new Element(Tag.valueOf(sourceTag), sourceEl.baseUri(), destAttrs);\n        int numDiscarded = 0;\n\n        Attributes sourceAttrs = sourceEl.attributes();\n        for (Attribute sourceAttr : sourceAttrs) {\n            if (whitelist.isSafeAttribute(sourceTag, sourceEl, sourceAttr))\n                destAttrs.put(sourceAttr);\n            else\n                numDiscarded++;\n        }\n        Attributes enforcedAttrs = whitelist.getEnforcedAttributes(sourceTag);\n        destAttrs.addAll(enforcedAttrs);\n\n        return new ElementMeta(dest, numDiscarded);\n    }\n\n    private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded) {\n            this.el = el;\n            this.numAttribsDiscarded = numAttribsDiscarded;\n        }\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist)",
+        "public Document clean(Document dirtyDocument)",
+        "public boolean isValid(Document dirtyDocument)",
+        "private int copySafeNodes(Element source, Element dest)",
+        "private ElementMeta createSafeElement(Element sourceEl)",
+        "private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded)"
+      ],
+      "fixed_signatures": [
+        "public class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist)",
+        "public Document clean(Document dirtyDocument)",
+        "public boolean isValid(Document dirtyDocument)",
+        "private int copySafeNodes(Element source, Element dest)",
+        "private ElementMeta createSafeElement(Element sourceEl)",
+        "private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Document clean(Document dirtyDocument) {\n  Validate.notNull(dirtyDocument);\n\n  Document clean = Document.createShell(dirtyDocument.baseUri());\n  copySafeNodes(dirtyDocument.body(), clean.body());\n\n  return clean;\n  }",
+          "fixed_method": "  public Document clean(Document dirtyDocument) {\n  Validate.notNull(dirtyDocument);\n\n  Document clean = Document.createShell(dirtyDocument.baseUri());\n  if (dirtyDocument.body() != null) \n  copySafeNodes(dirtyDocument.body(), clean.body());\n\n  return clean;\n  }",
+          "diff": [
+            "@@ -40,6 +40,7 @@",
+            "         Validate.notNull(dirtyDocument);\n",
+            " \n",
+            "         Document clean = Document.createShell(dirtyDocument.baseUri());\n",
+            "+        if (dirtyDocument.body() != null) // frameset documents won't have a body. the clean doc will have empty body.\n",
+            "             copySafeNodes(dirtyDocument.body(), clean.body());\n",
+            " \n",
+            "         return clean;\n"
+          ],
+          "changed_lines": 1
+        }
+      ]
+    }
+  ]
+}

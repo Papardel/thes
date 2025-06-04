@@ -1,0 +1,201 @@
+{
+  "bug_id": "34",
+  "failed_tests": {
+    "org.apache.commons.cli.CommandLineTest": [
+      {
+        "methodName": "testGetParsedOptionValue",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<foo> but was:<null>",
+        "fail_line": "        assertEquals(\"foo\", cmd.getParsedOptionValue(\"f\"));",
+        "test_source": "  public void testGetParsedOptionValue() throws Exception {\n  Options options = new Options();\n  options.addOption(OptionBuilder.hasArg().withType(Number.class).create(\"i\"));\n  options.addOption(OptionBuilder.hasArg().create(\"f\"));\n  \n  CommandLineParser parser = new DefaultParser();\n  CommandLine cmd = parser.parse(options, new String[] { \"-i\", \"123\", \"-f\", \"foo\" });\n  \n  assertEquals(123, ((Number) cmd.getParsedOptionValue(\"i\")).intValue());\n  assertEquals(\"foo\", cmd.getParsedOptionValue(\"f\"));\n  }",
+        "stack": [
+          "CommandLineTest.testGetParsedOptionValue line 74"
+        ]
+      }
+    ],
+    "org.apache.commons.cli.OptionBuilderTest": [
+      {
+        "methodName": "testTwoCompleteOptions",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<class java.lang.String> but was:<null>",
+        "fail_line": "        assertEquals( String.class, simple.getType() );",
+        "test_source": "  public void testTwoCompleteOptions( ) {\n  Option simple = OptionBuilder.withLongOpt( \"simple option\")\n  .hasArg( )\n  .isRequired( )\n  .hasArgs( )\n  .withType( Float.class )\n  .withDescription( \"this is a simple option\" )\n  .create( 's' );\n\n  assertEquals( \"s\", simple.getOpt() );\n  assertEquals( \"simple option\", simple.getLongOpt() );\n  assertEquals( \"this is a simple option\", simple.getDescription() );\n  assertEquals( simple.getType(), Float.class );\n  assertTrue( simple.hasArg() );\n  assertTrue( simple.isRequired() );\n  assertTrue( simple.hasArgs() );\n\n  simple = OptionBuilder.withLongOpt( \"dimple option\")\n  .hasArg( )\n  .withDescription( \"this is a dimple option\" )\n  .create( 'd' );\n\n  assertEquals( \"d\", simple.getOpt() );\n  assertEquals( \"dimple option\", simple.getLongOpt() );\n  assertEquals( \"this is a dimple option\", simple.getDescription() );\n  assertEquals( String.class, simple.getType() );\n  assertTrue( simple.hasArg() );\n  assertTrue( !simple.isRequired() );\n  assertTrue( !simple.hasArgs() );\n  }",
+        "stack": [
+          "OptionBuilderTest.testTwoCompleteOptions line 67"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/Option.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class Option implements Cloneable, Serializable { private static final long serialVersionUID = 1L; public static final int UNINITIALIZED = -1; public static final int UNLIMITED_VALUES = -2; private String opt; private String longOpt; private String argName; private String description; private boolean required; private boolean optionalArg; private int numberOfArgs = UNINITIALIZED; private Class type; private List values = new ArrayList(); private char valuesep; public Option(String opt, String description) throws IllegalArgumentException {\n        this(opt, null, false, description);\n    }\n\n    \n    public Option(String opt, boolean hasArg, String description) throws IllegalArgumentException {\n        this(opt, null, hasArg, description);\n    }\n\n    \n    public Option(String opt, String longOpt, boolean hasArg, String description) throws IllegalArgumentException {\n        \n        OptionValidator.validateOption(opt);\n\n        this.opt = opt;\n        this.longOpt = longOpt;\n\n        \n        if (hasArg)\n        {\n            this.numberOfArgs = 1;\n        }\n\n        this.description = description;\n    }\n\n    \n    public int getId() {\n        return getKey().charAt(0);\n    }\n\n    \n    String getKey()\n    {\n        \n        if (opt == null)\n        {\n            return longOpt;\n        }\n\n        return opt;\n    }\n\n    \n    public String getOpt() {\n        return opt;\n    }\n\n    \n    public Object getType() {\n        return type;\n    }\n\n    \n    public void setType(Class type) {\n        this.type = type;\n    }\n\n    \n    public String getLongOpt() {\n        return longOpt;\n    }\n\n    \n    public void setLongOpt(String longOpt) {\n        this.longOpt = longOpt;\n    }\n\n    \n    public void setOptionalArg(boolean optionalArg) {\n        this.optionalArg = optionalArg;\n    }\n\n    \n    public boolean hasOptionalArg() {\n        return optionalArg;\n    }\n\n    \n    public boolean hasLongOpt() {\n        return longOpt != null;\n    }\n\n    \n    public boolean hasArg() {\n        return numberOfArgs > 0 || numberOfArgs == UNLIMITED_VALUES;\n    }\n\n    \n    public String getDescription() {\n        return description;\n    }\n\n    \n    public void setDescription(String description) {\n        this.description = description;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public void setArgName(String argName) {\n        this.argName = argName;\n    }\n\n    \n    public String getArgName() {\n        return argName;\n    }\n\n    \n    public boolean hasArgName() {\n        return argName != null && argName.length() > 0;\n    }\n\n    \n    public boolean hasArgs() {\n        return numberOfArgs > 1 || numberOfArgs == UNLIMITED_VALUES;\n    }\n\n    \n    public void setArgs(int num) {\n        this.numberOfArgs = num;\n    }\n\n    \n    public void setValueSeparator(char sep) {\n        this.valuesep = sep;\n    }\n\n    \n    public char getValueSeparator() {\n        return valuesep;\n    }\n\n    \n    public boolean hasValueSeparator() {\n        return valuesep > 0;\n    }\n\n    \n    public int getArgs() {\n        return numberOfArgs;\n    }\n\n    \n    void addValueForProcessing(String value)\n    {\n        switch (numberOfArgs)\n        {\n            case UNINITIALIZED:\n                throw new RuntimeException(\"NO_ARGS_ALLOWED\");\n\n            default:\n                processValue(value);\n        }\n    }\n\n    \n    private void processValue(String value) {\n        \n        if (hasValueSeparator())\n        {\n            \n            char sep = getValueSeparator();\n\n            \n            int index = value.indexOf(sep);\n\n            \n            while (index != -1)\n            {\n                \n                if (values.size() == (numberOfArgs - 1))\n                {\n                    break;\n                }\n\n                \n                add(value.substring(0, index));\n\n                \n                value = value.substring(index + 1);\n\n                \n                index = value.indexOf(sep);\n            }\n        }\n\n        \n        add(value);\n    }\n\n    \n    private void add(String value) {\n        if (!acceptsArg())\n        {\n            throw new RuntimeException(\"Cannot add value, list full.\");\n        }\n\n        \n        values.add(value);\n    }\n\n    \n    public String getValue() {\n        return hasNoValues() ? null : (String) values.get(0);\n    }\n\n    \n    public String getValue(int index) throws IndexOutOfBoundsException {\n        return hasNoValues() ? null : (String) values.get(index);\n    }\n\n    \n    public String getValue(String defaultValue) {\n        String value = getValue();\n\n        return (value != null) ? value : defaultValue;\n    }\n\n    \n    public String[] getValues() {\n        return hasNoValues() ? null : (String[]) values.toArray(new String[values.size()]);\n    }\n\n    \n    public List getValuesList() {\n        return values;\n    }\n\n    \n    public String toString() {\n        StringBuffer buf = new StringBuffer().append(\"[ option: \");\n\n        buf.append(opt);\n\n        if (longOpt != null)\n        {\n            buf.append(\" \").append(longOpt);\n        }\n\n        buf.append(\" \");\n\n        if (hasArgs())\n        {\n            buf.append(\"[ARG...]\");\n        }\n        else if (hasArg())\n        {\n            buf.append(\" [ARG]\");\n        }\n\n        buf.append(\" :: \").append(description);\n\n        if (type != null)\n        {\n            buf.append(\" :: \").append(type);\n        }\n\n        buf.append(\" ]\");\n\n        return buf.toString();\n    }\n\n    \n    private boolean hasNoValues() {\n        return values.isEmpty();\n    }\n\n    public boolean equals(Object o) {\n        if (this == o)\n        {\n            return true;\n        }\n        if (o == null || getClass() != o.getClass())\n        {\n            return false;\n        }\n\n        Option option = (Option) o;\n\n\n        if (opt != null ? !opt.equals(option.opt) : option.opt != null)\n        {\n            return false;\n        }\n        if (longOpt != null ? !longOpt.equals(option.longOpt) : option.longOpt != null)\n        {\n            return false;\n        }\n\n        return true;\n    }\n\n    public int hashCode() {\n        int result;\n        result = opt != null ? opt.hashCode() : 0;\n        result = 31 * result + (longOpt != null ? longOpt.hashCode() : 0);\n        return result;\n    }\n\n    \n    public Object clone() {\n        try\n        {\n            Option option = (Option) super.clone();\n            option.values = new ArrayList(values);\n            return option;\n        }\n        catch (CloneNotSupportedException cnse)\n        {\n            throw new RuntimeException(\"A CloneNotSupportedException was thrown: \" + cnse.getMessage());\n        }\n    }\n\n    \n    void clearValues()\n    {\n        values.clear();\n    }\n\n    \n    public boolean addValue(String value) {\n        throw new UnsupportedOperationException(\"The addValue method is not intended for client use. \"\n                + \"Subclasses should use the addValueForProcessing method instead. \");\n    }\n\n    \n    boolean acceptsArg()\n    {\n        return (hasArg() || hasArgs() || hasOptionalArg()) && (numberOfArgs <= 0 || values.size() < numberOfArgs);\n    }\n\n    \n    boolean requiresArg()\n    {\n        if (optionalArg)\n        {\n            return false;\n        }\n        if (numberOfArgs == UNLIMITED_VALUES)\n        {\n            return values.size() < 1;\n        }\n        else\n        {\n            return acceptsArg();\n        }\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class Option implements Cloneable, Serializable { private static final long serialVersionUID = 1L; public static final int UNINITIALIZED = -1; public static final int UNLIMITED_VALUES = -2; private String opt; private String longOpt; private String argName; private String description; private boolean required; private boolean optionalArg; private int numberOfArgs = UNINITIALIZED; private Class type = String.class; private List values = new ArrayList(); private char valuesep; public Option(String opt, String description) throws IllegalArgumentException {\n        this(opt, null, false, description);\n    }\n\n    \n    public Option(String opt, boolean hasArg, String description) throws IllegalArgumentException {\n        this(opt, null, hasArg, description);\n    }\n\n    \n    public Option(String opt, String longOpt, boolean hasArg, String description) throws IllegalArgumentException {\n        \n        OptionValidator.validateOption(opt);\n\n        this.opt = opt;\n        this.longOpt = longOpt;\n\n        \n        if (hasArg)\n        {\n            this.numberOfArgs = 1;\n        }\n\n        this.description = description;\n    }\n\n    \n    public int getId() {\n        return getKey().charAt(0);\n    }\n\n    \n    String getKey()\n    {\n        \n        if (opt == null)\n        {\n            return longOpt;\n        }\n\n        return opt;\n    }\n\n    \n    public String getOpt() {\n        return opt;\n    }\n\n    \n    public Object getType() {\n        return type;\n    }\n\n    \n    public void setType(Class type) {\n        this.type = type;\n    }\n\n    \n    public String getLongOpt() {\n        return longOpt;\n    }\n\n    \n    public void setLongOpt(String longOpt) {\n        this.longOpt = longOpt;\n    }\n\n    \n    public void setOptionalArg(boolean optionalArg) {\n        this.optionalArg = optionalArg;\n    }\n\n    \n    public boolean hasOptionalArg() {\n        return optionalArg;\n    }\n\n    \n    public boolean hasLongOpt() {\n        return longOpt != null;\n    }\n\n    \n    public boolean hasArg() {\n        return numberOfArgs > 0 || numberOfArgs == UNLIMITED_VALUES;\n    }\n\n    \n    public String getDescription() {\n        return description;\n    }\n\n    \n    public void setDescription(String description) {\n        this.description = description;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public void setArgName(String argName) {\n        this.argName = argName;\n    }\n\n    \n    public String getArgName() {\n        return argName;\n    }\n\n    \n    public boolean hasArgName() {\n        return argName != null && argName.length() > 0;\n    }\n\n    \n    public boolean hasArgs() {\n        return numberOfArgs > 1 || numberOfArgs == UNLIMITED_VALUES;\n    }\n\n    \n    public void setArgs(int num) {\n        this.numberOfArgs = num;\n    }\n\n    \n    public void setValueSeparator(char sep) {\n        this.valuesep = sep;\n    }\n\n    \n    public char getValueSeparator() {\n        return valuesep;\n    }\n\n    \n    public boolean hasValueSeparator() {\n        return valuesep > 0;\n    }\n\n    \n    public int getArgs() {\n        return numberOfArgs;\n    }\n\n    \n    void addValueForProcessing(String value)\n    {\n        switch (numberOfArgs)\n        {\n            case UNINITIALIZED:\n                throw new RuntimeException(\"NO_ARGS_ALLOWED\");\n\n            default:\n                processValue(value);\n        }\n    }\n\n    \n    private void processValue(String value) {\n        \n        if (hasValueSeparator())\n        {\n            \n            char sep = getValueSeparator();\n\n            \n            int index = value.indexOf(sep);\n\n            \n            while (index != -1)\n            {\n                \n                if (values.size() == (numberOfArgs - 1))\n                {\n                    break;\n                }\n\n                \n                add(value.substring(0, index));\n\n                \n                value = value.substring(index + 1);\n\n                \n                index = value.indexOf(sep);\n            }\n        }\n\n        \n        add(value);\n    }\n\n    \n    private void add(String value) {\n        if (!acceptsArg())\n        {\n            throw new RuntimeException(\"Cannot add value, list full.\");\n        }\n\n        \n        values.add(value);\n    }\n\n    \n    public String getValue() {\n        return hasNoValues() ? null : (String) values.get(0);\n    }\n\n    \n    public String getValue(int index) throws IndexOutOfBoundsException {\n        return hasNoValues() ? null : (String) values.get(index);\n    }\n\n    \n    public String getValue(String defaultValue) {\n        String value = getValue();\n\n        return (value != null) ? value : defaultValue;\n    }\n\n    \n    public String[] getValues() {\n        return hasNoValues() ? null : (String[]) values.toArray(new String[values.size()]);\n    }\n\n    \n    public List getValuesList() {\n        return values;\n    }\n\n    \n    public String toString() {\n        StringBuffer buf = new StringBuffer().append(\"[ option: \");\n\n        buf.append(opt);\n\n        if (longOpt != null)\n        {\n            buf.append(\" \").append(longOpt);\n        }\n\n        buf.append(\" \");\n\n        if (hasArgs())\n        {\n            buf.append(\"[ARG...]\");\n        }\n        else if (hasArg())\n        {\n            buf.append(\" [ARG]\");\n        }\n\n        buf.append(\" :: \").append(description);\n\n        if (type != null)\n        {\n            buf.append(\" :: \").append(type);\n        }\n\n        buf.append(\" ]\");\n\n        return buf.toString();\n    }\n\n    \n    private boolean hasNoValues() {\n        return values.isEmpty();\n    }\n\n    public boolean equals(Object o) {\n        if (this == o)\n        {\n            return true;\n        }\n        if (o == null || getClass() != o.getClass())\n        {\n            return false;\n        }\n\n        Option option = (Option) o;\n\n\n        if (opt != null ? !opt.equals(option.opt) : option.opt != null)\n        {\n            return false;\n        }\n        if (longOpt != null ? !longOpt.equals(option.longOpt) : option.longOpt != null)\n        {\n            return false;\n        }\n\n        return true;\n    }\n\n    public int hashCode() {\n        int result;\n        result = opt != null ? opt.hashCode() : 0;\n        result = 31 * result + (longOpt != null ? longOpt.hashCode() : 0);\n        return result;\n    }\n\n    \n    public Object clone() {\n        try\n        {\n            Option option = (Option) super.clone();\n            option.values = new ArrayList(values);\n            return option;\n        }\n        catch (CloneNotSupportedException cnse)\n        {\n            throw new RuntimeException(\"A CloneNotSupportedException was thrown: \" + cnse.getMessage());\n        }\n    }\n\n    \n    void clearValues()\n    {\n        values.clear();\n    }\n\n    \n    public boolean addValue(String value) {\n        throw new UnsupportedOperationException(\"The addValue method is not intended for client use. \"\n                + \"Subclasses should use the addValueForProcessing method instead. \");\n    }\n\n    \n    boolean acceptsArg()\n    {\n        return (hasArg() || hasArgs() || hasOptionalArg()) && (numberOfArgs <= 0 || values.size() < numberOfArgs);\n    }\n\n    \n    boolean requiresArg()\n    {\n        if (optionalArg)\n        {\n            return false;\n        }\n        if (numberOfArgs == UNLIMITED_VALUES)\n        {\n            return values.size() < 1;\n        }\n        else\n        {\n            return acceptsArg();\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public Option(String opt, boolean hasArg, String description) throws IllegalArgumentException",
+        "public Option(String opt, String longOpt, boolean hasArg, String description) throws IllegalArgumentException",
+        "public int getId()",
+        "public String getOpt()",
+        "public Object getType()",
+        "public void setType(Class type)",
+        "public String getLongOpt()",
+        "public void setLongOpt(String longOpt)",
+        "public void setOptionalArg(boolean optionalArg)",
+        "public boolean hasOptionalArg()",
+        "public boolean hasLongOpt()",
+        "public boolean hasArg()",
+        "public String getDescription()",
+        "public void setDescription(String description)",
+        "public boolean isRequired()",
+        "public void setRequired(boolean required)",
+        "public void setArgName(String argName)",
+        "public String getArgName()",
+        "public boolean hasArgName()",
+        "public boolean hasArgs()",
+        "public void setArgs(int num)",
+        "public void setValueSeparator(char sep)",
+        "public char getValueSeparator()",
+        "public boolean hasValueSeparator()",
+        "public int getArgs()",
+        "private void processValue(String value)",
+        "private void add(String value)",
+        "public String getValue()",
+        "public String getValue(int index) throws IndexOutOfBoundsException",
+        "public String getValue(String defaultValue)",
+        "public String[] getValues()",
+        "public List getValuesList()",
+        "public String toString()",
+        "private boolean hasNoValues()",
+        "public boolean equals(Object o)",
+        "public int hashCode()",
+        "public Object clone()",
+        "public boolean addValue(String value)"
+      ],
+      "fixed_signatures": [
+        "public Option(String opt, boolean hasArg, String description) throws IllegalArgumentException",
+        "public Option(String opt, String longOpt, boolean hasArg, String description) throws IllegalArgumentException",
+        "public int getId()",
+        "public String getOpt()",
+        "public Object getType()",
+        "public void setType(Class type)",
+        "public String getLongOpt()",
+        "public void setLongOpt(String longOpt)",
+        "public void setOptionalArg(boolean optionalArg)",
+        "public boolean hasOptionalArg()",
+        "public boolean hasLongOpt()",
+        "public boolean hasArg()",
+        "public String getDescription()",
+        "public void setDescription(String description)",
+        "public boolean isRequired()",
+        "public void setRequired(boolean required)",
+        "public void setArgName(String argName)",
+        "public String getArgName()",
+        "public boolean hasArgName()",
+        "public boolean hasArgs()",
+        "public void setArgs(int num)",
+        "public void setValueSeparator(char sep)",
+        "public char getValueSeparator()",
+        "public boolean hasValueSeparator()",
+        "public int getArgs()",
+        "private void processValue(String value)",
+        "private void add(String value)",
+        "public String getValue()",
+        "public String getValue(int index) throws IndexOutOfBoundsException",
+        "public String getValue(String defaultValue)",
+        "public String[] getValues()",
+        "public List getValuesList()",
+        "public String toString()",
+        "private boolean hasNoValues()",
+        "public boolean equals(Object o)",
+        "public int hashCode()",
+        "public Object clone()",
+        "public boolean addValue(String value)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private List values = new ArrayList(); private char valuesep; public Option(String opt, String description) throws IllegalArgumentException {\n  this(opt, null, false, description);\n  }",
+          "fixed_method": "  private List values = new ArrayList(); private char valuesep; public Option(String opt, String description) throws IllegalArgumentException {\n  this(opt, null, false, description);\n  }",
+          "diff": [
+            "@@ -69,7 +69,7 @@",
+            "     private int numberOfArgs = UNINITIALIZED;\n",
+            " \n",
+            "     /** the type of this Option */\n",
+            "-    private Class type;\n",
+            "+    private Class type = String.class;\n",
+            " \n",
+            "     /** the list of argument values **/\n",
+            "     private List values = new ArrayList();\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    },
+    {
+      "name": "org/apache/commons/cli/OptionBuilder.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\n\npublic final class OptionBuilder { private static String longopt; private static String description; private static String argName; private static boolean required; private static int numberOfArgs = Option.UNINITIALIZED; private static Class type; private static boolean optionalArg; private static char valuesep; private static OptionBuilder instance = new OptionBuilder(); static {\n        \n        reset();\n    }\n\n    \n    private OptionBuilder() {\n        \n    }\n\n    \n    private static void reset() {\n        description = null;\n        argName = null;\n        longopt = null;\n        type = null;\n        required = false;\n        numberOfArgs = Option.UNINITIALIZED;\n        optionalArg = false;\n        valuesep = (char) 0;\n    }\n\n    \n    public static OptionBuilder withLongOpt(String newLongopt) {\n        OptionBuilder.longopt = newLongopt;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg() {\n        OptionBuilder.numberOfArgs = 1;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg(boolean hasArg) {\n        OptionBuilder.numberOfArgs = hasArg ? 1 : Option.UNINITIALIZED;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withArgName(String name) {\n        OptionBuilder.argName = name;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired() {\n        OptionBuilder.required = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator(char sep) {\n        OptionBuilder.valuesep = sep;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator() {\n        OptionBuilder.valuesep = '=';\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired(boolean newRequired) {\n        OptionBuilder.required = newRequired;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs(int num) {\n        OptionBuilder.numberOfArgs = num;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArg() {\n        OptionBuilder.numberOfArgs = 1;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs(int numArgs) {\n        OptionBuilder.numberOfArgs = numArgs;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withType(Class newType) {\n        OptionBuilder.type = newType;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withDescription(String newDescription) {\n        OptionBuilder.description = newDescription;\n\n        return instance;\n    }\n\n    \n    public static Option create(char opt) throws IllegalArgumentException {\n        return create(String.valueOf(opt));\n    }\n\n    \n    public static Option create() throws IllegalArgumentException {\n        if (longopt == null)\n        {\n            OptionBuilder.reset();\n            throw new IllegalArgumentException(\"must specify longopt\");\n        }\n\n        return create(null);\n    }\n\n    \n    public static Option create(String opt) throws IllegalArgumentException {\n        Option option = null;\n        try\n        {\n            \n            option = new Option(opt, description);\n\n            \n            option.setLongOpt(longopt);\n            option.setRequired(required);\n            option.setOptionalArg(optionalArg);\n            option.setArgs(numberOfArgs);\n            option.setType(type);\n            option.setValueSeparator(valuesep);\n            option.setArgName(argName);\n        }\n        finally\n        {\n            \n            OptionBuilder.reset();\n        }\n\n        \n        return option;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\n\npublic final class OptionBuilder { private static String longopt; private static String description; private static String argName; private static boolean required; private static int numberOfArgs = Option.UNINITIALIZED; private static Class type; private static boolean optionalArg; private static char valuesep; private static OptionBuilder instance = new OptionBuilder(); static {\n        \n        reset();\n    }\n\n    \n    private OptionBuilder() {\n        \n    }\n\n    \n    private static void reset() {\n        description = null;\n        argName = null;\n        longopt = null;\n        type = String.class;\n        required = false;\n        numberOfArgs = Option.UNINITIALIZED;\n        optionalArg = false;\n        valuesep = (char) 0;\n    }\n\n    \n    public static OptionBuilder withLongOpt(String newLongopt) {\n        OptionBuilder.longopt = newLongopt;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg() {\n        OptionBuilder.numberOfArgs = 1;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg(boolean hasArg) {\n        OptionBuilder.numberOfArgs = hasArg ? 1 : Option.UNINITIALIZED;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withArgName(String name) {\n        OptionBuilder.argName = name;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired() {\n        OptionBuilder.required = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator(char sep) {\n        OptionBuilder.valuesep = sep;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator() {\n        OptionBuilder.valuesep = '=';\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired(boolean newRequired) {\n        OptionBuilder.required = newRequired;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs(int num) {\n        OptionBuilder.numberOfArgs = num;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArg() {\n        OptionBuilder.numberOfArgs = 1;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs(int numArgs) {\n        OptionBuilder.numberOfArgs = numArgs;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withType(Class newType) {\n        OptionBuilder.type = newType;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withDescription(String newDescription) {\n        OptionBuilder.description = newDescription;\n\n        return instance;\n    }\n\n    \n    public static Option create(char opt) throws IllegalArgumentException {\n        return create(String.valueOf(opt));\n    }\n\n    \n    public static Option create() throws IllegalArgumentException {\n        if (longopt == null)\n        {\n            OptionBuilder.reset();\n            throw new IllegalArgumentException(\"must specify longopt\");\n        }\n\n        return create(null);\n    }\n\n    \n    public static Option create(String opt) throws IllegalArgumentException {\n        Option option = null;\n        try\n        {\n            \n            option = new Option(opt, description);\n\n            \n            option.setLongOpt(longopt);\n            option.setRequired(required);\n            option.setOptionalArg(optionalArg);\n            option.setArgs(numberOfArgs);\n            option.setType(type);\n            option.setValueSeparator(valuesep);\n            option.setArgName(argName);\n        }\n        finally\n        {\n            \n            OptionBuilder.reset();\n        }\n\n        \n        return option;\n    }\n}\n",
+      "buggy_signatures": [
+        "private OptionBuilder()",
+        "private static void reset()",
+        "public static OptionBuilder withLongOpt(String newLongopt)",
+        "public static OptionBuilder hasArg()",
+        "public static OptionBuilder hasArg(boolean hasArg)",
+        "public static OptionBuilder withArgName(String name)",
+        "public static OptionBuilder isRequired()",
+        "public static OptionBuilder withValueSeparator(char sep)",
+        "public static OptionBuilder withValueSeparator()",
+        "public static OptionBuilder isRequired(boolean newRequired)",
+        "public static OptionBuilder hasArgs()",
+        "public static OptionBuilder hasArgs(int num)",
+        "public static OptionBuilder hasOptionalArg()",
+        "public static OptionBuilder hasOptionalArgs()",
+        "public static OptionBuilder hasOptionalArgs(int numArgs)",
+        "public static OptionBuilder withType(Class newType)",
+        "public static OptionBuilder withDescription(String newDescription)",
+        "public static Option create(char opt) throws IllegalArgumentException",
+        "public static Option create() throws IllegalArgumentException",
+        "public static Option create(String opt) throws IllegalArgumentException"
+      ],
+      "fixed_signatures": [
+        "private OptionBuilder()",
+        "private static void reset()",
+        "public static OptionBuilder withLongOpt(String newLongopt)",
+        "public static OptionBuilder hasArg()",
+        "public static OptionBuilder hasArg(boolean hasArg)",
+        "public static OptionBuilder withArgName(String name)",
+        "public static OptionBuilder isRequired()",
+        "public static OptionBuilder withValueSeparator(char sep)",
+        "public static OptionBuilder withValueSeparator()",
+        "public static OptionBuilder isRequired(boolean newRequired)",
+        "public static OptionBuilder hasArgs()",
+        "public static OptionBuilder hasArgs(int num)",
+        "public static OptionBuilder hasOptionalArg()",
+        "public static OptionBuilder hasOptionalArgs()",
+        "public static OptionBuilder hasOptionalArgs(int numArgs)",
+        "public static OptionBuilder withType(Class newType)",
+        "public static OptionBuilder withDescription(String newDescription)",
+        "public static Option create(char opt) throws IllegalArgumentException",
+        "public static Option create() throws IllegalArgumentException",
+        "public static Option create(String opt) throws IllegalArgumentException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private static void reset() {\n  description = null;\n  argName = null;\n  longopt = null;\n  type = null;\n  required = false;\n  numberOfArgs = Option.UNINITIALIZED;\n  optionalArg = false;\n  valuesep = (char) 0;\n  }",
+          "fixed_method": "  private static void reset() {\n  description = null;\n  argName = null;\n  longopt = null;\n  type = String.class;\n  required = false;\n  numberOfArgs = Option.UNINITIALIZED;\n  optionalArg = false;\n  valuesep = (char) 0;\n  }",
+          "diff": [
+            "@@ -81,7 +81,7 @@",
+            "         description = null;\n",
+            "         argName = null;\n",
+            "         longopt = null;\n",
+            "-        type = null;\n",
+            "+        type = String.class;\n",
+            "         required = false;\n",
+            "         numberOfArgs = Option.UNINITIALIZED;\n",
+            "         optionalArg = false;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "bug_id": "11",
+  "failed_tests": {
+    "org.apache.commons.codec.net.QuotedPrintableCodecTest": [
+      {
+        "methodName": "testSkipNotEncodedCRLF",
+        "error": "org.apache.commons.codec.DecoderException",
+        "message": "Invalid URL encoding: not a valid digit (radix 16): 13",
+        "fail_line": "        assertEquals(expected, qpcodec.decode(qpdata));",
+        "test_source": "  public void testSkipNotEncodedCRLF() throws Exception {\n  String qpdata = \"CRLF in an\\n encoded text should be=20=\\r\\n\\rskipped in the\\r decoding.\";\n  String expected = \"CRLF in an encoded text should be skipped in the decoding.\";\n\n  QuotedPrintableCodec qpcodec = new QuotedPrintableCodec();\n  assertEquals(expected, qpcodec.decode(qpdata));\n\n  String encoded = qpcodec.encode(expected);\n  assertEquals(expected, qpcodec.decode(encoded));\n  }",
+        "stack": [
+          "Utils.digit16 line 44, QuotedPrintableCodec.decodeQuotedPrintable line 229, QuotedPrintableCodec.decode line 275, QuotedPrintableCodec.decode line 324, QuotedPrintableCodec.decode line 344, QuotedPrintableCodecTest.testSkipNotEncodedCRLF line 300"
+        ]
+      },
+      {
+        "methodName": "testSoftLineBreakDecode",
+        "error": "org.apache.commons.codec.DecoderException",
+        "message": "Invalid URL encoding: not a valid digit (radix 16): 13",
+        "fail_line": "        assertEquals(expected, qpcodec.decode(qpdata));",
+        "test_source": "  public void testSoftLineBreakDecode() throws Exception {\n  String qpdata = \"If you believe that truth=3Dbeauty, then surely=20=\\r\\nmathematics \" +\n  \"is the most beautiful branch of philosophy.\";\n  String expected = \"If you believe that truth=beauty, then surely mathematics \" +\n  \"is the most beautiful branch of philosophy.\";\n\n  QuotedPrintableCodec qpcodec = new QuotedPrintableCodec();\n  assertEquals(expected, qpcodec.decode(qpdata));\n\n  String encoded = qpcodec.encode(expected);\n  assertEquals(expected, qpcodec.decode(encoded));\n  }",
+        "stack": [
+          "Utils.digit16 line 44, QuotedPrintableCodec.decodeQuotedPrintable line 229, QuotedPrintableCodec.decode line 275, QuotedPrintableCodec.decode line 324, QuotedPrintableCodec.decode line 344, QuotedPrintableCodecTest.testSoftLineBreakDecode line 274"
+        ]
+      },
+      {
+        "methodName": "testSoftLineBreakEncode",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...matics is the most b[=",
+        "fail_line": "        assertEquals(qpdata, qpcodec.encode(expected));",
+        "test_source": "  public void testSoftLineBreakEncode() throws Exception {\n  String qpdata = \"If you believe that truth=3Dbeauty, then surely mathematics is the most \" +\n  \"b=\\r\\neautiful branch of philosophy.\";\n  String expected = \"If you believe that truth=beauty, then surely mathematics is the most \" +\n  \"beautiful branch of philosophy.\";\n\n  QuotedPrintableCodec qpcodec = new QuotedPrintableCodec();\n  assertEquals(qpdata, qpcodec.encode(expected));\n\n  String decoded = qpcodec.decode(qpdata);\n  assertEquals(qpdata, qpcodec.encode(decoded));\n  }",
+        "stack": [
+          "QuotedPrintableCodecTest.testSoftLineBreakEncode line 288"
+        ]
+      },
+      {
+        "methodName": "testUltimateSoftBreak",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...There is no end to i[=",
+        "fail_line": "        assertEquals(expected, qpcodec.encode(plain));",
+        "test_source": "  public void testUltimateSoftBreak() throws Exception {\n  final QuotedPrintableCodec qpcodec = new QuotedPrintableCodec();\n\n  String plain =\"This is a example of a quoted-printable text file. There is no end to it\\t\";\n  String expected = \"This is a example of a quoted-printable text file. There is no end to i=\\r\\nt=09\";\n\n  assertEquals(expected, qpcodec.encode(plain));\n\n  plain =\"This is a example of a quoted-printable text file. There is no end to it \";\n  expected = \"This is a example of a quoted-printable text file. There is no end to i=\\r\\nt=20\";\n\n  assertEquals(expected, qpcodec.encode(plain));\n\n  // whitespace before soft break\n  plain =\"This is a example of a quoted-printable text file. There is no end to  \";\n  expected = \"This is a example of a quoted-printable text file. There is no end to=20=\\r\\n =20\";\n\n  assertEquals(expected, qpcodec.encode(plain));\n\n  // non-printable character before soft break\n  plain =\"This is a example of a quoted-printable text file. There is no end to=  \";\n  expected = \"This is a example of a quoted-printable text file. There is no end to=3D=\\r\\n =20\";\n\n  assertEquals(expected, qpcodec.encode(plain));\n  }",
+        "stack": [
+          "QuotedPrintableCodecTest.testUltimateSoftBreak line 326"
+        ]
+      },
+      {
+        "methodName": "testTrailingSpecial",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<... might contain sp=3D[=",
+        "fail_line": "        assertEquals(expected, qpcodec.encode(plain));",
+        "test_source": "  public void testTrailingSpecial() throws Exception {\n  final QuotedPrintableCodec qpcodec = new QuotedPrintableCodec();\n\n  String plain =\"This is a example of a quoted-printable text file. This might contain sp=cial chars.\";\n  String expected = \"This is a example of a quoted-printable text file. This might contain sp=3D=\\r\\ncial chars.\";\n  assertEquals(expected, qpcodec.encode(plain));\n\n  plain =\"This is a example of a quoted-printable text file. This might contain ta\\tbs as well.\";\n  expected = \"This is a example of a quoted-printable text file. This might contain ta=09=\\r\\nbs as well.\";\n  assertEquals(expected, qpcodec.encode(plain));\n  }",
+        "stack": [
+          "QuotedPrintableCodecTest.testTrailingSpecial line 312"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/codec/net/QuotedPrintableCodec.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.codec.net;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.UnsupportedEncodingException;\nimport java.util.BitSet;\n\nimport org.apache.commons.codec.BinaryDecoder;\nimport org.apache.commons.codec.BinaryEncoder;\nimport org.apache.commons.codec.CharEncoding;\nimport org.apache.commons.codec.DecoderException;\nimport org.apache.commons.codec.EncoderException;\nimport org.apache.commons.codec.StringDecoder;\nimport org.apache.commons.codec.StringEncoder;\nimport org.apache.commons.codec.binary.StringUtils;\n\n\npublic class QuotedPrintableCodec implements BinaryEncoder, BinaryDecoder, StringEncoder, StringDecoder { private final String charset; private static final BitSet PRINTABLE_CHARS = new BitSet(256); private static final byte ESCAPE_CHAR = '='; private static final byte TAB = 9; private static final byte SPACE = 32; static {\n        \n        for (int i = 33; i <= 60; i++) {\n            PRINTABLE_CHARS.set(i);\n        }\n        for (int i = 62; i <= 126; i++) {\n            PRINTABLE_CHARS.set(i);\n        }\n        PRINTABLE_CHARS.set(TAB);\n        PRINTABLE_CHARS.set(SPACE);\n    }\n\n    \n    public QuotedPrintableCodec() {\n        this(CharEncoding.UTF_8);\n    }\n\n    \n    public QuotedPrintableCodec(String charset) {\n        super();\n        this.charset = charset;\n    }\n\n    \n    private static final void encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n        buffer.write(ESCAPE_CHAR);\n        char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));\n        char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));\n        buffer.write(hex1);\n        buffer.write(hex2);\n    }\n\n    \n\n    \n\n    \n\n    \n    public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes) {\n        if (bytes == null) {\n            return null;\n        }\n        if (printable == null) {\n            printable = PRINTABLE_CHARS;\n        }\n        ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n        \n        \n                \n        for (byte c : bytes) {\n            int b = c;\n            if (b < 0) {\n                b = 256 + b;\n            }\n            if (printable.get(b)) {\n                buffer.write(b);\n            } else {\n                \n\n                \n                encodeQuotedPrintable(b, buffer);\n            }\n        }\n\n        \n        \n\n        \n        \n        \n            \n\n        return buffer.toByteArray();\n    }\n\n    \n    public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException {\n        if (bytes == null) {\n            return null;\n        }\n        ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n        for (int i = 0; i < bytes.length; i++) {\n            final int b = bytes[i];\n            if (b == ESCAPE_CHAR) {\n                try {\n                    \n                    int u = Utils.digit16(bytes[++i]);\n                    int l = Utils.digit16(bytes[++i]);\n                    buffer.write((char) ((u << 4) + l));\n                } catch (ArrayIndexOutOfBoundsException e) {\n                    throw new DecoderException(\"Invalid quoted-printable encoding\", e);\n                }\n            } else {\n                \n                buffer.write(b);\n            }\n        }\n        return buffer.toByteArray();\n    }\n\n    \n    public byte[] encode(byte[] bytes) {\n        return encodeQuotedPrintable(PRINTABLE_CHARS, bytes);\n    }\n\n    \n    public byte[] decode(byte[] bytes) throws DecoderException {\n        return decodeQuotedPrintable(bytes);\n    }\n\n    \n    public String encode(String pString) throws EncoderException {\n        if (pString == null) {\n            return null;\n        }\n        try {\n            return encode(pString, getDefaultCharset());\n        } catch (UnsupportedEncodingException e) {\n            throw new EncoderException(e.getMessage(), e);\n        }\n    }\n\n    \n    public String decode(String pString, String charset) throws DecoderException, UnsupportedEncodingException {\n        if (pString == null) {\n            return null;\n        }\n        return new String(decode(StringUtils.getBytesUsAscii(pString)), charset);\n    }\n\n    \n    public String decode(String pString) throws DecoderException {\n        if (pString == null) {\n            return null;\n        }\n        try {\n            return decode(pString, getDefaultCharset());\n        } catch (UnsupportedEncodingException e) {\n            throw new DecoderException(e.getMessage(), e);\n        }\n    }\n\n    \n    public Object encode(Object pObject) throws EncoderException {\n        if (pObject == null) {\n            return null;\n        } else if (pObject instanceof byte[]) {\n            return encode((byte[]) pObject);\n        } else if (pObject instanceof String) {\n            return encode((String) pObject);\n        } else {\n            throw new EncoderException(\"Objects of type \" + \n                  pObject.getClass().getName() + \n                  \" cannot be quoted-printable encoded\");\n        }\n    }\n\n    \n    public Object decode(Object pObject) throws DecoderException {\n        if (pObject == null) {\n            return null;\n        } else if (pObject instanceof byte[]) {\n            return decode((byte[]) pObject);\n        } else if (pObject instanceof String) {\n            return decode((String) pObject);\n        } else {\n            throw new DecoderException(\"Objects of type \" + \n                  pObject.getClass().getName() + \n                  \" cannot be quoted-printable decoded\");\n        }\n    }\n\n    \n    public String getDefaultCharset() {\n        return this.charset;\n    }\n\n    \n    public String encode(String pString, String charset) throws UnsupportedEncodingException {\n        if (pString == null) {\n            return null;\n        }\n        return StringUtils.newStringUsAscii(encode(pString.getBytes(charset)));\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.codec.net;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.UnsupportedEncodingException;\nimport java.util.BitSet;\n\nimport org.apache.commons.codec.BinaryDecoder;\nimport org.apache.commons.codec.BinaryEncoder;\nimport org.apache.commons.codec.CharEncoding;\nimport org.apache.commons.codec.DecoderException;\nimport org.apache.commons.codec.EncoderException;\nimport org.apache.commons.codec.StringDecoder;\nimport org.apache.commons.codec.StringEncoder;\nimport org.apache.commons.codec.binary.StringUtils;\n\n\npublic class QuotedPrintableCodec implements BinaryEncoder, BinaryDecoder, StringEncoder, StringDecoder { private final String charset; private static final BitSet PRINTABLE_CHARS = new BitSet(256); private static final byte ESCAPE_CHAR = '='; private static final byte TAB = 9; private static final byte SPACE = 32; private static final byte CR = 13; private static final byte LF = 10; private static final int SAFE_LENGTH = 73; static {\n        \n        for (int i = 33; i <= 60; i++) {\n            PRINTABLE_CHARS.set(i);\n        }\n        for (int i = 62; i <= 126; i++) {\n            PRINTABLE_CHARS.set(i);\n        }\n        PRINTABLE_CHARS.set(TAB);\n        PRINTABLE_CHARS.set(SPACE);\n    }\n\n    \n    public QuotedPrintableCodec() {\n        this(CharEncoding.UTF_8);\n    }\n\n    \n    public QuotedPrintableCodec(String charset) {\n        super();\n        this.charset = charset;\n    }\n\n    \n    private static final int encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n        buffer.write(ESCAPE_CHAR);\n        char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));\n        char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));\n        buffer.write(hex1);\n        buffer.write(hex2);\n        return 3;\n    }\n\n    \n    private static int getUnsignedOctet(final int index, final byte[] bytes) {\n        int b = bytes[index];\n        if (b < 0) {\n            b = 256 + b;\n        }\n        return b;\n    }\n\n    \n    private static int encodeByte(final int b, final boolean encode, final ByteArrayOutputStream buffer) {\n        if (encode) {\n            return encodeQuotedPrintable(b, buffer);\n        } else {\n            buffer.write(b);\n            return 1;\n        }\n    }\n\n    \n    private static boolean isWhitespace(final int b) {\n        return b == SPACE || b == TAB;\n    }\n\n    \n    public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes) {\n        if (bytes == null) {\n            return null;\n        }\n        if (printable == null) {\n            printable = PRINTABLE_CHARS;\n        }\n        ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n        int pos = 1;\n        \n        \n        for (int i = 0; i < bytes.length - 3; i++) {\n            int b = getUnsignedOctet(i, bytes);\n            if (pos < SAFE_LENGTH) {\n                \n                pos += encodeByte(b, !printable.get(b), buffer);\n            } else {\n                \n                encodeByte(b, !printable.get(b) || isWhitespace(b), buffer);\n\n                \n                buffer.write(ESCAPE_CHAR);\n                buffer.write(CR);\n                buffer.write(LF);\n                pos = 1;\n            }\n        }\n\n        \n        \n        int b = getUnsignedOctet(bytes.length - 3, bytes);\n        boolean encode = !printable.get(b) || (isWhitespace(b) && pos > SAFE_LENGTH - 5);\n        pos += encodeByte(b, encode, buffer);\n\n        \n        \n        \n        if (pos > SAFE_LENGTH - 2) {\n            buffer.write(ESCAPE_CHAR);\n            buffer.write(CR);\n            buffer.write(LF);\n        }\n        for (int i = bytes.length - 2; i < bytes.length; i++) {\n            b = getUnsignedOctet(i, bytes);\n            \n            encode = !printable.get(b) || (i > bytes.length - 2 && isWhitespace(b));\n            encodeByte(b, encode, buffer);\n        }\n\n        return buffer.toByteArray();\n    }\n\n    \n    public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException {\n        if (bytes == null) {\n            return null;\n        }\n        ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n        for (int i = 0; i < bytes.length; i++) {\n            final int b = bytes[i];\n            if (b == ESCAPE_CHAR) {\n                try {\n                    \n                    if (bytes[++i] == CR) {\n                        continue;\n                    }\n                    int u = Utils.digit16(bytes[i]);\n                    int l = Utils.digit16(bytes[++i]);\n                    buffer.write((char) ((u << 4) + l));\n                } catch (ArrayIndexOutOfBoundsException e) {\n                    throw new DecoderException(\"Invalid quoted-printable encoding\", e);\n                }\n            } else if (b != CR && b != LF) {\n                \n                buffer.write(b);\n            }\n        }\n        return buffer.toByteArray();\n    }\n\n    \n    public byte[] encode(byte[] bytes) {\n        return encodeQuotedPrintable(PRINTABLE_CHARS, bytes);\n    }\n\n    \n    public byte[] decode(byte[] bytes) throws DecoderException {\n        return decodeQuotedPrintable(bytes);\n    }\n\n    \n    public String encode(String pString) throws EncoderException {\n        if (pString == null) {\n            return null;\n        }\n        try {\n            return encode(pString, getDefaultCharset());\n        } catch (UnsupportedEncodingException e) {\n            throw new EncoderException(e.getMessage(), e);\n        }\n    }\n\n    \n    public String decode(String pString, String charset) throws DecoderException, UnsupportedEncodingException {\n        if (pString == null) {\n            return null;\n        }\n        return new String(decode(StringUtils.getBytesUsAscii(pString)), charset);\n    }\n\n    \n    public String decode(String pString) throws DecoderException {\n        if (pString == null) {\n            return null;\n        }\n        try {\n            return decode(pString, getDefaultCharset());\n        } catch (UnsupportedEncodingException e) {\n            throw new DecoderException(e.getMessage(), e);\n        }\n    }\n\n    \n    public Object encode(Object pObject) throws EncoderException {\n        if (pObject == null) {\n            return null;\n        } else if (pObject instanceof byte[]) {\n            return encode((byte[]) pObject);\n        } else if (pObject instanceof String) {\n            return encode((String) pObject);\n        } else {\n            throw new EncoderException(\"Objects of type \" + \n                  pObject.getClass().getName() + \n                  \" cannot be quoted-printable encoded\");\n        }\n    }\n\n    \n    public Object decode(Object pObject) throws DecoderException {\n        if (pObject == null) {\n            return null;\n        } else if (pObject instanceof byte[]) {\n            return decode((byte[]) pObject);\n        } else if (pObject instanceof String) {\n            return decode((String) pObject);\n        } else {\n            throw new DecoderException(\"Objects of type \" + \n                  pObject.getClass().getName() + \n                  \" cannot be quoted-printable decoded\");\n        }\n    }\n\n    \n    public String getDefaultCharset() {\n        return this.charset;\n    }\n\n    \n    public String encode(String pString, String charset) throws UnsupportedEncodingException {\n        if (pString == null) {\n            return null;\n        }\n        return StringUtils.newStringUsAscii(encode(pString.getBytes(charset)));\n    }\n}\n",
+      "buggy_signatures": [
+        "public QuotedPrintableCodec()",
+        "public QuotedPrintableCodec(String charset)",
+        "private static final void encodeQuotedPrintable(int b, ByteArrayOutputStream buffer)",
+        "public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes)",
+        "public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException",
+        "public byte[] encode(byte[] bytes)",
+        "public byte[] decode(byte[] bytes) throws DecoderException",
+        "public String encode(String pString) throws EncoderException",
+        "public String decode(String pString, String charset) throws DecoderException, UnsupportedEncodingException",
+        "public String decode(String pString) throws DecoderException",
+        "public Object encode(Object pObject) throws EncoderException",
+        "public Object decode(Object pObject) throws DecoderException",
+        "public String getDefaultCharset()",
+        "public String encode(String pString, String charset) throws UnsupportedEncodingException"
+      ],
+      "fixed_signatures": [
+        "public QuotedPrintableCodec()",
+        "public QuotedPrintableCodec(String charset)",
+        "private static final int encodeQuotedPrintable(int b, ByteArrayOutputStream buffer)",
+        "private static int getUnsignedOctet(final int index, final byte[] bytes)",
+        "private static int encodeByte(final int b, final boolean encode, final ByteArrayOutputStream buffer)",
+        "private static boolean isWhitespace(final int b)",
+        "public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes)",
+        "public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException",
+        "public byte[] encode(byte[] bytes)",
+        "public byte[] decode(byte[] bytes) throws DecoderException",
+        "public String encode(String pString) throws EncoderException",
+        "public String decode(String pString, String charset) throws DecoderException, UnsupportedEncodingException",
+        "public String decode(String pString) throws DecoderException",
+        "public Object encode(Object pObject) throws EncoderException",
+        "public Object decode(Object pObject) throws DecoderException",
+        "public String getDefaultCharset()",
+        "public String encode(String pString, String charset) throws UnsupportedEncodingException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private static final BitSet PRINTABLE_CHARS = new BitSet(256); private static final byte ESCAPE_CHAR = '='; private static final byte TAB = 9; private static final byte SPACE = 32; static {\n  \n  for (int i = 33; i <= 60; i++) {\n  PRINTABLE_CHARS.set(i);\n  }\n  for (int i = 62; i <= 126; i++) {\n  PRINTABLE_CHARS.set(i);\n  }\n  PRINTABLE_CHARS.set(TAB);\n  PRINTABLE_CHARS.set(SPACE);\n  }",
+          "fixed_method": "  private static final BitSet PRINTABLE_CHARS = new BitSet(256); private static final byte ESCAPE_CHAR = '='; private static final byte TAB = 9; private static final byte SPACE = 32; private static final byte CR = 13; private static final byte LF = 10; private static final int SAFE_LENGTH = 73; static {\n  \n  for (int i = 33; i <= 60; i++) {\n  PRINTABLE_CHARS.set(i);\n  }\n  for (int i = 62; i <= 126; i++) {\n  PRINTABLE_CHARS.set(i);\n  }\n  PRINTABLE_CHARS.set(TAB);\n  PRINTABLE_CHARS.set(SPACE);\n  }",
+          "diff": [
+            "@@ -67,9 +67,12 @@",
+            " \n",
+            "     private static final byte SPACE = 32;\n",
+            " \n",
+            "-\n",
+            "+    private static final byte CR = 13;\n",
+            "+\n",
+            "+    private static final byte LF = 10;\n",
+            " \n",
+            "     /** Safe line length for quoted printable encoded text. */\n",
+            "+    private static final int SAFE_LENGTH = 73;\n",
+            " \n",
+            "     // Static initializer for printable chars collection\n",
+            "     static {\n"
+          ],
+          "changed_lines": 5
+        },
+        {
+          "buggy_method": "  private static final void encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n  buffer.write(ESCAPE_CHAR);\n  char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));\n  char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));\n  buffer.write(hex1);\n  buffer.write(hex2);\n  }",
+          "fixed_method": "  private static final int encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n  buffer.write(ESCAPE_CHAR);\n  char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));\n  char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));\n  buffer.write(hex1);\n  buffer.write(hex2);\n  return 3;\n  }",
+          "diff": [
+            "@@ -111,12 +114,13 @@",
+            "      *            the buffer to write to\n",
+            "      * @return The number of bytes written to the <code>buffer</code>\n",
+            "      */\n",
+            "-    private static final void encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n",
+            "+    private static final int encodeQuotedPrintable(int b, ByteArrayOutputStream buffer) {\n",
+            "         buffer.write(ESCAPE_CHAR);\n",
+            "         char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));\n",
+            "         char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));\n",
+            "         buffer.write(hex1);\n",
+            "         buffer.write(hex2);\n",
+            "+        return 3;\n",
+            "     }\n",
+            " \n",
+            "     /**\n",
+            "@@ -129,6 +133,13 @@",
+            "      *                  the byte array\n",
+            "      * @return the unsigned octet at position <code>index</code> from the array\n",
+            "      */\n",
+            "+    private static int getUnsignedOctet(final int index, final byte[] bytes) {\n",
+            "+        int b = bytes[index];\n",
+            "+        if (b < 0) {\n",
+            "+            b = 256 + b;\n",
+            "+        }\n",
+            "+        return b;\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * Write a byte to the buffer.\n",
+            "@@ -141,6 +152,15 @@",
+            "      *                  the buffer to write to\n",
+            "      * @return the number of bytes that have been written to the buffer\n",
+            "      */\n",
+            "+    private static int encodeByte(final int b, final boolean encode,\n",
+            "+                                  final ByteArrayOutputStream buffer) {\n",
+            "+        if (encode) {\n",
+            "+            return encodeQuotedPrintable(b, buffer);\n",
+            "+        } else {\n",
+            "+            buffer.write(b);\n",
+            "+            return 1;\n",
+            "+        }\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * Checks whether the given byte is whitespace.\n",
+            "@@ -149,6 +169,9 @@",
+            "      *                  byte to be checked\n",
+            "      * @return <code>true</code> if the byte is either a space or tab character\n",
+            "      */\n",
+            "+    private static boolean isWhitespace(final int b) {\n",
+            "+        return b == SPACE || b == TAB;\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * Encodes an array of bytes into an array of quoted-printable 7-bit characters. Unsafe characters are escaped.\n"
+          ],
+          "changed_lines": 22
+        },
+        {
+          "buggy_method": "  public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes) {\n  if (bytes == null) {\n  return null;\n  }\n  if (printable == null) {\n  printable = PRINTABLE_CHARS;\n  }\n  ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n  \n  \n  \n  for (byte c : bytes) {\n  int b = c;\n  if (b < 0) {\n  b = 256 + b;\n  }\n  if (printable.get(b)) {\n  buffer.write(b);\n  } else {\n  \n\n  \n  encodeQuotedPrintable(b, buffer);\n  }\n  }\n\n  \n  \n\n  \n  \n  \n  \n\n  return buffer.toByteArray();\n  }",
+          "fixed_method": "  public static final byte[] encodeQuotedPrintable(BitSet printable, byte[] bytes) {\n  if (bytes == null) {\n  return null;\n  }\n  if (printable == null) {\n  printable = PRINTABLE_CHARS;\n  }\n  ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n  int pos = 1;\n  \n  \n  for (int i = 0; i < bytes.length - 3; i++) {\n  int b = getUnsignedOctet(i, bytes);\n  if (pos < SAFE_LENGTH) {\n  \n  pos += encodeByte(b, !printable.get(b), buffer);\n  } else {\n  \n  encodeByte(b, !printable.get(b) || isWhitespace(b), buffer);\n\n  \n  buffer.write(ESCAPE_CHAR);\n  buffer.write(CR);\n  buffer.write(LF);\n  pos = 1;\n  }\n  }\n\n  \n  \n  int b = getUnsignedOctet(bytes.length - 3, bytes);\n  boolean encode = !printable.get(b) || (isWhitespace(b) && pos > SAFE_LENGTH - 5);\n  pos += encodeByte(b, encode, buffer);\n\n  \n  \n  \n  if (pos > SAFE_LENGTH - 2) {\n  buffer.write(ESCAPE_CHAR);\n  buffer.write(CR);\n  buffer.write(LF);\n  }\n  for (int i = bytes.length - 2; i < bytes.length; i++) {\n  b = getUnsignedOctet(i, bytes);\n  \n  encode = !printable.get(b) || (i > bytes.length - 2 && isWhitespace(b));\n  encodeByte(b, encode, buffer);\n  }\n\n  return buffer.toByteArray();\n  }",
+          "diff": [
+            "@@ -172,31 +195,46 @@",
+            "             printable = PRINTABLE_CHARS;\n",
+            "         }\n",
+            "         ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n",
+            "+        int pos = 1;\n",
+            "         // encode up to buffer.length - 3, the last three octets will be treated\n",
+            "         // separately for simplification of note #3\n",
+            "+        for (int i = 0; i < bytes.length - 3; i++) {\n",
+            "+            int b = getUnsignedOctet(i, bytes);\n",
+            "+            if (pos < SAFE_LENGTH) {\n",
+            "                 // up to this length it is safe to add any byte, encoded or not\n",
+            "-        for (byte c : bytes) {\n",
+            "-            int b = c;\n",
+            "-            if (b < 0) {\n",
+            "-                b = 256 + b;\n",
+            "-            }\n",
+            "-            if (printable.get(b)) {\n",
+            "-                buffer.write(b);\n",
+            "+                pos += encodeByte(b, !printable.get(b), buffer);\n",
+            "             } else {\n",
+            "                 // rule #3: whitespace at the end of a line *must* be encoded\n",
+            "+                encodeByte(b, !printable.get(b) || isWhitespace(b), buffer);\n",
+            " \n",
+            "                 // rule #5: soft line break\n",
+            "-                encodeQuotedPrintable(b, buffer);\n",
+            "+                buffer.write(ESCAPE_CHAR);\n",
+            "+                buffer.write(CR);\n",
+            "+                buffer.write(LF);\n",
+            "+                pos = 1;\n",
+            "             }\n",
+            "         }\n",
+            " \n",
+            "         // rule #3: whitespace at the end of a line *must* be encoded\n",
+            "         // if we would do a soft break line after this octet, encode whitespace\n",
+            "+        int b = getUnsignedOctet(bytes.length - 3, bytes);\n",
+            "+        boolean encode = !printable.get(b) || (isWhitespace(b) && pos > SAFE_LENGTH - 5);\n",
+            "+        pos += encodeByte(b, encode, buffer);\n",
+            " \n",
+            "         // note #3: '=' *must not* be the ultimate or penultimate character\n",
+            "         // simplification: if < 6 bytes left, do a soft line break as we may need\n",
+            "         //                 exactly 6 bytes space for the last 2 bytes\n",
+            "+        if (pos > SAFE_LENGTH - 2) {\n",
+            "+            buffer.write(ESCAPE_CHAR);\n",
+            "+            buffer.write(CR);\n",
+            "+            buffer.write(LF);\n",
+            "+        }\n",
+            "+        for (int i = bytes.length - 2; i < bytes.length; i++) {\n",
+            "+            b = getUnsignedOctet(i, bytes);\n",
+            "             // rule #3: trailing whitespace shall be encoded\n",
+            "+            encode = !printable.get(b) || (i > bytes.length - 2 && isWhitespace(b));\n",
+            "+            encodeByte(b, encode, buffer);\n",
+            "+        }\n",
+            " \n",
+            "         return buffer.toByteArray();\n",
+            "     }\n"
+          ],
+          "changed_lines": 31
+        },
+        {
+          "buggy_method": "  public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException {\n  if (bytes == null) {\n  return null;\n  }\n  ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n  for (int i = 0; i < bytes.length; i++) {\n  final int b = bytes[i];\n  if (b == ESCAPE_CHAR) {\n  try {\n  \n  int u = Utils.digit16(bytes[++i]);\n  int l = Utils.digit16(bytes[++i]);\n  buffer.write((char) ((u << 4) + l));\n  } catch (ArrayIndexOutOfBoundsException e) {\n  throw new DecoderException(\"Invalid quoted-printable encoding\", e);\n  }\n  } else {\n  \n  buffer.write(b);\n  }\n  }\n  return buffer.toByteArray();\n  }",
+          "fixed_method": "  public static final byte[] decodeQuotedPrintable(byte[] bytes) throws DecoderException {\n  if (bytes == null) {\n  return null;\n  }\n  ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n  for (int i = 0; i < bytes.length; i++) {\n  final int b = bytes[i];\n  if (b == ESCAPE_CHAR) {\n  try {\n  \n  if (bytes[++i] == CR) {\n  continue;\n  }\n  int u = Utils.digit16(bytes[i]);\n  int l = Utils.digit16(bytes[++i]);\n  buffer.write((char) ((u << 4) + l));\n  } catch (ArrayIndexOutOfBoundsException e) {\n  throw new DecoderException(\"Invalid quoted-printable encoding\", e);\n  }\n  } else if (b != CR && b != LF) {\n  \n  buffer.write(b);\n  }\n  }\n  return buffer.toByteArray();\n  }",
+          "diff": [
+            "@@ -226,13 +264,16 @@",
+            "             if (b == ESCAPE_CHAR) {\n",
+            "                 try {\n",
+            "                     // if the next octet is a CR we have found a soft line break\n",
+            "-                    int u = Utils.digit16(bytes[++i]);\n",
+            "+                    if (bytes[++i] == CR) {\n",
+            "+                        continue;\n",
+            "+                    }\n",
+            "+                    int u = Utils.digit16(bytes[i]);\n",
+            "                     int l = Utils.digit16(bytes[++i]);\n",
+            "                     buffer.write((char) ((u << 4) + l));\n",
+            "                 } catch (ArrayIndexOutOfBoundsException e) {\n",
+            "                     throw new DecoderException(\"Invalid quoted-printable encoding\", e);\n",
+            "                 }\n",
+            "-            } else {\n",
+            "+            } else if (b != CR && b != LF) {\n",
+            "                 // every other octet is appended except for CR & LF\n",
+            "                 buffer.write(b);\n",
+            "             }\n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

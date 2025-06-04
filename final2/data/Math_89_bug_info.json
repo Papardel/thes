@@ -1,0 +1,103 @@
+{
+  "bug_id": "89",
+  "failed_tests": {
+    "org.apache.commons.math.stat.FrequencyTest": [
+      {
+        "methodName": "testAddNonComparable",
+        "error": "java.lang.ClassCastException",
+        "message": "class java.lang.Object cannot be cast to class java.lang.Comparable (java.lang.Object and java.lang.Comparable are in module java.base of loader 'bootstrap')",
+        "fail_line": "            f.addValue(new Object()); // This was previously OK",
+        "test_source": "  public void testAddNonComparable() {\n  try {\n  f.addValue(new Object()); // This was previously OK\n  fail(\"Expected IllegalArgumentException\");\n  } catch (IllegalArgumentException expected) {\n  }\n  f.clear();\n  f.addValue(1);\n  try {\n  f.addValue(new Object());\n  fail(\"Expected IllegalArgumentException\");\n  } catch (IllegalArgumentException expected) {\n  }\n  }",
+        "stack": [
+          "Frequency.addValue line 110, FrequencyTest.testAddNonComparable line 195"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/stat/Frequency.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.stat;\n\nimport java.io.Serializable;\nimport java.text.NumberFormat;\nimport java.util.Iterator;\nimport java.util.Comparator;\nimport java.util.TreeMap;\n\n\npublic class Frequency implements Serializable { private static final long serialVersionUID = -3845586908418844111L; private final TreeMap freqTable; public Frequency() {\n        freqTable = new TreeMap();\n    }\n    \n    \n    public Frequency(Comparator comparator) {\n        freqTable = new TreeMap(comparator);\n    }\n\n    \n    @Override\n    public String toString() {\n        NumberFormat nf = NumberFormat.getPercentInstance();\n        StringBuffer outBuffer = new StringBuffer();\n        outBuffer.append(\"Value \\t Freq. \\t Pct. \\t Cum Pct. \\n\");\n        Iterator iter = freqTable.keySet().iterator();\n        while (iter.hasNext()) {\n            Object value = iter.next();\n            outBuffer.append(value);\n            outBuffer.append('\\t');\n            outBuffer.append(getCount(value));\n            outBuffer.append('\\t');\n            outBuffer.append(nf.format(getPct(value)));\n            outBuffer.append('\\t');\n            outBuffer.append(nf.format(getCumPct(value)));\n            outBuffer.append('\\n');\n        }\n        return outBuffer.toString();\n    }\n\n    \n    @Deprecated\n    public void addValue(Object v) {\n            addValue((Comparable<?>) v);            \n    }\n    \n    \n    public void addValue(Comparable<?>v) {\n        Object obj = v;\n        if (v instanceof Integer) {\n           obj = Long.valueOf(((Integer) v).longValue());\n        }\n        try {\n            Long count = (Long) freqTable.get(obj);\n            if (count == null) {\n                freqTable.put(obj, Long.valueOf(1));\n            } else {\n                freqTable.put(obj, Long.valueOf(count.longValue() + 1));\n            }\n        } catch (ClassCastException ex) {   \n            \n            throw new IllegalArgumentException(\"Value not comparable to existing values.\");\n        }\n    }\n\n    \n    public void addValue(int v) {\n        addValue(Long.valueOf(v));\n    }\n    \n    \n    public void addValue(Integer v) {\n        addValue(Long.valueOf(v.longValue()));\n    }\n\n    \n    public void addValue(long v) {\n        addValue(Long.valueOf(v));\n    }\n    \n    \n    public void addValue(char v) {\n        addValue(Character.valueOf(v));\n    }\n    \n    \n    public void clear() {\n        freqTable.clear();\n    }\n    \n    \n    public Iterator valuesIterator() {\n        return freqTable.keySet().iterator();\n    }\n    \n    \n    \n    \n    public long getSumFreq() {\n        long result = 0;\n        Iterator iterator = freqTable.values().iterator();\n        while (iterator.hasNext())  {\n            result += ((Long) iterator.next()).longValue();\n        }\n        return result;\n    }\n\n    \n    public long getCount(Object v) {\n        if (v instanceof Integer) {\n            return getCount(((Integer) v).longValue());\n        }\n        long result = 0;\n        try { \n            Long count =  (Long) freqTable.get(v);\n            if (count != null) {\n                result = count.longValue();\n            }\n        } catch (ClassCastException ex) {\n            \n        }\n        return result;\n    }\n\n    \n    public long getCount(int v) {\n        return getCount(Long.valueOf(v));\n    }\n    \n    \n    public long getCount(long v) {\n        return getCount(Long.valueOf(v));\n    }\n    \n    \n    public long getCount(char v) {\n        return getCount(Character.valueOf(v));\n    }\n    \n    \n\n    \n    public double getPct(Object v) {\n        final long sumFreq = getSumFreq();\n        if (sumFreq == 0) {\n            return Double.NaN;\n        }\n        return (double) getCount(v) / (double) sumFreq;        \n    }\n    \n    \n    public double getPct(int v) {\n        return getPct(Long.valueOf(v));       \n    }\n    \n    \n    public double getPct(long v) {\n        return getPct(Long.valueOf(v));         \n    }\n    \n    \n    public double getPct(char v) {\n        return getPct(Character.valueOf(v));         \n    }\n    \n    \n    \n    \n    public long getCumFreq(Object v) {\n        if (getSumFreq() == 0) {\n            return 0;\n        }\n        if (v instanceof Integer) {\n            return getCumFreq(((Integer) v).longValue());\n        }\n        Comparator c = freqTable.comparator();\n        if (c == null) {\n            c = new NaturalComparator();\n        }\n        long result = 0;\n        \n        try {\n            Long value = (Long) freqTable.get(v);\n            if (value != null) {\n                result = value.longValue();\n            }\n        } catch (ClassCastException ex) {\n            return result;   \n        }\n        \n        if (c.compare(v, freqTable.firstKey()) < 0) {\n            return 0;  \n        }\n        \n        if (c.compare(v, freqTable.lastKey()) >= 0) {\n            return getSumFreq();    \n        }\n        \n        Iterator values = valuesIterator();\n        while (values.hasNext()) {\n            Object nextValue = values.next();\n            if (c.compare(v, nextValue) > 0) {\n                result += getCount(nextValue);\n            } else {\n                return result;\n            }\n        }\n        return result;\n    }\n    \n     \n    public long getCumFreq(int v) {\n        return getCumFreq(Long.valueOf(v));       \n    }\n    \n     \n    public long getCumFreq(long v) {\n        return getCumFreq(Long.valueOf(v));         \n    }\n    \n    \n    public long getCumFreq(char v) {\n        return getCumFreq(Character.valueOf(v));         \n    }\n    \n    \n    \n    \n    public double getCumPct(Object v) {\n        final long sumFreq = getSumFreq();\n        if (sumFreq == 0) {\n            return Double.NaN;\n        }\n        return (double) getCumFreq(v) / (double) sumFreq;        \n    }\n    \n    \n    public double getCumPct(int v) {\n        return getCumPct(Long.valueOf(v));       \n    }\n    \n    \n    public double getCumPct(long v) {\n        return getCumPct(Long.valueOf(v));         \n    }\n    \n    \n    public double getCumPct(char v) {\n        return getCumPct(Character.valueOf(v));         \n    }\n    \n    \n    private static class NaturalComparator implements Comparator, Serializable { private static final long serialVersionUID = -3852193713161395148L; public int compare(Object o1, Object o2) {\n            return ((Comparable)o1).compareTo(o2);\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.stat;\n\nimport java.io.Serializable;\nimport java.text.NumberFormat;\nimport java.util.Iterator;\nimport java.util.Comparator;\nimport java.util.TreeMap;\n\n\npublic class Frequency implements Serializable { private static final long serialVersionUID = -3845586908418844111L; private final TreeMap freqTable; public Frequency() {\n        freqTable = new TreeMap();\n    }\n    \n    \n    public Frequency(Comparator comparator) {\n        freqTable = new TreeMap(comparator);\n    }\n\n    \n    @Override\n    public String toString() {\n        NumberFormat nf = NumberFormat.getPercentInstance();\n        StringBuffer outBuffer = new StringBuffer();\n        outBuffer.append(\"Value \\t Freq. \\t Pct. \\t Cum Pct. \\n\");\n        Iterator iter = freqTable.keySet().iterator();\n        while (iter.hasNext()) {\n            Object value = iter.next();\n            outBuffer.append(value);\n            outBuffer.append('\\t');\n            outBuffer.append(getCount(value));\n            outBuffer.append('\\t');\n            outBuffer.append(nf.format(getPct(value)));\n            outBuffer.append('\\t');\n            outBuffer.append(nf.format(getCumPct(value)));\n            outBuffer.append('\\n');\n        }\n        return outBuffer.toString();\n    }\n\n    \n    @Deprecated\n    public void addValue(Object v) {\n        if (v instanceof Comparable<?>){\n            addValue((Comparable<?>) v);            \n        } else {\n            throw new IllegalArgumentException(\"Object must implement Comparable\");\n        }\n    }\n    \n    \n    public void addValue(Comparable<?>v) {\n        Object obj = v;\n        if (v instanceof Integer) {\n           obj = Long.valueOf(((Integer) v).longValue());\n        }\n        try {\n            Long count = (Long) freqTable.get(obj);\n            if (count == null) {\n                freqTable.put(obj, Long.valueOf(1));\n            } else {\n                freqTable.put(obj, Long.valueOf(count.longValue() + 1));\n            }\n        } catch (ClassCastException ex) {   \n            \n            throw new IllegalArgumentException(\"Value not comparable to existing values.\");\n        }\n    }\n\n    \n    public void addValue(int v) {\n        addValue(Long.valueOf(v));\n    }\n    \n    \n    public void addValue(Integer v) {\n        addValue(Long.valueOf(v.longValue()));\n    }\n\n    \n    public void addValue(long v) {\n        addValue(Long.valueOf(v));\n    }\n    \n    \n    public void addValue(char v) {\n        addValue(Character.valueOf(v));\n    }\n    \n    \n    public void clear() {\n        freqTable.clear();\n    }\n    \n    \n    public Iterator valuesIterator() {\n        return freqTable.keySet().iterator();\n    }\n    \n    \n    \n    \n    public long getSumFreq() {\n        long result = 0;\n        Iterator iterator = freqTable.values().iterator();\n        while (iterator.hasNext())  {\n            result += ((Long) iterator.next()).longValue();\n        }\n        return result;\n    }\n\n    \n    public long getCount(Object v) {\n        if (v instanceof Integer) {\n            return getCount(((Integer) v).longValue());\n        }\n        long result = 0;\n        try { \n            Long count =  (Long) freqTable.get(v);\n            if (count != null) {\n                result = count.longValue();\n            }\n        } catch (ClassCastException ex) {\n            \n        }\n        return result;\n    }\n\n    \n    public long getCount(int v) {\n        return getCount(Long.valueOf(v));\n    }\n    \n    \n    public long getCount(long v) {\n        return getCount(Long.valueOf(v));\n    }\n    \n    \n    public long getCount(char v) {\n        return getCount(Character.valueOf(v));\n    }\n    \n    \n\n    \n    public double getPct(Object v) {\n        final long sumFreq = getSumFreq();\n        if (sumFreq == 0) {\n            return Double.NaN;\n        }\n        return (double) getCount(v) / (double) sumFreq;        \n    }\n    \n    \n    public double getPct(int v) {\n        return getPct(Long.valueOf(v));       \n    }\n    \n    \n    public double getPct(long v) {\n        return getPct(Long.valueOf(v));         \n    }\n    \n    \n    public double getPct(char v) {\n        return getPct(Character.valueOf(v));         \n    }\n    \n    \n    \n    \n    public long getCumFreq(Object v) {\n        if (getSumFreq() == 0) {\n            return 0;\n        }\n        if (v instanceof Integer) {\n            return getCumFreq(((Integer) v).longValue());\n        }\n        Comparator c = freqTable.comparator();\n        if (c == null) {\n            c = new NaturalComparator();\n        }\n        long result = 0;\n        \n        try {\n            Long value = (Long) freqTable.get(v);\n            if (value != null) {\n                result = value.longValue();\n            }\n        } catch (ClassCastException ex) {\n            return result;   \n        }\n        \n        if (c.compare(v, freqTable.firstKey()) < 0) {\n            return 0;  \n        }\n        \n        if (c.compare(v, freqTable.lastKey()) >= 0) {\n            return getSumFreq();    \n        }\n        \n        Iterator values = valuesIterator();\n        while (values.hasNext()) {\n            Object nextValue = values.next();\n            if (c.compare(v, nextValue) > 0) {\n                result += getCount(nextValue);\n            } else {\n                return result;\n            }\n        }\n        return result;\n    }\n    \n     \n    public long getCumFreq(int v) {\n        return getCumFreq(Long.valueOf(v));       \n    }\n    \n     \n    public long getCumFreq(long v) {\n        return getCumFreq(Long.valueOf(v));         \n    }\n    \n    \n    public long getCumFreq(char v) {\n        return getCumFreq(Character.valueOf(v));         \n    }\n    \n    \n    \n    \n    public double getCumPct(Object v) {\n        final long sumFreq = getSumFreq();\n        if (sumFreq == 0) {\n            return Double.NaN;\n        }\n        return (double) getCumFreq(v) / (double) sumFreq;        \n    }\n    \n    \n    public double getCumPct(int v) {\n        return getCumPct(Long.valueOf(v));       \n    }\n    \n    \n    public double getCumPct(long v) {\n        return getCumPct(Long.valueOf(v));         \n    }\n    \n    \n    public double getCumPct(char v) {\n        return getCumPct(Character.valueOf(v));         \n    }\n    \n    \n    private static class NaturalComparator implements Comparator, Serializable { private static final long serialVersionUID = -3852193713161395148L; public int compare(Object o1, Object o2) {\n            return ((Comparable)o1).compareTo(o2);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public Frequency(Comparator comparator)",
+        "public String toString()",
+        "public void addValue(Object v)",
+        "public void addValue(Comparable<?>v)",
+        "public void addValue(int v)",
+        "public void addValue(Integer v)",
+        "public void addValue(long v)",
+        "public void addValue(char v)",
+        "public void clear()",
+        "public Iterator valuesIterator()",
+        "public long getSumFreq()",
+        "public long getCount(Object v)",
+        "public long getCount(int v)",
+        "public long getCount(long v)",
+        "public long getCount(char v)",
+        "public double getPct(Object v)",
+        "public double getPct(int v)",
+        "public double getPct(long v)",
+        "public double getPct(char v)",
+        "public long getCumFreq(Object v)",
+        "public long getCumFreq(int v)",
+        "public long getCumFreq(long v)",
+        "public long getCumFreq(char v)",
+        "public double getCumPct(Object v)",
+        "public double getCumPct(int v)",
+        "public double getCumPct(long v)",
+        "public double getCumPct(char v)"
+      ],
+      "fixed_signatures": [
+        "public Frequency(Comparator comparator)",
+        "public String toString()",
+        "public void addValue(Object v)",
+        "public void addValue(Comparable<?>v)",
+        "public void addValue(int v)",
+        "public void addValue(Integer v)",
+        "public void addValue(long v)",
+        "public void addValue(char v)",
+        "public void clear()",
+        "public Iterator valuesIterator()",
+        "public long getSumFreq()",
+        "public long getCount(Object v)",
+        "public long getCount(int v)",
+        "public long getCount(long v)",
+        "public long getCount(char v)",
+        "public double getPct(Object v)",
+        "public double getPct(int v)",
+        "public double getPct(long v)",
+        "public double getPct(char v)",
+        "public long getCumFreq(Object v)",
+        "public long getCumFreq(int v)",
+        "public long getCumFreq(long v)",
+        "public long getCumFreq(char v)",
+        "public double getCumPct(Object v)",
+        "public double getCumPct(int v)",
+        "public double getCumPct(long v)",
+        "public double getCumPct(char v)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void addValue(Object v) {\n  addValue((Comparable<?>) v);  \n  }",
+          "fixed_method": "  public void addValue(Object v) {\n  if (v instanceof Comparable<?>){\n  addValue((Comparable<?>) v);  \n  } else {\n  throw new IllegalArgumentException(\"Object must implement Comparable\");\n  }\n  }",
+          "diff": [
+            "@@ -107,7 +107,11 @@",
+            "      */\n",
+            "     @Deprecated\n",
+            "     public void addValue(Object v) {\n",
+            "+        if (v instanceof Comparable<?>){\n",
+            "             addValue((Comparable<?>) v);            \n",
+            "+        } else {\n",
+            "+            throw new IllegalArgumentException(\"Object must implement Comparable\");\n",
+            "+        }\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "bug_id": "34",
+  "failed_tests": {
+    "org.apache.commons.math3.genetics.ListPopulationTest": [
+      {
+        "methodName": "testIterator",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: java.lang.UnsupportedOperationException",
+        "fail_line": "",
+        "test_source": "  public void testIterator() {\n  final ArrayList<Chromosome> chromosomes = new ArrayList<Chromosome>();\n  chromosomes.add(new DummyBinaryChromosome(BinaryChromosome.randomBinaryRepresentation(3)));\n  chromosomes.add(new DummyBinaryChromosome(BinaryChromosome.randomBinaryRepresentation(3)));\n  chromosomes.add(new DummyBinaryChromosome(BinaryChromosome.randomBinaryRepresentation(3)));\n\n  final ListPopulation population = new ListPopulation(10) {\n  public Population nextGeneration() {\n  // not important\n  return null;\n  }\n  };\n\n  population.addChromosomes(chromosomes);\n\n  final Iterator<Chromosome> iter = population.iterator();\n  while (iter.hasNext()) {\n  iter.next();\n  iter.remove();\n  }\n  }",
+        "stack": [
+          ""
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/genetics/ListPopulation.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.genetics;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Iterator;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.exception.NotPositiveException;\nimport org.apache.commons.math3.exception.NullArgumentException;\nimport org.apache.commons.math3.exception.NumberIsTooLargeException;\nimport org.apache.commons.math3.exception.NumberIsTooSmallException;\n\n\npublic abstract class ListPopulation implements Population { private List<Chromosome> chromosomes; private int populationLimit; public ListPopulation(final int populationLimit) {\n        this(Collections.<Chromosome> emptyList(), populationLimit);\n    }\n\n    \n    public ListPopulation(final List<Chromosome> chromosomes, final int populationLimit) {\n        if (chromosomes == null) {\n            throw new NullArgumentException();\n        }\n        if (populationLimit <= 0) {\n            throw new NotPositiveException(LocalizedFormats.POPULATION_LIMIT_NOT_POSITIVE, populationLimit);\n        }\n        if (chromosomes.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.populationLimit = populationLimit;\n        this.chromosomes = new ArrayList<Chromosome>(populationLimit);\n        this.chromosomes.addAll(chromosomes);\n    }\n\n    \n    public void setChromosomes(final List<Chromosome> chromosomes) {\n        if (chromosomes == null) {\n            throw new NullArgumentException();\n        }\n        if (chromosomes.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.clear();\n        this.chromosomes.addAll(chromosomes);\n    }\n\n    \n    public void addChromosomes(final Collection<Chromosome> chromosomeColl) {\n        if (chromosomes.size() + chromosomeColl.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.addAll(chromosomeColl);\n    }\n\n    \n    public List<Chromosome> getChromosomes() {\n        return Collections.unmodifiableList(chromosomes);\n    }\n\n    \n    protected List<Chromosome> getChromosomeList() {\n        return chromosomes;\n    }\n\n    \n    public void addChromosome(final Chromosome chromosome) {\n        if (chromosomes.size() >= populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.add(chromosome);\n    }\n\n    \n    public Chromosome getFittestChromosome() {\n        \n        Chromosome bestChromosome = this.chromosomes.get(0);\n        for (Chromosome chromosome : this.chromosomes) {\n            if (chromosome.compareTo(bestChromosome) > 0) {\n                \n                bestChromosome = chromosome;\n            }\n        }\n        return bestChromosome;\n    }\n\n    \n    public int getPopulationLimit() {\n        return this.populationLimit;\n    }\n\n    \n    public void setPopulationLimit(final int populationLimit) {\n        if (populationLimit <= 0) {\n            throw new NotPositiveException(LocalizedFormats.POPULATION_LIMIT_NOT_POSITIVE, populationLimit);\n        }\n        if (populationLimit < chromosomes.size()) {\n            throw new NumberIsTooSmallException(populationLimit, chromosomes.size(), true);\n        }\n        this.populationLimit = populationLimit;\n    }\n\n    \n    public int getPopulationSize() {\n        return this.chromosomes.size();\n    }\n\n    \n    @Override\n    public String toString() {\n        return this.chromosomes.toString();\n    }\n\n    \n    public Iterator<Chromosome> iterator() {\n        return chromosomes.iterator();\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.genetics;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Iterator;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.exception.NotPositiveException;\nimport org.apache.commons.math3.exception.NullArgumentException;\nimport org.apache.commons.math3.exception.NumberIsTooLargeException;\nimport org.apache.commons.math3.exception.NumberIsTooSmallException;\n\n\npublic abstract class ListPopulation implements Population { private List<Chromosome> chromosomes; private int populationLimit; public ListPopulation(final int populationLimit) {\n        this(Collections.<Chromosome> emptyList(), populationLimit);\n    }\n\n    \n    public ListPopulation(final List<Chromosome> chromosomes, final int populationLimit) {\n        if (chromosomes == null) {\n            throw new NullArgumentException();\n        }\n        if (populationLimit <= 0) {\n            throw new NotPositiveException(LocalizedFormats.POPULATION_LIMIT_NOT_POSITIVE, populationLimit);\n        }\n        if (chromosomes.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.populationLimit = populationLimit;\n        this.chromosomes = new ArrayList<Chromosome>(populationLimit);\n        this.chromosomes.addAll(chromosomes);\n    }\n\n    \n    public void setChromosomes(final List<Chromosome> chromosomes) {\n        if (chromosomes == null) {\n            throw new NullArgumentException();\n        }\n        if (chromosomes.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.clear();\n        this.chromosomes.addAll(chromosomes);\n    }\n\n    \n    public void addChromosomes(final Collection<Chromosome> chromosomeColl) {\n        if (chromosomes.size() + chromosomeColl.size() > populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.addAll(chromosomeColl);\n    }\n\n    \n    public List<Chromosome> getChromosomes() {\n        return Collections.unmodifiableList(chromosomes);\n    }\n\n    \n    protected List<Chromosome> getChromosomeList() {\n        return chromosomes;\n    }\n\n    \n    public void addChromosome(final Chromosome chromosome) {\n        if (chromosomes.size() >= populationLimit) {\n            throw new NumberIsTooLargeException(LocalizedFormats.LIST_OF_CHROMOSOMES_BIGGER_THAN_POPULATION_SIZE,\n                                                chromosomes.size(), populationLimit, false);\n        }\n        this.chromosomes.add(chromosome);\n    }\n\n    \n    public Chromosome getFittestChromosome() {\n        \n        Chromosome bestChromosome = this.chromosomes.get(0);\n        for (Chromosome chromosome : this.chromosomes) {\n            if (chromosome.compareTo(bestChromosome) > 0) {\n                \n                bestChromosome = chromosome;\n            }\n        }\n        return bestChromosome;\n    }\n\n    \n    public int getPopulationLimit() {\n        return this.populationLimit;\n    }\n\n    \n    public void setPopulationLimit(final int populationLimit) {\n        if (populationLimit <= 0) {\n            throw new NotPositiveException(LocalizedFormats.POPULATION_LIMIT_NOT_POSITIVE, populationLimit);\n        }\n        if (populationLimit < chromosomes.size()) {\n            throw new NumberIsTooSmallException(populationLimit, chromosomes.size(), true);\n        }\n        this.populationLimit = populationLimit;\n    }\n\n    \n    public int getPopulationSize() {\n        return this.chromosomes.size();\n    }\n\n    \n    @Override\n    public String toString() {\n        return this.chromosomes.toString();\n    }\n\n    \n    public Iterator<Chromosome> iterator() {\n        return getChromosomes().iterator();\n    }\n}\n",
+      "buggy_signatures": [
+        "public abstract class ListPopulation implements Population { private List<Chromosome> chromosomes; private int populationLimit; public ListPopulation(final int populationLimit)",
+        "public ListPopulation(final List<Chromosome> chromosomes, final int populationLimit)",
+        "public void setChromosomes(final List<Chromosome> chromosomes)",
+        "public void addChromosomes(final Collection<Chromosome> chromosomeColl)",
+        "public List<Chromosome> getChromosomes()",
+        "protected List<Chromosome> getChromosomeList()",
+        "public void addChromosome(final Chromosome chromosome)",
+        "public Chromosome getFittestChromosome()",
+        "public int getPopulationLimit()",
+        "public void setPopulationLimit(final int populationLimit)",
+        "public int getPopulationSize()",
+        "public String toString()",
+        "public Iterator<Chromosome> iterator()"
+      ],
+      "fixed_signatures": [
+        "public abstract class ListPopulation implements Population { private List<Chromosome> chromosomes; private int populationLimit; public ListPopulation(final int populationLimit)",
+        "public ListPopulation(final List<Chromosome> chromosomes, final int populationLimit)",
+        "public void setChromosomes(final List<Chromosome> chromosomes)",
+        "public void addChromosomes(final Collection<Chromosome> chromosomeColl)",
+        "public List<Chromosome> getChromosomes()",
+        "protected List<Chromosome> getChromosomeList()",
+        "public void addChromosome(final Chromosome chromosome)",
+        "public Chromosome getFittestChromosome()",
+        "public int getPopulationLimit()",
+        "public void setPopulationLimit(final int populationLimit)",
+        "public int getPopulationSize()",
+        "public String toString()",
+        "public Iterator<Chromosome> iterator()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Iterator<Chromosome> iterator() {\n  return chromosomes.iterator();\n  }",
+          "fixed_method": "  public Iterator<Chromosome> iterator() {\n  return getChromosomes().iterator();\n  }",
+          "diff": [
+            "@@ -206,6 +206,6 @@",
+            "      * @return chromosome iterator\n",
+            "      */\n",
+            "     public Iterator<Chromosome> iterator() {\n",
+            "-        return chromosomes.iterator();\n",
+            "+        return getChromosomes().iterator();\n",
+            "     }\n",
+            " }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

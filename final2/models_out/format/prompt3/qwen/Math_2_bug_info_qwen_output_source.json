@@ -1,0 +1,10 @@
+{
+  "bug_id": "Math_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-signature> \n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\n Chosen Methods\n\n### Method 1\nSignature: org.apache.commons.math3.distribution.HypergeometricDistribution.public double getNumericalMean()\n```java\npublic double getNumericalMean() {\n        return (double) (getSampleSize() * getNumberOfSuccesses()) / (double) getPopulationSize();\n    }\n```\n\n### Method 2\nSignature: org.apache.commons.math3.distribution.HypergeometricDistribution.public int getNumberOfSuccesses()\n```java\npublic int getNumberOfSuccesses() {\n        return numberOfSuccesses;\n    }\n```\n\n### Method 3\nSignature: org.apache.commons.math3.distribution.HypergeometricDistribution.public int getSupportLowerBound()\n```java\npublic int getSupportLowerBound() {\n        return FastMath.max(0,\n                            getSampleSize() + getNumberOfSuccesses() - getPopulationSize());\n    }\n```\n\n### Method 4\nSignature: org.apache.commons.math3.distribution.HypergeometricDistribution.private int[] getDomain(int n, int m, int k)\n```java\nprivate int[] getDomain(int n, int m, int k) {\n        return new int[] { getLowerDomain(n, m, k), getUpperDomain(m, k) };\n    }\n```\n\n### Method 5\nSignature: org.apache.commons.math3.distribution.HypergeometricDistribution.public int getSupportUpperBound()\n```java\npublic int getSupportUpperBound() {\n        return FastMath.min(getNumberOfSuccesses(), getSampleSize());\n    }\n```\nAnalyse the candidate methods above and determine the one most likely to cause the bug.\n",
+      "response": "RESPONSE: `org.apache.commons.math3.distribution.HypergeometricDistribution.getSupportUpperBound()`"
+    }
+  ]
+}

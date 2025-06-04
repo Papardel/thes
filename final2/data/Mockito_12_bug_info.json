@@ -1,0 +1,146 @@
+{
+  "bug_id": "12",
+  "failed_tests": {
+    "org.mockito.internal.util.reflection.GenericMasterTest": [
+      {
+        "methodName": "shouldDealWithNestedGenerics",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "        assertEquals(Set.class, m.getGenericType(field(\"nested\")));",
+        "test_source": "  public void shouldDealWithNestedGenerics() throws Exception {\n  assertEquals(Set.class, m.getGenericType(field(\"nested\")));\n  assertEquals(Set.class, m.getGenericType(field(\"multiNested\")));\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, GenericMasterTest.shouldDealWithNestedGenerics line 38"
+        ]
+      }
+    ],
+    "org.mockitousage.annotation.CaptorAnnotationBasicTest": [
+      {
+        "methodName": "shouldUseAnnotatedCaptor",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldUseAnnotatedCaptor() {\n  //when\n  createPerson(\"Wes\", \"Williams\");\n  \n  //then\n  verify(peopleRepository).save(captor.capture());\n  assertEquals(\"Wes\", captor.getValue().getName());\n  assertEquals(\"Williams\", captor.getValue().getSurname());\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldUseCaptorInOrdinaryWay",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldUseCaptorInOrdinaryWay() {\n  //when\n  createPerson(\"Wes\", \"Williams\");\n  \n  //then\n  ArgumentCaptor<Person> captor = ArgumentCaptor.forClass(Person.class);\n  verify(peopleRepository).save(captor.capture());\n  assertEquals(\"Wes\", captor.getValue().getName());\n  assertEquals(\"Williams\", captor.getValue().getSurname());\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldCaptureGenericList",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldCaptureGenericList() {\n  //given\n  List<String> list = new LinkedList<String>();\n  mock.listArgMethod(list);\n  \n  //when\n  verify(mock).listArgMethod(genericListCaptor.capture());\n  \n  //then\n  assertSame(list, genericListCaptor.getValue());\n  } ",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldUseGenericlessAnnotatedCaptor",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldUseGenericlessAnnotatedCaptor() {\n  //when\n  createPerson(\"Wes\", \"Williams\");\n  \n  //then\n  verify(peopleRepository).save((Person) genericLessCaptor.capture());\n  assertEquals(\"Wes\", ((Person) genericLessCaptor.getValue()).getName());\n  assertEquals(\"Williams\", ((Person) genericLessCaptor.getValue()).getSurname());\n  }  ",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      }
+    ],
+    "org.mockitousage.annotation.CaptorAnnotationTest": [
+      {
+        "methodName": "shouldScreamWhenWrongTypeForCaptor",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldScreamWhenWrongTypeForCaptor() {\n  try {\n  MockitoAnnotations.initMocks(new WrongType());\n  fail();\n  } catch (MockitoException e) {}\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "testNormalUsage",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void testNormalUsage() {\n\n  MockitoAnnotations.initMocks(this);\n\n  // check if assigned correctly\n  assertNotNull(finalCaptor);\n  assertNotNull(genericsCaptor);\n  assertNotNull(nonGenericCaptorIsAllowed);\n  assertNull(notAMock);\n\n  // use captors in the field to be sure they are cool\n  String argForFinalCaptor = \"Hello\";\n  ArrayList<List<String>> argForGenericsCaptor = new ArrayList<List<String>>();\n\n  mockInterface.testMe(argForFinalCaptor, argForGenericsCaptor);\n\n  Mockito.verify(mockInterface).testMe(finalCaptor.capture(), genericsCaptor.capture());\n\n  assertEquals(argForFinalCaptor, finalCaptor.getValue());\n  assertEquals(argForGenericsCaptor, genericsCaptor.getValue());\n\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldScreamWhenMoreThanOneMockitoAnnotaton",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldScreamWhenMoreThanOneMockitoAnnotaton() {\n  try {\n  MockitoAnnotations.initMocks(new ToManyAnnotations());\n  fail();\n  } catch (MockitoException e) {\n  assertContains(\"missingGenericsField\", e.getMessage());\n  assertContains(\"multiple Mockito annotations\", e.getMessage());  \n  }\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldScreamWhenInitializingCaptorsForNullClass",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldScreamWhenInitializingCaptorsForNullClass() throws Exception {\n  try {\n  MockitoAnnotations.initMocks(null);\n  fail();\n  } catch (MockitoException e) {\n  }\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      },
+      {
+        "methodName": "shouldLookForAnnotatedCaptorsInSuperClasses",
+        "error": "java.lang.ClassCastException",
+        "message": "class sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to class java.lang.Class (sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl and java.lang.Class are in module java.base of loader 'bootstrap')",
+        "fail_line": "",
+        "test_source": "  public void shouldLookForAnnotatedCaptorsInSuperClasses() throws Exception {\n  Sub sub = new Sub();\n  MockitoAnnotations.initMocks(sub);\n\n  assertNotNull(sub.getCaptor());\n  assertNotNull(sub.getBaseCaptor());\n  assertNotNull(sub.getSuperBaseCaptor());\n  }",
+        "stack": [
+          "GenericMaster.getGenericType line 20, DefaultAnnotationEngine.processAnnotationOn line 76, DefaultAnnotationEngine.createMockFor line 42, InjectingAnnotationEngine.createMockFor line 35, MockitoConfiguration$1.createMockFor line 56, MockitoAnnotations.processAnnotationDeprecatedWay line 119, MockitoAnnotations.scan line 108, MockitoAnnotations.initMocks line 95, TestBase.init line 40"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/util/reflection/GenericMaster.java",
+      "buggy_full_code": "package org.mockito.internal.util.reflection;\n\nimport java.lang.reflect.Field;\nimport java.lang.reflect.ParameterizedType;\nimport java.lang.reflect.Type;\n\n@SuppressWarnings(\"unchecked\")\npublic class GenericMaster { public Class getGenericType(Field field) {        \n        Type generic = field.getGenericType();\n        if (generic != null && generic instanceof ParameterizedType) {\n            Type actual = ((ParameterizedType) generic).getActualTypeArguments()[0];\n                return (Class) actual;\n                \n        }\n        \n        return Object.class;\n    }\n}\n",
+      "fixed_full_code": "package org.mockito.internal.util.reflection;\n\nimport java.lang.reflect.Field;\nimport java.lang.reflect.ParameterizedType;\nimport java.lang.reflect.Type;\n\n@SuppressWarnings(\"unchecked\")\npublic class GenericMaster { public Class getGenericType(Field field) {        \n        Type generic = field.getGenericType();\n        if (generic != null && generic instanceof ParameterizedType) {\n            Type actual = ((ParameterizedType) generic).getActualTypeArguments()[0];\n            if (actual instanceof Class) {\n                return (Class) actual;\n            } else if (actual instanceof ParameterizedType) {\n                \n                return (Class) ((ParameterizedType) actual).getRawType();\n            }\n        }\n        \n        return Object.class;\n    }\n}\n",
+      "buggy_signatures": [
+        "public class GenericMaster { public Class getGenericType(Field field)"
+      ],
+      "fixed_signatures": [
+        "public class GenericMaster { public Class getGenericType(Field field)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Class getGenericType(Field field) {  \n  Type generic = field.getGenericType();\n  if (generic != null && generic instanceof ParameterizedType) {\n  Type actual = ((ParameterizedType) generic).getActualTypeArguments()[0];\n  return (Class) actual;\n  \n  }\n  \n  return Object.class;\n  }",
+          "fixed_method": "  public Class getGenericType(Field field) {  \n  Type generic = field.getGenericType();\n  if (generic != null && generic instanceof ParameterizedType) {\n  Type actual = ((ParameterizedType) generic).getActualTypeArguments()[0];\n  if (actual instanceof Class) {\n  return (Class) actual;\n  } else if (actual instanceof ParameterizedType) {\n  \n  return (Class) ((ParameterizedType) actual).getRawType();\n  }\n  }\n  \n  return Object.class;\n  }",
+          "diff": [
+            "@@ -17,8 +17,12 @@",
+            "         Type generic = field.getGenericType();\n",
+            "         if (generic != null && generic instanceof ParameterizedType) {\n",
+            "             Type actual = ((ParameterizedType) generic).getActualTypeArguments()[0];\n",
+            "+            if (actual instanceof Class) {\n",
+            "                 return (Class) actual;\n",
+            "+            } else if (actual instanceof ParameterizedType) {\n",
+            "                 //in case of nested generics we don't go deep\n",
+            "+                return (Class) ((ParameterizedType) actual).getRawType();\n",
+            "+            }\n",
+            "         }\n",
+            "         \n",
+            "         return Object.class;\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

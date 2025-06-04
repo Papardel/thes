@@ -1,0 +1,73 @@
+{
+  "bug_id": "94",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.interop.IllegalTypesCheckTest": [
+      {
+        "methodName": "testC3P0Types",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected an exception with one of substrings ([Illegal type]): got one with message \"Can not instantiate value of type [simple type, class com.mchange.v2.c3p0.jacksontest.ComboPooledDataSource] from String value ('/tmp/foobar.txt'); no single-String constructor/factory method",
+        "fail_line": "        _testIllegalType(ComboPooledDataSource.class); // [databind#1931]",
+        "test_source": "  public void testC3P0Types() throws Exception {\n  _testIllegalType(ComboPooledDataSource.class); // [databind#1931]\n  }",
+        "stack": [
+          "BaseTest.verifyException line 368, IllegalTypesCheckTest._verifyException line 156, IllegalTypesCheckTest._verifySecurityException line 140, IllegalTypesCheckTest._testIllegalType line 133, IllegalTypesCheckTest._testIllegalType line 119, IllegalTypesCheckTest.testC3P0Types line 115"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/jsontype/impl/SubTypeValidator.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.jsontype.impl;\n\nimport java.util.Collections;\nimport java.util.HashSet;\nimport java.util.Set;\n\nimport com.fasterxml.jackson.databind.DeserializationContext;\nimport com.fasterxml.jackson.databind.JavaType;\nimport com.fasterxml.jackson.databind.JsonMappingException;\n\n\npublic class SubTypeValidator { protected final static String PREFIX_SPRING = \"org.springframework.\"; protected final static Set<String> DEFAULT_NO_DESER_CLASS_NAMES; static { Set<String> s = new HashSet<String>(); s.add(\"org.apache.commons.collections.functors.InvokerTransformer\"); s.add(\"org.apache.commons.collections.functors.InstantiateTransformer\"); s.add(\"org.apache.commons.collections4.functors.InvokerTransformer\"); s.add(\"org.apache.commons.collections4.functors.InstantiateTransformer\"); s.add(\"org.codehaus.groovy.runtime.ConvertedClosure\"); s.add(\"org.codehaus.groovy.runtime.MethodClosure\"); s.add(\"org.springframework.beans.factory.ObjectFactory\"); s.add(\"com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\"); s.add(\"org.apache.xalan.xsltc.trax.TemplatesImpl\"); s.add(\"com.sun.rowset.JdbcRowSetImpl\"); s.add(\"java.util.logging.FileHandler\"); s.add(\"java.rmi.server.UnicastRemoteObject\"); s.add(\"org.springframework.beans.factory.config.PropertyPathFactoryBean\"); s.add(\"org.apache.tomcat.dbcp.dbcp2.BasicDataSource\"); s.add(\"com.sun.org.apache.bcel.internal.util.ClassLoader\"); DEFAULT_NO_DESER_CLASS_NAMES = Collections.unmodifiableSet(s); } protected Set<String> _cfgIllegalClassNames = DEFAULT_NO_DESER_CLASS_NAMES; private final static SubTypeValidator instance = new SubTypeValidator(); protected SubTypeValidator() { }\n\n    public static SubTypeValidator instance() { return instance; }\n\n    public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException {\n        \n        \n        final Class<?> raw = type.getRawClass();\n        String full = raw.getName();\n\n        main_check:\n        do {\n            if (_cfgIllegalClassNames.contains(full)) {\n                break;\n            }\n\n            \n            \n            \n            if (raw.isInterface()) {\n                ;\n            } else if (full.startsWith(PREFIX_SPRING)) {\n                for (Class<?> cls = raw; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()){\n                    String name = cls.getSimpleName();\n                    \n                    if (\"AbstractPointcutAdvisor\".equals(name)\n                            \n                            || \"AbstractApplicationContext\".equals(name)) {\n                        break main_check;\n                    }\n                \n                \n                \n                \n                \n                \n                }\n            }\n            return;\n        } while (false);\n\n        throw JsonMappingException.from(ctxt,\n                String.format(\"Illegal type (%s) to deserialize: prevented for security reasons\", full));\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.jsontype.impl;\n\nimport java.util.Collections;\nimport java.util.HashSet;\nimport java.util.Set;\n\nimport com.fasterxml.jackson.databind.DeserializationContext;\nimport com.fasterxml.jackson.databind.JavaType;\nimport com.fasterxml.jackson.databind.JsonMappingException;\n\n\npublic class SubTypeValidator { protected final static String PREFIX_SPRING = \"org.springframework.\"; protected final static String PREFIX_C3P0 = \"com.mchange.v2.c3p0.\"; protected final static Set<String> DEFAULT_NO_DESER_CLASS_NAMES; static { Set<String> s = new HashSet<String>(); s.add(\"org.apache.commons.collections.functors.InvokerTransformer\"); s.add(\"org.apache.commons.collections.functors.InstantiateTransformer\"); s.add(\"org.apache.commons.collections4.functors.InvokerTransformer\"); s.add(\"org.apache.commons.collections4.functors.InstantiateTransformer\"); s.add(\"org.codehaus.groovy.runtime.ConvertedClosure\"); s.add(\"org.codehaus.groovy.runtime.MethodClosure\"); s.add(\"org.springframework.beans.factory.ObjectFactory\"); s.add(\"com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\"); s.add(\"org.apache.xalan.xsltc.trax.TemplatesImpl\"); s.add(\"com.sun.rowset.JdbcRowSetImpl\"); s.add(\"java.util.logging.FileHandler\"); s.add(\"java.rmi.server.UnicastRemoteObject\"); s.add(\"org.springframework.beans.factory.config.PropertyPathFactoryBean\"); s.add(\"org.apache.tomcat.dbcp.dbcp2.BasicDataSource\"); s.add(\"com.sun.org.apache.bcel.internal.util.ClassLoader\"); DEFAULT_NO_DESER_CLASS_NAMES = Collections.unmodifiableSet(s); } protected Set<String> _cfgIllegalClassNames = DEFAULT_NO_DESER_CLASS_NAMES; private final static SubTypeValidator instance = new SubTypeValidator(); protected SubTypeValidator() { }\n\n    public static SubTypeValidator instance() { return instance; }\n\n    public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException {\n        \n        \n        final Class<?> raw = type.getRawClass();\n        String full = raw.getName();\n\n        main_check:\n        do {\n            if (_cfgIllegalClassNames.contains(full)) {\n                break;\n            }\n\n            \n            \n            \n            if (raw.isInterface()) {\n                ;\n            } else if (full.startsWith(PREFIX_SPRING)) {\n                for (Class<?> cls = raw; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()){\n                    String name = cls.getSimpleName();\n                    \n                    if (\"AbstractPointcutAdvisor\".equals(name)\n                            \n                            || \"AbstractApplicationContext\".equals(name)) {\n                        break main_check;\n                    }\n                }\n            } else if (full.startsWith(PREFIX_C3P0)) {\n                \n                \n                \n                \n                \n                \n                if (full.endsWith(\"DataSource\")) {\n                    break main_check;\n                }\n            }\n            return;\n        } while (false);\n\n        throw JsonMappingException.from(ctxt,\n                String.format(\"Illegal type (%s) to deserialize: prevented for security reasons\", full));\n    }\n}\n",
+      "buggy_signatures": [
+        "public static SubTypeValidator instance()",
+        "public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException"
+      ],
+      "fixed_signatures": [
+        "public static SubTypeValidator instance()",
+        "public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -20,6 +20,7 @@",
+            " {\n",
+            "     protected final static String PREFIX_SPRING = \"org.springframework.\";\n",
+            " \n",
+            "+    protected final static String PREFIX_C3P0 = \"com.mchange.v2.c3p0.\";\n",
+            " \n",
+            "     /**\n",
+            "      * Set of well-known \"nasty classes\", deserialization of which is considered dangerous\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException {\n  \n  \n  final Class<?> raw = type.getRawClass();\n  String full = raw.getName();\n\n  main_check:\n  do {\n  if (_cfgIllegalClassNames.contains(full)) {\n  break;\n  }\n\n  \n  \n  \n  if (raw.isInterface()) {\n  ;\n  } else if (full.startsWith(PREFIX_SPRING)) {\n  for (Class<?> cls = raw; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()){\n  String name = cls.getSimpleName();\n  \n  if (\"AbstractPointcutAdvisor\".equals(name)\n  \n  || \"AbstractApplicationContext\".equals(name)) {\n  break main_check;\n  }\n  \n  \n  \n  \n  \n  \n  }\n  }\n  return;\n  } while (false);\n\n  throw JsonMappingException.from(ctxt,\n  String.format(\"Illegal type (%s) to deserialize: prevented for security reasons\", full));\n  }",
+          "fixed_method": "  public void validateSubType(DeserializationContext ctxt, JavaType type) throws JsonMappingException {\n  \n  \n  final Class<?> raw = type.getRawClass();\n  String full = raw.getName();\n\n  main_check:\n  do {\n  if (_cfgIllegalClassNames.contains(full)) {\n  break;\n  }\n\n  \n  \n  \n  if (raw.isInterface()) {\n  ;\n  } else if (full.startsWith(PREFIX_SPRING)) {\n  for (Class<?> cls = raw; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()){\n  String name = cls.getSimpleName();\n  \n  if (\"AbstractPointcutAdvisor\".equals(name)\n  \n  || \"AbstractApplicationContext\".equals(name)) {\n  break main_check;\n  }\n  }\n  } else if (full.startsWith(PREFIX_C3P0)) {\n  \n  \n  \n  \n  \n  \n  if (full.endsWith(\"DataSource\")) {\n  break main_check;\n  }\n  }\n  return;\n  } while (false);\n\n  throw JsonMappingException.from(ctxt,\n  String.format(\"Illegal type (%s) to deserialize: prevented for security reasons\", full));\n  }",
+          "diff": [
+            "@@ -95,12 +96,16 @@",
+            "                             || \"AbstractApplicationContext\".equals(name)) {\n",
+            "                         break main_check;\n",
+            "                     }\n",
+            "+                }\n",
+            "+            } else if (full.startsWith(PREFIX_C3P0)) {\n",
+            "                 // [databind#1737]; more 3rd party\n",
+            "                 // s.add(\"com.mchange.v2.c3p0.JndiRefForwardingDataSource\");\n",
+            "                 // s.add(\"com.mchange.v2.c3p0.WrapperConnectionPoolDataSource\");\n",
+            "                 // [databind#1931]; more 3rd party\n",
+            "                 // com.mchange.v2.c3p0.ComboPooledDataSource\n",
+            "                 // com.mchange.v2.c3p0.debug.AfterCloseLoggingComboPooledDataSource \n",
+            "+                if (full.endsWith(\"DataSource\")) {\n",
+            "+                    break main_check;\n",
+            "                 }\n",
+            "             }\n",
+            "             return;\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

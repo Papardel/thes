@@ -1,0 +1,357 @@
+{
+  "bug_id": "1",
+  "failed_tests": {
+    "org.mockito.internal.invocation.InvocationMatcherTest": [
+      {
+        "methodName": "should_capture_arguments_when_args_count_does_NOT_match",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        invocationMatcher.captureArgumentsFrom(invocation);",
+        "test_source": "  public void should_capture_arguments_when_args_count_does_NOT_match() throws Exception {\n  //given\n  mock.varargs();\n  Invocation invocation = getLastInvocation();\n\n  //when\n  InvocationMatcher invocationMatcher = new InvocationMatcher(invocation, (List) asList(new LocalizedMatcher(AnyVararg.ANY_VARARG)));\n\n  //then\n  invocationMatcher.captureArgumentsFrom(invocation);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMatcherTest.should_capture_arguments_when_args_count_does_NOT_match line 170"
+        ]
+      }
+    ],
+    "org.mockito.internal.util.reflection.FieldInitializerTest": [
+      {
+        "methodName": "can_instantiate_class_with_parameterized_constructor",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        new FieldInitializer(this, field(\"noDefaultConstructor\"), resolver).initialize();",
+        "test_source": "  public void can_instantiate_class_with_parameterized_constructor() throws Exception {\n  ConstructorArgumentResolver resolver = given(mock(ConstructorArgumentResolver.class).resolveTypeInstances(any(Class[].class)))\n  .willReturn(new Object[]{null}).getMock();\n\n  new FieldInitializer(this, field(\"noDefaultConstructor\"), resolver).initialize();\n\n  assertNotNull(noDefaultConstructor);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, FieldInitializer$ParameterizedConstructorInstantiator.instantiate line 256, FieldInitializer.acquireFieldInstance line 124, FieldInitializer.initialize line 86, FieldInitializerTest.can_instantiate_class_with_parameterized_constructor line 162"
+        ]
+      }
+    ],
+    "org.mockito.internal.util.reflection.ParameterizedConstructorInstantiatorTest": [
+      {
+        "methodName": "should_report_failure_if_constructor_throws_exception",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "            new ParameterizedConstructorInstantiator(this, field(\"withThrowingConstructor\"), resolver).instantiate();",
+        "test_source": "  public void should_report_failure_if_constructor_throws_exception() throws Exception {\n  given(resolver.resolveTypeInstances(Matchers.<Class<?>[]>anyVararg())).willReturn(new Object[]{ null });\n\n  try {\n  new ParameterizedConstructorInstantiator(this, field(\"withThrowingConstructor\"), resolver).instantiate();\n  fail();\n  } catch (MockitoException e) {\n  assertThat(e.getMessage()).contains(\"constructor\").contains(\"raised an exception\");\n  }\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, FieldInitializer$ParameterizedConstructorInstantiator.instantiate line 256, ParameterizedConstructorInstantiatorTest.should_report_failure_if_constructor_throws_exception line 101, JUnit45AndHigherRunnerImpl.run line 37, MockitoJUnitRunner.run line 62"
+        ]
+      },
+      {
+        "methodName": "should_fail_if_an_argument_instance_type_do_not_match_wanted_type",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "            new ParameterizedConstructorInstantiator(this, field(\"withMultipleConstructor\"), resolver).instantiate();",
+        "test_source": "  public void should_fail_if_an_argument_instance_type_do_not_match_wanted_type() throws Exception {\n  Observer observer = mock(Observer.class);\n  Set wrongArg = mock(Set.class);\n  given(resolver.resolveTypeInstances(Matchers.<Class<?>[]>anyVararg())).willReturn(new Object[]{ observer, wrongArg });\n\n  try {\n  new ParameterizedConstructorInstantiator(this, field(\"withMultipleConstructor\"), resolver).instantiate();\n  fail();\n  } catch (MockitoException e) {\n  assertThat(e.getMessage()).contains(\"argResolver\").contains(\"incorrect types\");\n  }\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, FieldInitializer$ParameterizedConstructorInstantiator.instantiate line 256, ParameterizedConstructorInstantiatorTest.should_fail_if_an_argument_instance_type_do_not_match_wanted_type line 89, JUnit45AndHigherRunnerImpl.run line 37, MockitoJUnitRunner.run line 62"
+        ]
+      },
+      {
+        "methodName": "should_instantiate_type_with_vararg_constructor",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        new ParameterizedConstructorInstantiator(this, field(\"withVarargConstructor\"), resolver).instantiate();",
+        "test_source": "  public void should_instantiate_type_with_vararg_constructor() throws Exception {\n  Observer[] vararg = new Observer[] {  };\n  given(resolver.resolveTypeInstances(Matchers.<Class<?>[]>anyVararg())).willReturn(new Object[]{ \"\", vararg});\n\n  new ParameterizedConstructorInstantiator(this, field(\"withVarargConstructor\"), resolver).instantiate();\n\n  assertNotNull(withVarargConstructor);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, FieldInitializer$ParameterizedConstructorInstantiator.instantiate line 256, ParameterizedConstructorInstantiatorTest.should_instantiate_type_with_vararg_constructor line 113, JUnit45AndHigherRunnerImpl.run line 37, MockitoJUnitRunner.run line 62"
+        ]
+      },
+      {
+        "methodName": "should_instantiate_type_if_resolver_provide_matching_types",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        new ParameterizedConstructorInstantiator(this, field(\"withMultipleConstructor\"), resolver).instantiate();",
+        "test_source": "  public void should_instantiate_type_if_resolver_provide_matching_types() throws Exception {\n  Observer observer = mock(Observer.class);\n  Map map = mock(Map.class);\n  given(resolver.resolveTypeInstances(Matchers.<Class<?>[]>anyVararg())).willReturn(new Object[]{ observer, map });\n\n  new ParameterizedConstructorInstantiator(this, field(\"withMultipleConstructor\"), resolver).instantiate();\n\n  assertNotNull(withMultipleConstructor);\n  assertNotNull(withMultipleConstructor.observer);\n  assertNotNull(withMultipleConstructor.map);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, FieldInitializer$ParameterizedConstructorInstantiator.instantiate line 256, ParameterizedConstructorInstantiatorTest.should_instantiate_type_if_resolver_provide_matching_types line 75, JUnit45AndHigherRunnerImpl.run line 37, MockitoJUnitRunner.run line 62"
+        ]
+      }
+    ],
+    "org.mockitousage.basicapi.ResetTest": [
+      {
+        "methodName": "shouldRemoveAllStubbing",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        when(mock.objectReturningMethod(200)).thenReturn(200);",
+        "test_source": "  public void shouldRemoveAllStubbing() throws Exception {\n  when(mock.objectReturningMethod(isA(Integer.class))).thenReturn(100);\n  when(mock.objectReturningMethod(200)).thenReturn(200);\n  reset(mock);\n  assertNull(mock.objectReturningMethod(200));\n  assertEquals(\"default behavior should return null\", null, mock.objectReturningMethod(\"blah\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, ResetTest.shouldRemoveAllStubbing line 48"
+        ]
+      }
+    ],
+    "org.mockitousage.basicapi.UsingVarargsTest": [
+      {
+        "methodName": "shouldVerifyWithNullVarArgArray",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        Mockito.verify(foo).varArgs((String[]) Mockito.anyObject());",
+        "test_source": "  public void shouldVerifyWithNullVarArgArray() {\n  Foo foo = Mockito.mock(Foo.class);\n  foo.varArgs((String[]) null);  \n  Mockito.verify(foo).varArgs((String[]) Mockito.anyObject());\n  Mockito.verify(foo).varArgs((String[]) null);\n  }  ",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptSuperCallable line 44, UsingVarargsTest.shouldVerifyWithNullVarArgArray line 129"
+        ]
+      },
+      {
+        "methodName": "shouldVerifyWithAnyObject",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        Mockito.verify(foo).varArgs((String[]) Mockito.anyObject());",
+        "test_source": "  public void shouldVerifyWithAnyObject() {\n  Foo foo = Mockito.mock(Foo.class);\n  foo.varArgs(\"\");  \n  Mockito.verify(foo).varArgs((String[]) Mockito.anyObject());\n  Mockito.verify(foo).varArgs((String) Mockito.anyObject());\n  }  ",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptSuperCallable line 44, UsingVarargsTest.shouldVerifyWithAnyObject line 121"
+        ]
+      },
+      {
+        "methodName": "shouldStubBooleanVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(true, mock.withBooleanVarargs(1));",
+        "test_source": "  public void shouldStubBooleanVarargs() {\n  when(mock.withBooleanVarargs(1)).thenReturn(true);\n  when(mock.withBooleanVarargs(1, true, false)).thenReturn(true);\n  \n  assertEquals(true, mock.withBooleanVarargs(1));\n  assertEquals(false, mock.withBooleanVarargs(9999));\n  \n  assertEquals(true, mock.withBooleanVarargs(1, true, false));\n  assertEquals(false, mock.withBooleanVarargs(1, true, false, true));\n  assertEquals(false, mock.withBooleanVarargs(2, true, false));\n  assertEquals(false, mock.withBooleanVarargs(1, true));\n  assertEquals(false, mock.withBooleanVarargs(1, false, false));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldStubBooleanVarargs line 65"
+        ]
+      },
+      {
+        "methodName": "shouldMatchEasilyEmptyVararg",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(-1, mock.foo());",
+        "test_source": "  public void shouldMatchEasilyEmptyVararg() throws Exception {\n  //when\n  when(mock.foo(anyVararg())).thenReturn(-1);\n\n  //then\n  assertEquals(-1, mock.foo());\n  } ",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldMatchEasilyEmptyVararg line 174"
+        ]
+      },
+      {
+        "methodName": "shouldVerifyBooleanVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(mock).withBooleanVarargs(1);",
+        "test_source": "  public void shouldVerifyBooleanVarargs() {\n  mock.withBooleanVarargs(1);\n  mock.withBooleanVarargs(2, true, false, true);\n  mock.withBooleanVarargs(3, true, true, true);\n\n  verify(mock).withBooleanVarargs(1);\n  verify(mock).withBooleanVarargs(2, true, false, true);\n  try {\n  verify(mock).withBooleanVarargs(3, true, true, true, true);\n  fail();\n  } catch (ArgumentsAreDifferent e) {}\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldVerifyBooleanVarargs line 109"
+        ]
+      },
+      {
+        "methodName": "shouldStubCorrectlyWhenMixedVarargsUsed",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        String result = mixedVarargs.doSomething(\"hello\",(String[]) null);",
+        "test_source": "  public void shouldStubCorrectlyWhenMixedVarargsUsed() {\n  MixedVarargs mixedVarargs = mock(MixedVarargs.class);\n  when(mixedVarargs.doSomething(\"hello\", (String[])null)).thenReturn(\"hello\");\n  when(mixedVarargs.doSomething(\"goodbye\", (String[])null)).thenReturn(\"goodbye\");\n\n  String result = mixedVarargs.doSomething(\"hello\",(String[]) null);\n  assertEquals(\"hello\", result);\n  \n  verify(mixedVarargs).doSomething(\"hello\", (String[])null);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldStubCorrectlyWhenMixedVarargsUsed line 150"
+        ]
+      },
+      {
+        "methodName": "shouldStubStringVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(\"1\", mock.withStringVarargsReturningString(1));",
+        "test_source": "  public void shouldStubStringVarargs() {\n  when(mock.withStringVarargsReturningString(1)).thenReturn(\"1\");\n  when(mock.withStringVarargsReturningString(2, \"1\", \"2\", \"3\")).thenReturn(\"2\");\n  \n  RuntimeException expected = new RuntimeException();\n  stubVoid(mock).toThrow(expected).on().withStringVarargs(3, \"1\", \"2\", \"3\", \"4\");\n\n  assertEquals(\"1\", mock.withStringVarargsReturningString(1));\n  assertEquals(null, mock.withStringVarargsReturningString(2));\n  \n  assertEquals(\"2\", mock.withStringVarargsReturningString(2, \"1\", \"2\", \"3\"));\n  assertEquals(null, mock.withStringVarargsReturningString(2, \"1\", \"2\"));\n  assertEquals(null, mock.withStringVarargsReturningString(2, \"1\", \"2\", \"3\", \"4\"));\n  assertEquals(null, mock.withStringVarargsReturningString(2, \"1\", \"2\", \"9999\"));\n  \n  mock.withStringVarargs(3, \"1\", \"2\", \"3\", \"9999\");\n  mock.withStringVarargs(9999, \"1\", \"2\", \"3\", \"4\");\n  \n  try {\n  mock.withStringVarargs(3, \"1\", \"2\", \"3\", \"4\");\n  fail();\n  } catch (Exception e) {\n  assertEquals(expected, e);\n  }\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldStubStringVarargs line 41"
+        ]
+      },
+      {
+        "methodName": "shouldStubCorrectlyWhenDoubleStringAndMixedVarargsUsed",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        String result = mixedVarargs.doSomething(\"one\", \"two\", (String[])null);",
+        "test_source": "  public void shouldStubCorrectlyWhenDoubleStringAndMixedVarargsUsed() {\n  MixedVarargs mixedVarargs = mock(MixedVarargs.class);\n  when(mixedVarargs.doSomething(\"one\", \"two\", (String[])null)).thenReturn(\"hello\");\n  when(mixedVarargs.doSomething(\"1\", \"2\", (String[])null)).thenReturn(\"goodbye\");\n\n  String result = mixedVarargs.doSomething(\"one\", \"two\", (String[])null);\n  assertEquals(\"hello\", result);\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldStubCorrectlyWhenDoubleStringAndMixedVarargsUsed line 163"
+        ]
+      },
+      {
+        "methodName": "shouldVerifyStringVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(mock).withStringVarargs(1);",
+        "test_source": "  public void shouldVerifyStringVarargs() {\n  mock.withStringVarargs(1);\n  mock.withStringVarargs(2, \"1\", \"2\", \"3\");\n  mock.withStringVarargs(3, \"1\", \"2\", \"3\", \"4\");\n\n  verify(mock).withStringVarargs(1);\n  verify(mock).withStringVarargs(2, \"1\", \"2\", \"3\");\n  try {\n  verify(mock).withStringVarargs(2, \"1\", \"2\", \"79\", \"4\");\n  fail();\n  } catch (ArgumentsAreDifferent e) {}\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldVerifyStringVarargs line 81"
+        ]
+      },
+      {
+        "methodName": "shouldVerifyObjectVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(mock).withObjectVarargs(1);",
+        "test_source": "  public void shouldVerifyObjectVarargs() {\n  mock.withObjectVarargs(1);\n  mock.withObjectVarargs(2, \"1\", new ArrayList<Object>(), new Integer(1));\n  mock.withObjectVarargs(3, new Integer(1));\n\n  verify(mock).withObjectVarargs(1);\n  verify(mock).withObjectVarargs(2, \"1\", new ArrayList<Object>(), new Integer(1));\n  try {\n  verifyNoMoreInteractions(mock);\n  fail();\n  } catch (NoInteractionsWanted e) {}\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, UsingVarargsTest.shouldVerifyObjectVarargs line 95"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.VarargsErrorWhenCallingRealMethodTest": [
+      {
+        "methodName": "shouldNotThrowAnyException",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(1, foo.blah(\"foo\", \"bar\"));",
+        "test_source": "  public void shouldNotThrowAnyException() throws Exception {\n  Foo foo = mock(Foo.class);\n\n  when(foo.blah(anyString(), anyString())).thenCallRealMethod();\n\n  assertEquals(1, foo.blah(\"foo\", \"bar\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptSuperCallable line 44, VarargsErrorWhenCallingRealMethodTest.shouldNotThrowAnyException line 26"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.varargs.VarargsAndAnyObjectPicksUpExtraInvocationsTest": [
+      {
+        "methodName": "shouldVerifyCorrectlyWithAnyVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(table, times(2)).newRow(anyString(), (String[]) anyVararg());",
+        "test_source": "  public void shouldVerifyCorrectlyWithAnyVarargs() {\n  //when\n  table.newRow(\"qux\", \"foo\", \"bar\", \"baz\");\n  table.newRow(\"abc\", \"def\");\n  \n  //then\n  verify(table, times(2)).newRow(anyString(), (String[]) anyVararg());\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VarargsAndAnyObjectPicksUpExtraInvocationsTest.shouldVerifyCorrectlyWithAnyVarargs line 30"
+        ]
+      },
+      {
+        "methodName": "shouldVerifyCorrectlyNumberOfInvocationsUsingAnyVarargAndEqualArgument",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(table, times(2)).newRow(eq(\"x\"), (String[]) anyVararg());",
+        "test_source": "  public void shouldVerifyCorrectlyNumberOfInvocationsUsingAnyVarargAndEqualArgument() {\n  //when\n  table.newRow(\"x\", \"foo\", \"bar\", \"baz\");\n  table.newRow(\"x\", \"def\");\n\n  //then\n  verify(table, times(2)).newRow(eq(\"x\"), (String[]) anyVararg());\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VarargsAndAnyObjectPicksUpExtraInvocationsTest.shouldVerifyCorrectlyNumberOfInvocationsUsingAnyVarargAndEqualArgument line 40"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.varargs.VarargsNotPlayingWithAnyObjectTest": [
+      {
+        "methodName": "shouldStubUsingAnyVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(\"foo\", mock.run(\"a\", \"b\"));",
+        "test_source": "  public void shouldStubUsingAnyVarargs() {\n  when(mock.run((String[]) anyVararg())).thenReturn(\"foo\");\n  \n  assertEquals(\"foo\", mock.run(\"a\", \"b\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VarargsNotPlayingWithAnyObjectTest.shouldStubUsingAnyVarargs line 56"
+        ]
+      }
+    ],
+    "org.mockitousage.matchers.VerificationAndStubbingUsingMatchersTest": [
+      {
+        "methodName": "shouldVerifyUsingMatchers",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        assertEquals(\"stubbed\", three.varargsObject(5, \"first arg\", \"second arg\"));",
+        "test_source": "  public void shouldVerifyUsingMatchers() {\n  stubVoid(one).toThrow(new RuntimeException()).on().oneArg(true);\n  when(three.varargsObject(5, \"first arg\", \"second arg\")).thenReturn(\"stubbed\");\n\n  try {\n  one.oneArg(true);\n  fail();\n  } catch (RuntimeException e) {}\n\n  one.simpleMethod(100);\n  two.simpleMethod(\"test Mockito\");\n  three.varargsObject(10, \"first arg\", \"second arg\");\n  \n  assertEquals(\"stubbed\", three.varargsObject(5, \"first arg\", \"second arg\"));\n\n  verify(one).oneArg(eq(true));\n  verify(one).simpleMethod(anyInt());\n  verify(two).simpleMethod(startsWith(\"test\"));\n  verify(three).varargsObject(5, \"first arg\", \"second arg\");\n  verify(three).varargsObject(eq(10), eq(\"first arg\"), startsWith(\"second\"));\n  \n  verifyNoMoreInteractions(one, two, three);\n  \n  try {\n  verify(three).varargsObject(eq(10), eq(\"first arg\"), startsWith(\"third\"));\n  fail();\n  } catch (WantedButNotInvoked e) {}\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VerificationAndStubbingUsingMatchersTest.shouldVerifyUsingMatchers line 65"
+        ]
+      }
+    ],
+    "org.mockitousage.stubbing.BasicStubbingTest": [
+      {
+        "methodName": "test_stub_only_not_verifiable",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        when(localMock.objectReturningMethod(200)).thenReturn(200);",
+        "test_source": "  public void test_stub_only_not_verifiable() throws Exception {\n  IMethods localMock = mock(IMethods.class, withSettings().stubOnly());\n\n  when(localMock.objectReturningMethod(isA(Integer.class))).thenReturn(100);\n  when(localMock.objectReturningMethod(200)).thenReturn(200);\n\n  assertEquals(200, localMock.objectReturningMethod(200));\n  assertEquals(100, localMock.objectReturningMethod(666));\n  assertEquals(\"default behavior should return null\", null, localMock.objectReturningMethod(\"blah\"));\n\n  try {\n  verify(localMock, atLeastOnce()).objectReturningMethod(eq(200));\n  fail();\n  } catch (CannotVerifyStubOnlyMock e) {}\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, BasicStubbingTest.test_stub_only_not_verifiable line 104"
+        ]
+      },
+      {
+        "methodName": "should_evaluate_latest_stubbing_first",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        when(mock.objectReturningMethod(200)).thenReturn(200);",
+        "test_source": "  public void should_evaluate_latest_stubbing_first() throws Exception {\n  when(mock.objectReturningMethod(isA(Integer.class))).thenReturn(100);\n  when(mock.objectReturningMethod(200)).thenReturn(200);\n  \n  assertEquals(200, mock.objectReturningMethod(200));\n  assertEquals(100, mock.objectReturningMethod(666));\n  assertEquals(\"default behavior should return null\", null, mock.objectReturningMethod(\"blah\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, BasicStubbingTest.should_evaluate_latest_stubbing_first line 31"
+        ]
+      }
+    ],
+    "org.mockitousage.stubbing.DeprecatedStubbingTest": [
+      {
+        "methodName": "shouldEvaluateLatestStubbingFirst",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        stub(mock.objectReturningMethod(200)).toReturn(200);",
+        "test_source": "  public void shouldEvaluateLatestStubbingFirst() throws Exception {\n  stub(mock.objectReturningMethod(isA(Integer.class))).toReturn(100);\n  stub(mock.objectReturningMethod(200)).toReturn(200);\n  \n  assertEquals(200, mock.objectReturningMethod(200));\n  assertEquals(100, mock.objectReturningMethod(666));\n  assertEquals(\"default behavior should return null\", null, mock.objectReturningMethod(\"blah\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, MockHandlerImpl.handle line 94, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, DeprecatedStubbingTest.shouldEvaluateLatestStubbingFirst line 31"
+        ]
+      }
+    ],
+    "org.mockitousage.verification.VerificationInOrderMixedWithOrdiraryVerificationTest": [
+      {
+        "methodName": "shouldUseEqualsToVerifyMethodVarargs",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "",
+        "fail_line": "        verify(mockOne, times(2)).varargsObject(1, textOne, textOne);",
+        "test_source": "  public void shouldUseEqualsToVerifyMethodVarargs() {\n  mockOne = mock(IMethods.class);\n  \n  String textOne = \"test\";\n  String textTwo = new String(textOne);\n  \n  assertEquals(textOne, textTwo);\n  assertNotSame(textOne, textTwo);\n  \n  mockOne.varargsObject(1, textOne, textOne);\n  mockOne.varargsObject(1, textTwo, textTwo);\n  \n  verify(mockOne, times(2)).varargsObject(1, textOne, textOne);\n  \n  inOrder = inOrder(mockOne);\n  inOrder.verify(mockOne, times(2)).varargsObject(1, textOne, textOne);\n  } ",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 123, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VerificationInOrderMixedWithOrdiraryVerificationTest.shouldUseEqualsToVerifyMethodVarargs line 158"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/invocation/InvocationMatcher.java",
+      "buggy_full_code": "\n\npackage org.mockito.internal.invocation;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.lang.reflect.Method;\nimport java.util.Collections;\nimport java.util.LinkedList;\nimport java.util.List;\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.CapturesArguments;\nimport org.mockito.internal.matchers.MatcherDecorator;\nimport org.mockito.internal.matchers.VarargMatcher;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.invocation.DescribedInvocation;\nimport org.mockito.invocation.Invocation;\nimport org.mockito.invocation.Location;\n\n@SuppressWarnings(\"unchecked\")\npublic class InvocationMatcher implements DescribedInvocation, CapturesArgumensFromInvocation, Serializable { private static final long serialVersionUID = -3047126096857467610L; private final Invocation invocation; private final List<Matcher> matchers; public InvocationMatcher(Invocation invocation, List<Matcher> matchers) {\n        this.invocation = invocation;\n        if (matchers.isEmpty()) {\n            this.matchers = ArgumentsProcessor.argumentsToMatchers(invocation.getArguments());\n        } else {\n            this.matchers = matchers;\n        }\n    }\n    \n    public InvocationMatcher(Invocation invocation) {\n        this(invocation, Collections.<Matcher>emptyList());\n    }\n\n    public Method getMethod() {\n        return invocation.getMethod();\n    }\n    \n    public Invocation getInvocation() {\n        return this.invocation;\n    }\n    \n    public List<Matcher> getMatchers() {\n        return this.matchers;\n    }\n    \n    public String toString() {\n        return new PrintSettings().print(matchers, invocation);\n    }\n\n    public boolean matches(Invocation actual) {\n        return invocation.getMock().equals(actual.getMock())\n                && hasSameMethod(actual)\n                && new ArgumentsComparator().argumentsMatch(this, actual);\n    }\n\n    private boolean safelyArgumentsMatch(Object[] actualArgs) {\n        try {\n            return new ArgumentsComparator().argumentsMatch(this, actualArgs);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    \n    public boolean hasSimilarMethod(Invocation candidate) {\n        String wantedMethodName = getMethod().getName();\n        String currentMethodName = candidate.getMethod().getName();\n        \n        final boolean methodNameEquals = wantedMethodName.equals(currentMethodName);\n        final boolean isUnverified = !candidate.isVerified();\n        final boolean mockIsTheSame = getInvocation().getMock() == candidate.getMock();\n        final boolean methodEquals = hasSameMethod(candidate);\n\n        if (!methodNameEquals || !isUnverified || !mockIsTheSame) {\n            return false;\n        }\n\n        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());\n\n        return !overloadedButSameArgs;\n    }\n\n    public boolean hasSameMethod(Invocation candidate) {\n        \n        \n        Method m1 = invocation.getMethod();\n        Method m2 = candidate.getMethod();\n        \n        if (m1.getName() != null && m1.getName().equals(m2.getName())) {\n            \n            Class[] params1 = m1.getParameterTypes();\n            Class[] params2 = m2.getParameterTypes();\n            if (params1.length == params2.length) {\n                for (int i = 0; i < params1.length; i++) {\n                if (params1[i] != params2[i])\n                    return false;\n                }\n                return true;\n            }\n        }\n        return false;\n    }\n    \n    public Location getLocation() {\n        return invocation.getLocation();\n    }\n\n    public void captureArgumentsFrom(Invocation invocation) {\n        if (invocation.getMethod().isVarArgs()) {\n            int indexOfVararg = invocation.getRawArguments().length - 1;\n            throw new UnsupportedOperationException();\n\n        } else {\n            for (int position = 0; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n        }\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n    }\n\n    private boolean isVarargMatcher(Matcher matcher) {\n        Matcher actualMatcher = matcher;\n        if (actualMatcher instanceof MatcherDecorator) {\n            actualMatcher = ((MatcherDecorator) actualMatcher).getActualMatcher();\n        }\n        return actualMatcher instanceof VarargMatcher;\n    }\n\n    private boolean isVariableArgument(Invocation invocation, int position) {\n        return invocation.getRawArguments().length - 1 == position\n                && invocation.getRawArguments()[position] != null\n                && invocation.getRawArguments()[position].getClass().isArray()\n                && invocation.getMethod().isVarArgs();\n    }\n\n    public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n        LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n\n        for (Invocation i : invocations) {\n            out.add(new InvocationMatcher(i));\n        }\n\n        return out;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.mockito.internal.invocation;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.lang.reflect.Method;\nimport java.util.Collections;\nimport java.util.LinkedList;\nimport java.util.List;\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.CapturesArguments;\nimport org.mockito.internal.matchers.MatcherDecorator;\nimport org.mockito.internal.matchers.VarargMatcher;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.invocation.DescribedInvocation;\nimport org.mockito.invocation.Invocation;\nimport org.mockito.invocation.Location;\n\n@SuppressWarnings(\"unchecked\")\npublic class InvocationMatcher implements DescribedInvocation, CapturesArgumensFromInvocation, Serializable { private static final long serialVersionUID = -3047126096857467610L; private final Invocation invocation; private final List<Matcher> matchers; public InvocationMatcher(Invocation invocation, List<Matcher> matchers) {\n        this.invocation = invocation;\n        if (matchers.isEmpty()) {\n            this.matchers = ArgumentsProcessor.argumentsToMatchers(invocation.getArguments());\n        } else {\n            this.matchers = matchers;\n        }\n    }\n    \n    public InvocationMatcher(Invocation invocation) {\n        this(invocation, Collections.<Matcher>emptyList());\n    }\n\n    public Method getMethod() {\n        return invocation.getMethod();\n    }\n    \n    public Invocation getInvocation() {\n        return this.invocation;\n    }\n    \n    public List<Matcher> getMatchers() {\n        return this.matchers;\n    }\n    \n    public String toString() {\n        return new PrintSettings().print(matchers, invocation);\n    }\n\n    public boolean matches(Invocation actual) {\n        return invocation.getMock().equals(actual.getMock())\n                && hasSameMethod(actual)\n                && new ArgumentsComparator().argumentsMatch(this, actual);\n    }\n\n    private boolean safelyArgumentsMatch(Object[] actualArgs) {\n        try {\n            return new ArgumentsComparator().argumentsMatch(this, actualArgs);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    \n    public boolean hasSimilarMethod(Invocation candidate) {\n        String wantedMethodName = getMethod().getName();\n        String currentMethodName = candidate.getMethod().getName();\n        \n        final boolean methodNameEquals = wantedMethodName.equals(currentMethodName);\n        final boolean isUnverified = !candidate.isVerified();\n        final boolean mockIsTheSame = getInvocation().getMock() == candidate.getMock();\n        final boolean methodEquals = hasSameMethod(candidate);\n\n        if (!methodNameEquals || !isUnverified || !mockIsTheSame) {\n            return false;\n        }\n\n        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());\n\n        return !overloadedButSameArgs;\n    }\n\n    public boolean hasSameMethod(Invocation candidate) {\n        \n        \n        Method m1 = invocation.getMethod();\n        Method m2 = candidate.getMethod();\n        \n        if (m1.getName() != null && m1.getName().equals(m2.getName())) {\n            \n            Class[] params1 = m1.getParameterTypes();\n            Class[] params2 = m2.getParameterTypes();\n            if (params1.length == params2.length) {\n                for (int i = 0; i < params1.length; i++) {\n                if (params1[i] != params2[i])\n                    return false;\n                }\n                return true;\n            }\n        }\n        return false;\n    }\n    \n    public Location getLocation() {\n        return invocation.getLocation();\n    }\n\n    public void captureArgumentsFrom(Invocation invocation) {\n        if (invocation.getMethod().isVarArgs()) {\n            int indexOfVararg = invocation.getRawArguments().length - 1;\n            for (int position = 0; position < indexOfVararg; position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n            for (int position = indexOfVararg; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n                }\n            }\n\n        } else {\n            for (int position = 0; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n        }\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n    }\n\n    private boolean isVarargMatcher(Matcher matcher) {\n        Matcher actualMatcher = matcher;\n        if (actualMatcher instanceof MatcherDecorator) {\n            actualMatcher = ((MatcherDecorator) actualMatcher).getActualMatcher();\n        }\n        return actualMatcher instanceof VarargMatcher;\n    }\n\n    private boolean isVariableArgument(Invocation invocation, int position) {\n        return invocation.getRawArguments().length - 1 == position\n                && invocation.getRawArguments()[position] != null\n                && invocation.getRawArguments()[position].getClass().isArray()\n                && invocation.getMethod().isVarArgs();\n    }\n\n    public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n        LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n\n        for (Invocation i : invocations) {\n            out.add(new InvocationMatcher(i));\n        }\n\n        return out;\n    }\n}\n",
+      "buggy_signatures": [
+        "public InvocationMatcher(Invocation invocation)",
+        "public Method getMethod()",
+        "public Invocation getInvocation()",
+        "public List<Matcher> getMatchers()",
+        "public String toString()",
+        "public boolean matches(Invocation actual)",
+        "private boolean safelyArgumentsMatch(Object[] actualArgs)",
+        "public boolean hasSimilarMethod(Invocation candidate)",
+        "public boolean hasSameMethod(Invocation candidate)",
+        "public Location getLocation()",
+        "public void captureArgumentsFrom(Invocation invocation)",
+        "private boolean isVarargMatcher(Matcher matcher)",
+        "private boolean isVariableArgument(Invocation invocation, int position)",
+        "public static List<InvocationMatcher> createFrom(List<Invocation> invocations)"
+      ],
+      "fixed_signatures": [
+        "public InvocationMatcher(Invocation invocation)",
+        "public Method getMethod()",
+        "public Invocation getInvocation()",
+        "public List<Matcher> getMatchers()",
+        "public String toString()",
+        "public boolean matches(Invocation actual)",
+        "private boolean safelyArgumentsMatch(Object[] actualArgs)",
+        "public boolean hasSimilarMethod(Invocation candidate)",
+        "public boolean hasSameMethod(Invocation candidate)",
+        "public Location getLocation()",
+        "public void captureArgumentsFrom(Invocation invocation)",
+        "private boolean isVarargMatcher(Matcher matcher)",
+        "private boolean isVariableArgument(Invocation invocation, int position)",
+        "public static List<InvocationMatcher> createFrom(List<Invocation> invocations)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void captureArgumentsFrom(Invocation invocation) {\n  if (invocation.getMethod().isVarArgs()) {\n  int indexOfVararg = invocation.getRawArguments().length - 1;\n  throw new UnsupportedOperationException();\n\n  } else {\n  for (int position = 0; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  }\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }",
+          "fixed_method": "  public void captureArgumentsFrom(Invocation invocation) {\n  if (invocation.getMethod().isVarArgs()) {\n  int indexOfVararg = invocation.getRawArguments().length - 1;\n  for (int position = 0; position < indexOfVararg; position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  for (int position = indexOfVararg; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n  }\n  }\n\n  } else {\n  for (int position = 0; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  }\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }",
+          "diff": [
+            "@@ -120,7 +120,18 @@",
+            "     public void captureArgumentsFrom(Invocation invocation) {\n",
+            "         if (invocation.getMethod().isVarArgs()) {\n",
+            "             int indexOfVararg = invocation.getRawArguments().length - 1;\n",
+            "-            throw new UnsupportedOperationException();\n",
+            "+            for (int position = 0; position < indexOfVararg; position++) {\n",
+            "+                Matcher m = matchers.get(position);\n",
+            "+                if (m instanceof CapturesArguments) {\n",
+            "+                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n",
+            "+                }\n",
+            "+            }\n",
+            "+            for (int position = indexOfVararg; position < matchers.size(); position++) {\n",
+            "+                Matcher m = matchers.get(position);\n",
+            "+                if (m instanceof CapturesArguments) {\n",
+            "+                    ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n",
+            "+                }\n",
+            "+            }\n",
+            " \n",
+            "         } else {\n",
+            "             for (int position = 0; position < matchers.size(); position++) {\n"
+          ],
+          "changed_lines": 13
+        }
+      ]
+    }
+  ]
+}

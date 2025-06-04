@@ -1,0 +1,65 @@
+{
+  "bug_id": "8",
+  "failed_tests": {
+    "org.apache.commons.math3.distribution.DiscreteRealDistributionTest": [
+      {
+        "methodName": "testIssue942",
+        "error": "java.lang.ArrayStoreException",
+        "message": "org.apache.commons.math3.distribution.DiscreteRealDistributionTest$2",
+        "fail_line": "        Assert.assertEquals(1, new DiscreteDistribution<Object>(list).sample(1).length);",
+        "test_source": "  public void testIssue942() {\n  List<Pair<Object,Double>> list = new ArrayList<Pair<Object, Double>>();\n  list.add(new Pair<Object, Double>(new Object() {}, new Double(0)));\n  list.add(new Pair<Object, Double>(new Object() {}, new Double(1)));\n  Assert.assertEquals(1, new DiscreteDistribution<Object>(list).sample(1).length);\n  }",
+        "stack": [
+          "DiscreteDistribution.sample line 190, DiscreteRealDistributionTest.testIssue942 line 212"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/distribution/DiscreteDistribution.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.distribution;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.MathArithmeticException;\nimport org.apache.commons.math3.exception.MathIllegalArgumentException;\nimport org.apache.commons.math3.exception.NotPositiveException;\nimport org.apache.commons.math3.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.random.RandomGenerator;\nimport org.apache.commons.math3.random.Well19937c;\nimport org.apache.commons.math3.util.MathArrays;\nimport org.apache.commons.math3.util.Pair;\n\n\npublic class DiscreteDistribution<T> { protected final RandomGenerator random; private final List<T> singletons; private final double[] probabilities; public DiscreteDistribution(final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException {\n        this(new Well19937c(), samples);\n    }\n\n    \n    public DiscreteDistribution(final RandomGenerator rng, final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException {\n        random = rng;\n\n        singletons = new ArrayList<T>(samples.size());\n        final double[] probs = new double[samples.size()];\n\n        for (int i = 0; i < samples.size(); i++) {\n            final Pair<T, Double> sample = samples.get(i);\n            singletons.add(sample.getKey());\n            if (sample.getValue() < 0) {\n                throw new NotPositiveException(sample.getValue());\n            }\n            probs[i] = sample.getValue();\n        }\n\n        probabilities = MathArrays.normalizeArray(probs, 1.0);\n    }\n\n    \n    public void reseedRandomGenerator(long seed) {\n        random.setSeed(seed);\n    }\n\n    \n    double probability(final T x) {\n        double probability = 0;\n\n        for (int i = 0; i < probabilities.length; i++) {\n            if ((x == null && singletons.get(i) == null) ||\n                (x != null && x.equals(singletons.get(i)))) {\n                probability += probabilities[i];\n            }\n        }\n\n        return probability;\n    }\n\n    \n    public List<Pair<T, Double>> getSamples() {\n        final List<Pair<T, Double>> samples = new ArrayList<Pair<T, Double>>(probabilities.length);\n\n        for (int i = 0; i < probabilities.length; i++) {\n            samples.add(new Pair<T, Double>(singletons.get(i), probabilities[i]));\n        }\n\n        return samples;\n    }\n\n    \n    public T sample() {\n        final double randomValue = random.nextDouble();\n        double sum = 0;\n\n        for (int i = 0; i < probabilities.length; i++) {\n            sum += probabilities[i];\n            if (randomValue < sum) {\n                return singletons.get(i);\n            }\n        }\n\n        \n        return singletons.get(singletons.size() - 1);\n    }\n\n    \n    public T[] sample(int sampleSize) throws NotStrictlyPositiveException {\n        if (sampleSize <= 0) {\n            throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SAMPLES,\n                    sampleSize);\n        }\n\n        final T[]out = (T[]) java.lang.reflect.Array.newInstance(singletons.get(0).getClass(), sampleSize);\n\n        for (int i = 0; i < sampleSize; i++) {\n            out[i] = sample();\n        }\n\n        return out;\n\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.distribution;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.MathArithmeticException;\nimport org.apache.commons.math3.exception.MathIllegalArgumentException;\nimport org.apache.commons.math3.exception.NotPositiveException;\nimport org.apache.commons.math3.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.random.RandomGenerator;\nimport org.apache.commons.math3.random.Well19937c;\nimport org.apache.commons.math3.util.MathArrays;\nimport org.apache.commons.math3.util.Pair;\n\n\npublic class DiscreteDistribution<T> { protected final RandomGenerator random; private final List<T> singletons; private final double[] probabilities; public DiscreteDistribution(final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException {\n        this(new Well19937c(), samples);\n    }\n\n    \n    public DiscreteDistribution(final RandomGenerator rng, final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException {\n        random = rng;\n\n        singletons = new ArrayList<T>(samples.size());\n        final double[] probs = new double[samples.size()];\n\n        for (int i = 0; i < samples.size(); i++) {\n            final Pair<T, Double> sample = samples.get(i);\n            singletons.add(sample.getKey());\n            if (sample.getValue() < 0) {\n                throw new NotPositiveException(sample.getValue());\n            }\n            probs[i] = sample.getValue();\n        }\n\n        probabilities = MathArrays.normalizeArray(probs, 1.0);\n    }\n\n    \n    public void reseedRandomGenerator(long seed) {\n        random.setSeed(seed);\n    }\n\n    \n    double probability(final T x) {\n        double probability = 0;\n\n        for (int i = 0; i < probabilities.length; i++) {\n            if ((x == null && singletons.get(i) == null) ||\n                (x != null && x.equals(singletons.get(i)))) {\n                probability += probabilities[i];\n            }\n        }\n\n        return probability;\n    }\n\n    \n    public List<Pair<T, Double>> getSamples() {\n        final List<Pair<T, Double>> samples = new ArrayList<Pair<T, Double>>(probabilities.length);\n\n        for (int i = 0; i < probabilities.length; i++) {\n            samples.add(new Pair<T, Double>(singletons.get(i), probabilities[i]));\n        }\n\n        return samples;\n    }\n\n    \n    public T sample() {\n        final double randomValue = random.nextDouble();\n        double sum = 0;\n\n        for (int i = 0; i < probabilities.length; i++) {\n            sum += probabilities[i];\n            if (randomValue < sum) {\n                return singletons.get(i);\n            }\n        }\n\n        \n        return singletons.get(singletons.size() - 1);\n    }\n\n    \n    public Object[] sample(int sampleSize) throws NotStrictlyPositiveException {\n        if (sampleSize <= 0) {\n            throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SAMPLES,\n                    sampleSize);\n        }\n\n        final Object[] out = new Object[sampleSize];\n\n        for (int i = 0; i < sampleSize; i++) {\n            out[i] = sample();\n        }\n\n        return out;\n\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class DiscreteDistribution<T> { protected final RandomGenerator random; private final List<T> singletons; private final double[] probabilities; public DiscreteDistribution(final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException",
+        "public DiscreteDistribution(final RandomGenerator rng, final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException",
+        "public void reseedRandomGenerator(long seed)",
+        "public List<Pair<T, Double>> getSamples()",
+        "public T sample()",
+        "public T[] sample(int sampleSize) throws NotStrictlyPositiveException"
+      ],
+      "fixed_signatures": [
+        "public class DiscreteDistribution<T> { protected final RandomGenerator random; private final List<T> singletons; private final double[] probabilities; public DiscreteDistribution(final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException",
+        "public DiscreteDistribution(final RandomGenerator rng, final List<Pair<T, Double>> samples) throws NotPositiveException, MathArithmeticException, MathIllegalArgumentException",
+        "public void reseedRandomGenerator(long seed)",
+        "public List<Pair<T, Double>> getSamples()",
+        "public T sample()",
+        "public Object[] sample(int sampleSize) throws NotStrictlyPositiveException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public T[] sample(int sampleSize) throws NotStrictlyPositiveException {\n  if (sampleSize <= 0) {\n  throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SAMPLES,\n  sampleSize);\n  }\n\n  final T[]out = (T[]) java.lang.reflect.Array.newInstance(singletons.get(0).getClass(), sampleSize);\n\n  for (int i = 0; i < sampleSize; i++) {\n  out[i] = sample();\n  }\n\n  return out;\n\n  }",
+          "fixed_method": "  public Object[] sample(int sampleSize) throws NotStrictlyPositiveException {\n  if (sampleSize <= 0) {\n  throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SAMPLES,\n  sampleSize);\n  }\n\n  final Object[] out = new Object[sampleSize];\n\n  for (int i = 0; i < sampleSize; i++) {\n  out[i] = sample();\n  }\n\n  return out;\n\n  }",
+          "diff": [
+            "@@ -178,13 +178,13 @@",
+            "      * @throws NotStrictlyPositiveException if {@code sampleSize} is not\n",
+            "      * positive.\n",
+            "      */\n",
+            "-    public T[] sample(int sampleSize) throws NotStrictlyPositiveException {\n",
+            "+    public Object[] sample(int sampleSize) throws NotStrictlyPositiveException {\n",
+            "         if (sampleSize <= 0) {\n",
+            "             throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SAMPLES,\n",
+            "                     sampleSize);\n",
+            "         }\n",
+            " \n",
+            "-        final T[]out = (T[]) java.lang.reflect.Array.newInstance(singletons.get(0).getClass(), sampleSize);\n",
+            "+        final Object[] out = new Object[sampleSize];\n",
+            " \n",
+            "         for (int i = 0; i < sampleSize; i++) {\n",
+            "             out[i] = sample();\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

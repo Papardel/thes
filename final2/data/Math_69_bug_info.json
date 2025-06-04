@@ -1,0 +1,84 @@
+{
+  "bug_id": "69",
+  "failed_tests": {
+    "org.apache.commons.math.stat.correlation.PearsonsCorrelationTest": [
+      {
+        "methodName": "testPValueNearZero",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(corrInstance.getCorrelationPValues().getEntry(0, 1) > 0);",
+        "test_source": "  public void testPValueNearZero() throws Exception {\n  /*\n  * Create a dataset that has r -> 1, p -> 0 as dimension increases.\n  * Prior to the fix for MATH-371, p vanished for dimension >= 14.\n  * Post fix, p-values diminish smoothly, vanishing at dimension = 127.\n  * Tested value is ~1E-303.\n  */\n  int dimension = 120; \n  double[][] data = new double[dimension][2];\n  for (int i = 0; i < dimension; i++) {\n  data[i][0] = i;\n  data[i][1] = i + 1/((double)i + 1);\n  }\n  PearsonsCorrelation corrInstance = new PearsonsCorrelation(data);\n  assertTrue(corrInstance.getCorrelationPValues().getEntry(0, 1) > 0);\n  }",
+        "stack": [
+          "PearsonsCorrelationTest.testPValueNearZero line 181"
+        ]
+      }
+    ],
+    "org.apache.commons.math.stat.correlation.SpearmansRankCorrelationTest": [
+      {
+        "methodName": "testPValueNearZero",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "PearsonsCorrelationTest.testPValueNearZero line 181"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/stat/correlation/PearsonsCorrelation.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.stat.correlation;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MathRuntimeException;\nimport org.apache.commons.math.distribution.TDistribution;\nimport org.apache.commons.math.distribution.TDistributionImpl;\nimport org.apache.commons.math.linear.RealMatrix;\nimport org.apache.commons.math.linear.BlockRealMatrix;\nimport org.apache.commons.math.stat.regression.SimpleRegression;\n\n\npublic class PearsonsCorrelation { private final RealMatrix correlationMatrix; private final int nObs; public PearsonsCorrelation() {\n        super();\n        correlationMatrix = null;\n        nObs = 0;\n    }\n\n    \n    public PearsonsCorrelation(double[][] data) {\n        this(new BlockRealMatrix(data));\n    }\n\n    \n    public PearsonsCorrelation(RealMatrix matrix) {\n        checkSufficientData(matrix);\n        nObs = matrix.getRowDimension();\n        correlationMatrix = computeCorrelationMatrix(matrix);\n    }\n\n    \n    public PearsonsCorrelation(Covariance covariance) {\n        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();\n        if (covarianceMatrix == null) {\n            throw MathRuntimeException.createIllegalArgumentException(\"covariance matrix is null\");\n        }\n        nObs = covariance.getN();\n        correlationMatrix = covarianceToCorrelation(covarianceMatrix);\n    }\n\n    \n    public PearsonsCorrelation(RealMatrix covarianceMatrix, int numberOfObservations) {\n        nObs = numberOfObservations;\n        correlationMatrix = covarianceToCorrelation(covarianceMatrix);\n\n    }\n\n    \n    public RealMatrix getCorrelationMatrix() {\n        return correlationMatrix;\n    }\n\n    \n    public RealMatrix getCorrelationStandardErrors() {\n        int nVars = correlationMatrix.getColumnDimension();\n        double[][] out = new double[nVars][nVars];\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < nVars; j++) {\n                double r = correlationMatrix.getEntry(i, j);\n                out[i][j] = Math.sqrt((1 - r * r) /(nObs - 2));\n            }\n        }\n        return new BlockRealMatrix(out);\n    }\n\n    \n    public RealMatrix getCorrelationPValues() throws MathException {\n        TDistribution tDistribution = new TDistributionImpl(nObs - 2);\n        int nVars = correlationMatrix.getColumnDimension();\n        double[][] out = new double[nVars][nVars];\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < nVars; j++) {\n                if (i == j) {\n                    out[i][j] = 0d;\n                } else {\n                    double r = correlationMatrix.getEntry(i, j);\n                    double t = Math.abs(r * Math.sqrt((nObs - 2)/(1 - r * r)));\n                    out[i][j] = 2 * (1 - tDistribution.cumulativeProbability(t));\n                }\n            }\n        }\n        return new BlockRealMatrix(out);\n    }\n\n\n    \n    public RealMatrix computeCorrelationMatrix(RealMatrix matrix) {\n        int nVars = matrix.getColumnDimension();\n        RealMatrix outMatrix = new BlockRealMatrix(nVars, nVars);\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < i; j++) {\n              double corr = correlation(matrix.getColumn(i), matrix.getColumn(j));\n              outMatrix.setEntry(i, j, corr);\n              outMatrix.setEntry(j, i, corr);\n            }\n            outMatrix.setEntry(i, i, 1d);\n        }\n        return outMatrix;\n    }\n\n    \n    public RealMatrix computeCorrelationMatrix(double[][] data) {\n       return computeCorrelationMatrix(new BlockRealMatrix(data));\n    }\n\n    \n    public double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException {\n        SimpleRegression regression = new SimpleRegression();\n        if(xArray.length == yArray.length && xArray.length > 1) {\n            for(int i=0; i<xArray.length; i++) {\n                regression.addData(xArray[i], yArray[i]);\n            }\n            return regression.getR();\n        }\n        else {\n            throw MathRuntimeException.createIllegalArgumentException(\n                    \"invalid array dimensions. xArray has size {0}; yArray has {1} elements\",\n                    xArray.length, yArray.length);\n        }\n    }\n\n    \n    public RealMatrix covarianceToCorrelation(RealMatrix covarianceMatrix) {\n        int nVars = covarianceMatrix.getColumnDimension();\n        RealMatrix outMatrix = new BlockRealMatrix(nVars, nVars);\n        for (int i = 0; i < nVars; i++) {\n            double sigma = Math.sqrt(covarianceMatrix.getEntry(i, i));\n            outMatrix.setEntry(i, i, 1d);\n            for (int j = 0; j < i; j++) {\n                double entry = covarianceMatrix.getEntry(i, j) /\n                       (sigma * Math.sqrt(covarianceMatrix.getEntry(j, j)));\n                outMatrix.setEntry(i, j, entry);\n                outMatrix.setEntry(j, i, entry);\n            }\n        }\n        return outMatrix;\n    }\n\n    \n    private void checkSufficientData(final RealMatrix matrix) {\n        int nRows = matrix.getRowDimension();\n        int nCols = matrix.getColumnDimension();\n        if (nRows < 2 || nCols < 2) {\n            throw MathRuntimeException.createIllegalArgumentException(\n                    \"insufficient data: only {0} rows and {1} columns.\",\n                    nRows, nCols);\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.stat.correlation;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MathRuntimeException;\nimport org.apache.commons.math.distribution.TDistribution;\nimport org.apache.commons.math.distribution.TDistributionImpl;\nimport org.apache.commons.math.linear.RealMatrix;\nimport org.apache.commons.math.linear.BlockRealMatrix;\nimport org.apache.commons.math.stat.regression.SimpleRegression;\n\n\npublic class PearsonsCorrelation { private final RealMatrix correlationMatrix; private final int nObs; public PearsonsCorrelation() {\n        super();\n        correlationMatrix = null;\n        nObs = 0;\n    }\n\n    \n    public PearsonsCorrelation(double[][] data) {\n        this(new BlockRealMatrix(data));\n    }\n\n    \n    public PearsonsCorrelation(RealMatrix matrix) {\n        checkSufficientData(matrix);\n        nObs = matrix.getRowDimension();\n        correlationMatrix = computeCorrelationMatrix(matrix);\n    }\n\n    \n    public PearsonsCorrelation(Covariance covariance) {\n        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();\n        if (covarianceMatrix == null) {\n            throw MathRuntimeException.createIllegalArgumentException(\"covariance matrix is null\");\n        }\n        nObs = covariance.getN();\n        correlationMatrix = covarianceToCorrelation(covarianceMatrix);\n    }\n\n    \n    public PearsonsCorrelation(RealMatrix covarianceMatrix, int numberOfObservations) {\n        nObs = numberOfObservations;\n        correlationMatrix = covarianceToCorrelation(covarianceMatrix);\n\n    }\n\n    \n    public RealMatrix getCorrelationMatrix() {\n        return correlationMatrix;\n    }\n\n    \n    public RealMatrix getCorrelationStandardErrors() {\n        int nVars = correlationMatrix.getColumnDimension();\n        double[][] out = new double[nVars][nVars];\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < nVars; j++) {\n                double r = correlationMatrix.getEntry(i, j);\n                out[i][j] = Math.sqrt((1 - r * r) /(nObs - 2));\n            }\n        }\n        return new BlockRealMatrix(out);\n    }\n\n    \n    public RealMatrix getCorrelationPValues() throws MathException {\n        TDistribution tDistribution = new TDistributionImpl(nObs - 2);\n        int nVars = correlationMatrix.getColumnDimension();\n        double[][] out = new double[nVars][nVars];\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < nVars; j++) {\n                if (i == j) {\n                    out[i][j] = 0d;\n                } else {\n                    double r = correlationMatrix.getEntry(i, j);\n                    double t = Math.abs(r * Math.sqrt((nObs - 2)/(1 - r * r)));\n                    out[i][j] = 2 * tDistribution.cumulativeProbability(-t);\n                }\n            }\n        }\n        return new BlockRealMatrix(out);\n    }\n\n\n    \n    public RealMatrix computeCorrelationMatrix(RealMatrix matrix) {\n        int nVars = matrix.getColumnDimension();\n        RealMatrix outMatrix = new BlockRealMatrix(nVars, nVars);\n        for (int i = 0; i < nVars; i++) {\n            for (int j = 0; j < i; j++) {\n              double corr = correlation(matrix.getColumn(i), matrix.getColumn(j));\n              outMatrix.setEntry(i, j, corr);\n              outMatrix.setEntry(j, i, corr);\n            }\n            outMatrix.setEntry(i, i, 1d);\n        }\n        return outMatrix;\n    }\n\n    \n    public RealMatrix computeCorrelationMatrix(double[][] data) {\n       return computeCorrelationMatrix(new BlockRealMatrix(data));\n    }\n\n    \n    public double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException {\n        SimpleRegression regression = new SimpleRegression();\n        if(xArray.length == yArray.length && xArray.length > 1) {\n            for(int i=0; i<xArray.length; i++) {\n                regression.addData(xArray[i], yArray[i]);\n            }\n            return regression.getR();\n        }\n        else {\n            throw MathRuntimeException.createIllegalArgumentException(\n                    \"invalid array dimensions. xArray has size {0}; yArray has {1} elements\",\n                    xArray.length, yArray.length);\n        }\n    }\n\n    \n    public RealMatrix covarianceToCorrelation(RealMatrix covarianceMatrix) {\n        int nVars = covarianceMatrix.getColumnDimension();\n        RealMatrix outMatrix = new BlockRealMatrix(nVars, nVars);\n        for (int i = 0; i < nVars; i++) {\n            double sigma = Math.sqrt(covarianceMatrix.getEntry(i, i));\n            outMatrix.setEntry(i, i, 1d);\n            for (int j = 0; j < i; j++) {\n                double entry = covarianceMatrix.getEntry(i, j) /\n                       (sigma * Math.sqrt(covarianceMatrix.getEntry(j, j)));\n                outMatrix.setEntry(i, j, entry);\n                outMatrix.setEntry(j, i, entry);\n            }\n        }\n        return outMatrix;\n    }\n\n    \n    private void checkSufficientData(final RealMatrix matrix) {\n        int nRows = matrix.getRowDimension();\n        int nCols = matrix.getColumnDimension();\n        if (nRows < 2 || nCols < 2) {\n            throw MathRuntimeException.createIllegalArgumentException(\n                    \"insufficient data: only {0} rows and {1} columns.\",\n                    nRows, nCols);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public class PearsonsCorrelation { private final RealMatrix correlationMatrix; private final int nObs; public PearsonsCorrelation()",
+        "public PearsonsCorrelation(double[][] data)",
+        "public PearsonsCorrelation(RealMatrix matrix)",
+        "public PearsonsCorrelation(Covariance covariance)",
+        "public PearsonsCorrelation(RealMatrix covarianceMatrix, int numberOfObservations)",
+        "public RealMatrix getCorrelationMatrix()",
+        "public RealMatrix getCorrelationStandardErrors()",
+        "public RealMatrix getCorrelationPValues() throws MathException",
+        "public RealMatrix computeCorrelationMatrix(RealMatrix matrix)",
+        "public RealMatrix computeCorrelationMatrix(double[][] data)",
+        "public double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException",
+        "public RealMatrix covarianceToCorrelation(RealMatrix covarianceMatrix)",
+        "private void checkSufficientData(final RealMatrix matrix)"
+      ],
+      "fixed_signatures": [
+        "public class PearsonsCorrelation { private final RealMatrix correlationMatrix; private final int nObs; public PearsonsCorrelation()",
+        "public PearsonsCorrelation(double[][] data)",
+        "public PearsonsCorrelation(RealMatrix matrix)",
+        "public PearsonsCorrelation(Covariance covariance)",
+        "public PearsonsCorrelation(RealMatrix covarianceMatrix, int numberOfObservations)",
+        "public RealMatrix getCorrelationMatrix()",
+        "public RealMatrix getCorrelationStandardErrors()",
+        "public RealMatrix getCorrelationPValues() throws MathException",
+        "public RealMatrix computeCorrelationMatrix(RealMatrix matrix)",
+        "public RealMatrix computeCorrelationMatrix(double[][] data)",
+        "public double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException",
+        "public RealMatrix covarianceToCorrelation(RealMatrix covarianceMatrix)",
+        "private void checkSufficientData(final RealMatrix matrix)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public RealMatrix getCorrelationPValues() throws MathException {\n  TDistribution tDistribution = new TDistributionImpl(nObs - 2);\n  int nVars = correlationMatrix.getColumnDimension();\n  double[][] out = new double[nVars][nVars];\n  for (int i = 0; i < nVars; i++) {\n  for (int j = 0; j < nVars; j++) {\n  if (i == j) {\n  out[i][j] = 0d;\n  } else {\n  double r = correlationMatrix.getEntry(i, j);\n  double t = Math.abs(r * Math.sqrt((nObs - 2)/(1 - r * r)));\n  out[i][j] = 2 * (1 - tDistribution.cumulativeProbability(t));\n  }\n  }\n  }\n  return new BlockRealMatrix(out);\n  }",
+          "fixed_method": "  public RealMatrix getCorrelationPValues() throws MathException {\n  TDistribution tDistribution = new TDistributionImpl(nObs - 2);\n  int nVars = correlationMatrix.getColumnDimension();\n  double[][] out = new double[nVars][nVars];\n  for (int i = 0; i < nVars; i++) {\n  for (int j = 0; j < nVars; j++) {\n  if (i == j) {\n  out[i][j] = 0d;\n  } else {\n  double r = correlationMatrix.getEntry(i, j);\n  double t = Math.abs(r * Math.sqrt((nObs - 2)/(1 - r * r)));\n  out[i][j] = 2 * tDistribution.cumulativeProbability(-t);\n  }\n  }\n  }\n  return new BlockRealMatrix(out);\n  }",
+          "diff": [
+            "@@ -168,7 +168,7 @@",
+            "                 } else {\n",
+            "                     double r = correlationMatrix.getEntry(i, j);\n",
+            "                     double t = Math.abs(r * Math.sqrt((nObs - 2)/(1 - r * r)));\n",
+            "-                    out[i][j] = 2 * (1 - tDistribution.cumulativeProbability(t));\n",
+            "+                    out[i][j] = 2 * tDistribution.cumulativeProbability(-t);\n",
+            "                 }\n",
+            "             }\n",
+            "         }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

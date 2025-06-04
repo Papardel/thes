@@ -1,0 +1,69 @@
+{
+  "bug_id": "55",
+  "failed_tests": {
+    "org.apache.commons.lang.time.StopWatchTest": [
+      {
+        "methodName": "testLang315",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue( suspendTime == totalTime );",
+        "test_source": "  public void testLang315() {\n  StopWatch watch = new StopWatch();\n  watch.start();\n  try {Thread.sleep(200);} catch (InterruptedException ex) {}\n  watch.suspend();\n  long suspendTime = watch.getTime();\n  try {Thread.sleep(200);} catch (InterruptedException ex) {}\n  watch.stop();\n  long totalTime = watch.getTime();\n  assertTrue( suspendTime == totalTime );\n  }",
+        "stack": [
+          "StopWatchTest.testLang315 line 120"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang/time/StopWatch.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang.time;\n\n\npublic class StopWatch { private static final int STATE_UNSTARTED = 0; private static final int STATE_RUNNING = 1; private static final int STATE_STOPPED = 2; private static final int STATE_SUSPENDED = 3; private static final int STATE_UNSPLIT = 10; private static final int STATE_SPLIT = 11; private int runningState = STATE_UNSTARTED; private int splitState = STATE_UNSPLIT; private long startTime = -1; private long stopTime = -1; public StopWatch() {\n        super();\n    }\n\n    \n    public void start() {\n        if(this.runningState == STATE_STOPPED) {\n            throw new IllegalStateException(\"Stopwatch must be reset before being restarted. \");\n        }\n        if(this.runningState != STATE_UNSTARTED) {\n            throw new IllegalStateException(\"Stopwatch already started. \");\n        }\n        stopTime = -1;\n        startTime = System.currentTimeMillis();\n        this.runningState = STATE_RUNNING;\n    }\n\n    \n    public void stop() {\n        if(this.runningState != STATE_RUNNING && this.runningState != STATE_SUSPENDED) {\n            throw new IllegalStateException(\"Stopwatch is not running. \");\n        }\n            stopTime = System.currentTimeMillis();\n        this.runningState = STATE_STOPPED;\n    }\n\n    \n    public void reset() {\n        this.runningState = STATE_UNSTARTED;\n        this.splitState   = STATE_UNSPLIT;\n        startTime = -1;\n        stopTime = -1;\n    }\n\n    \n    public void split() {\n        if(this.runningState != STATE_RUNNING) {\n            throw new IllegalStateException(\"Stopwatch is not running. \");\n        }\n        stopTime = System.currentTimeMillis();\n        this.splitState = STATE_SPLIT;\n    }\n\n    \n    public void unsplit() {\n        if(this.splitState != STATE_SPLIT) {\n            throw new IllegalStateException(\"Stopwatch has not been split. \");\n        }\n        stopTime = -1;\n        this.splitState = STATE_UNSPLIT;\n    }\n\n    \n    public void suspend() {\n        if(this.runningState != STATE_RUNNING) {\n            throw new IllegalStateException(\"Stopwatch must be running to suspend. \");\n        }\n        stopTime = System.currentTimeMillis();\n        this.runningState = STATE_SUSPENDED;\n    }\n\n    \n    public void resume() {\n        if(this.runningState != STATE_SUSPENDED) {\n            throw new IllegalStateException(\"Stopwatch must be suspended to resume. \");\n        }\n        startTime += (System.currentTimeMillis() - stopTime);\n        stopTime = -1;\n        this.runningState = STATE_RUNNING;\n    }\n\n    \n    public long getTime() {\n        if(this.runningState == STATE_STOPPED || this.runningState == STATE_SUSPENDED) {\n            return this.stopTime - this.startTime;\n        } else\n        if(this.runningState == STATE_UNSTARTED) {\n            return 0;\n        } else\n        if(this.runningState == STATE_RUNNING) {\n            return System.currentTimeMillis() - this.startTime;\n        }\n        throw new RuntimeException(\"Illegal running state has occured. \");\n    }\n\n    \n    public long getSplitTime() {\n        if(this.splitState != STATE_SPLIT) {\n            throw new IllegalStateException(\"Stopwatch must be split to get the split time. \");\n        }\n        return this.stopTime - this.startTime;\n    }\n\n    \n    public String toString() {\n        return DurationFormatUtils.formatDurationHMS(getTime());\n    }\n\n    \n    public String toSplitString() {\n        return DurationFormatUtils.formatDurationHMS(getSplitTime());\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang.time;\n\n\npublic class StopWatch { private static final int STATE_UNSTARTED = 0; private static final int STATE_RUNNING = 1; private static final int STATE_STOPPED = 2; private static final int STATE_SUSPENDED = 3; private static final int STATE_UNSPLIT = 10; private static final int STATE_SPLIT = 11; private int runningState = STATE_UNSTARTED; private int splitState = STATE_UNSPLIT; private long startTime = -1; private long stopTime = -1; public StopWatch() {\n        super();\n    }\n\n    \n    public void start() {\n        if(this.runningState == STATE_STOPPED) {\n            throw new IllegalStateException(\"Stopwatch must be reset before being restarted. \");\n        }\n        if(this.runningState != STATE_UNSTARTED) {\n            throw new IllegalStateException(\"Stopwatch already started. \");\n        }\n        stopTime = -1;\n        startTime = System.currentTimeMillis();\n        this.runningState = STATE_RUNNING;\n    }\n\n    \n    public void stop() {\n        if(this.runningState != STATE_RUNNING && this.runningState != STATE_SUSPENDED) {\n            throw new IllegalStateException(\"Stopwatch is not running. \");\n        }\n        if(this.runningState == STATE_RUNNING) {\n            stopTime = System.currentTimeMillis();\n        }\n        this.runningState = STATE_STOPPED;\n    }\n\n    \n    public void reset() {\n        this.runningState = STATE_UNSTARTED;\n        this.splitState   = STATE_UNSPLIT;\n        startTime = -1;\n        stopTime = -1;\n    }\n\n    \n    public void split() {\n        if(this.runningState != STATE_RUNNING) {\n            throw new IllegalStateException(\"Stopwatch is not running. \");\n        }\n        stopTime = System.currentTimeMillis();\n        this.splitState = STATE_SPLIT;\n    }\n\n    \n    public void unsplit() {\n        if(this.splitState != STATE_SPLIT) {\n            throw new IllegalStateException(\"Stopwatch has not been split. \");\n        }\n        stopTime = -1;\n        this.splitState = STATE_UNSPLIT;\n    }\n\n    \n    public void suspend() {\n        if(this.runningState != STATE_RUNNING) {\n            throw new IllegalStateException(\"Stopwatch must be running to suspend. \");\n        }\n        stopTime = System.currentTimeMillis();\n        this.runningState = STATE_SUSPENDED;\n    }\n\n    \n    public void resume() {\n        if(this.runningState != STATE_SUSPENDED) {\n            throw new IllegalStateException(\"Stopwatch must be suspended to resume. \");\n        }\n        startTime += (System.currentTimeMillis() - stopTime);\n        stopTime = -1;\n        this.runningState = STATE_RUNNING;\n    }\n\n    \n    public long getTime() {\n        if(this.runningState == STATE_STOPPED || this.runningState == STATE_SUSPENDED) {\n            return this.stopTime - this.startTime;\n        } else\n        if(this.runningState == STATE_UNSTARTED) {\n            return 0;\n        } else\n        if(this.runningState == STATE_RUNNING) {\n            return System.currentTimeMillis() - this.startTime;\n        }\n        throw new RuntimeException(\"Illegal running state has occured. \");\n    }\n\n    \n    public long getSplitTime() {\n        if(this.splitState != STATE_SPLIT) {\n            throw new IllegalStateException(\"Stopwatch must be split to get the split time. \");\n        }\n        return this.stopTime - this.startTime;\n    }\n\n    \n    public String toString() {\n        return DurationFormatUtils.formatDurationHMS(getTime());\n    }\n\n    \n    public String toSplitString() {\n        return DurationFormatUtils.formatDurationHMS(getSplitTime());\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public void start()",
+        "public void stop()",
+        "public void reset()",
+        "public void split()",
+        "public void unsplit()",
+        "public void suspend()",
+        "public void resume()",
+        "public long getTime()",
+        "public long getSplitTime()",
+        "public String toString()",
+        "public String toSplitString()"
+      ],
+      "fixed_signatures": [
+        "public void start()",
+        "public void stop()",
+        "public void reset()",
+        "public void split()",
+        "public void unsplit()",
+        "public void suspend()",
+        "public void resume()",
+        "public long getTime()",
+        "public long getSplitTime()",
+        "public String toString()",
+        "public String toSplitString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void stop() {\n  if(this.runningState != STATE_RUNNING && this.runningState != STATE_SUSPENDED) {\n  throw new IllegalStateException(\"Stopwatch is not running. \");\n  }\n  stopTime = System.currentTimeMillis();\n  this.runningState = STATE_STOPPED;\n  }",
+          "fixed_method": "  public void stop() {\n  if(this.runningState != STATE_RUNNING && this.runningState != STATE_SUSPENDED) {\n  throw new IllegalStateException(\"Stopwatch is not running. \");\n  }\n  if(this.runningState == STATE_RUNNING) {\n  stopTime = System.currentTimeMillis();\n  }\n  this.runningState = STATE_STOPPED;\n  }",
+          "diff": [
+            "@@ -115,7 +115,9 @@",
+            "         if(this.runningState != STATE_RUNNING && this.runningState != STATE_SUSPENDED) {\n",
+            "             throw new IllegalStateException(\"Stopwatch is not running. \");\n",
+            "         }\n",
+            "+        if(this.runningState == STATE_RUNNING) {\n",
+            "             stopTime = System.currentTimeMillis();\n",
+            "+        }\n",
+            "         this.runningState = STATE_STOPPED;\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

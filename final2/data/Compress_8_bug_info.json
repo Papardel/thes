@@ -1,0 +1,118 @@
+{
+  "bug_id": "8",
+  "failed_tests": {
+    "org.apache.commons.compress.archivers.tar.TarUtilsTest": [
+      {
+        "methodName": "testParseOctalInvalid",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected IllegalArgumentException - should be at least 2 bytes long",
+        "fail_line": "            fail(\"Expected IllegalArgumentException - should be at least 2 bytes long\");",
+        "test_source": "  public void testParseOctalInvalid() throws Exception {\n  byte [] buffer;\n  buffer=new byte[0]; // empty byte array\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - should be at least 2 bytes long\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer=new byte[]{0}; // 1-byte array\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - should be at least 2 bytes long\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer=new byte[]{0,0,' '}; // not all NULs\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - not all NULs\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer=new byte[]{' ',0,0,0}; // not all NULs\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - not all NULs\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer = \"abcdef \".getBytes(\"UTF-8\"); // Invalid input\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer = \"77777777777\".getBytes(\"UTF-8\"); // Invalid input - no trailer\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - no trailer\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer = \" 0 07 \".getBytes(\"UTF-8\"); // Invalid - embedded space\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - embedded space\");\n  } catch (IllegalArgumentException expected) {\n  }\n  buffer = \" 0\\00007 \".getBytes(\"UTF-8\"); // Invalid - embedded NUL\n  try {\n  TarUtils.parseOctal(buffer,0, buffer.length);\n  fail(\"Expected IllegalArgumentException - embedded NUL\");\n  } catch (IllegalArgumentException expected) {\n  }\n  }",
+        "stack": [
+          "TarUtilsTest.testParseOctalInvalid line 66"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/archivers/tar/TarUtils.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.archivers.tar;\n\n\n\npublic class TarUtils { private static final int BYTE_MASK = 255; private TarUtils() {    \n    }\n\n    \n    public static long parseOctal(final byte[] buffer, final int offset, final int length) {\n        long    result = 0;\n        boolean stillPadding = true;\n        int     end = offset + length;\n        int     start = offset;\n\n        for (int i = start; i < end; i++){\n            final byte currentByte = buffer[i];\n            if (currentByte == 0) {\n                break;\n            }\n\n        \n            if (currentByte == (byte) ' ' || currentByte == '0') {\n                if (stillPadding) {\n                   continue;\n            }\n                if (currentByte == (byte) ' ') {\n                break;\n                }\n            }\n\n        \n        \n\n            stillPadding = false;\n            \n            if (currentByte < '0' || currentByte > '7'){\n                throw new IllegalArgumentException(\n                        exceptionMessage(buffer, offset, length, start, currentByte));\n            }\n            result = (result << 3) + (currentByte - '0'); \n            \n        }\n\n        return result;\n    }\n\n    \n    private static String exceptionMessage(byte[] buffer, final int offset, final int length, int current, final byte currentByte) {\n        String string = new String(buffer, offset, length);\n        string=string.replaceAll(\"\\0\", \"{NUL}\"); \n        final String s = \"Invalid byte \"+currentByte+\" at offset \"+(current-offset)+\" in '\"+string+\"' len=\"+length;\n        return s;\n    }\n\n    \n    public static String parseName(byte[] buffer, final int offset, final int length) {\n        StringBuffer result = new StringBuffer(length);\n        int          end = offset + length;\n\n        for (int i = offset; i < end; ++i) {\n            byte b = buffer[i];\n            if (b == 0) { \n                break;\n            }\n            result.append((char) (b & 0xFF)); \n        }\n\n        return result.toString();\n    }\n\n    \n    public static int formatNameBytes(String name, byte[] buf, final int offset, final int length) {\n        int i;\n\n        \n        for (i = 0; i < length && i < name.length(); ++i) {\n            buf[offset + i] = (byte) name.charAt(i);\n        }\n\n        \n        for (; i < length; ++i) {\n            buf[offset + i] = 0;\n        }\n\n        return offset + length;\n    }\n\n    \n    public static void formatUnsignedOctalString(final long value, byte[] buffer, final int offset, final int length) {\n        int remaining = length;\n        remaining--;\n        if (value == 0) {\n            buffer[offset + remaining--] = (byte) '0';\n        } else {\n            long val = value;\n            for (; remaining >= 0 && val != 0; --remaining) {\n                \n                buffer[offset + remaining] = (byte) ((byte) '0' + (byte) (val & 7));\n                val = val >>> 3;\n                \n            }\n            if (val != 0){\n                throw new IllegalArgumentException\n                (value+\"=\"+Long.toOctalString(value)+ \" will not fit in octal number buffer of length \"+length);\n            }\n        }\n\n        for (; remaining >= 0; --remaining) { \n            buffer[offset + remaining] = (byte) '0';\n        }\n    }\n\n    \n    public static int formatOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-2; \n        formatUnsignedOctalString(value, buf, offset, idx);\n\n        buf[offset + idx++] = (byte) ' '; \n        buf[offset + idx]   = 0; \n\n        return offset + length;\n    }\n\n    \n    public static int formatLongOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-1; \n        \n        formatUnsignedOctalString(value, buf, offset, idx);\n        buf[offset + idx] = (byte) ' '; \n\n        return offset + length;\n    }\n\n    \n    public static int formatCheckSumOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-2; \n        formatUnsignedOctalString(value, buf, offset, idx);\n\n        buf[offset + idx++]   = 0; \n        buf[offset + idx]     = (byte) ' '; \n\n        return offset + length;\n    }\n\n    \n    public static long computeCheckSum(final byte[] buf) {\n        long sum = 0;\n\n        for (int i = 0; i < buf.length; ++i) {\n            sum += BYTE_MASK & buf[i];\n        }\n\n        return sum;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.archivers.tar;\n\n\n\npublic class TarUtils { private static final int BYTE_MASK = 255; private TarUtils() {    \n    }\n\n    \n    public static long parseOctal(final byte[] buffer, final int offset, final int length) {\n        long    result = 0;\n        int     end = offset + length;\n        int     start = offset;\n\n        if (length < 2){\n            throw new IllegalArgumentException(\"Length \"+length+\" must be at least 2\");\n        }\n\n        boolean allNUL = true;\n        for (int i = start; i < end; i++){\n            if (buffer[i] != 0){\n                allNUL = false;\n                break;\n            }\n        }\n        if (allNUL) {\n            return 0L;\n        }\n\n        \n        while (start < end){\n            if (buffer[start] == ' '){\n                start++;\n            } else {\n                break;\n            }\n        }\n\n        \n        byte trailer;\n        trailer = buffer[end-1];\n        if (trailer == 0 || trailer == ' '){\n            end--;\n        } else {\n            throw new IllegalArgumentException(\n                    exceptionMessage(buffer, offset, length, end-1, trailer));\n        }\n        \n        trailer = buffer[end-1];\n        if (trailer == 0 || trailer == ' '){\n            end--;\n        }\n\n        for ( ;start < end; start++) {\n            final byte currentByte = buffer[start];\n            \n            if (currentByte < '0' || currentByte > '7'){\n                throw new IllegalArgumentException(\n                        exceptionMessage(buffer, offset, length, start, currentByte));\n            }\n            result = (result << 3) + (currentByte - '0'); \n            \n        }\n\n        return result;\n    }\n\n    \n    private static String exceptionMessage(byte[] buffer, final int offset, final int length, int current, final byte currentByte) {\n        String string = new String(buffer, offset, length);\n        string=string.replaceAll(\"\\0\", \"{NUL}\"); \n        final String s = \"Invalid byte \"+currentByte+\" at offset \"+(current-offset)+\" in '\"+string+\"' len=\"+length;\n        return s;\n    }\n\n    \n    public static String parseName(byte[] buffer, final int offset, final int length) {\n        StringBuffer result = new StringBuffer(length);\n        int          end = offset + length;\n\n        for (int i = offset; i < end; ++i) {\n            byte b = buffer[i];\n            if (b == 0) { \n                break;\n            }\n            result.append((char) (b & 0xFF)); \n        }\n\n        return result.toString();\n    }\n\n    \n    public static int formatNameBytes(String name, byte[] buf, final int offset, final int length) {\n        int i;\n\n        \n        for (i = 0; i < length && i < name.length(); ++i) {\n            buf[offset + i] = (byte) name.charAt(i);\n        }\n\n        \n        for (; i < length; ++i) {\n            buf[offset + i] = 0;\n        }\n\n        return offset + length;\n    }\n\n    \n    public static void formatUnsignedOctalString(final long value, byte[] buffer, final int offset, final int length) {\n        int remaining = length;\n        remaining--;\n        if (value == 0) {\n            buffer[offset + remaining--] = (byte) '0';\n        } else {\n            long val = value;\n            for (; remaining >= 0 && val != 0; --remaining) {\n                \n                buffer[offset + remaining] = (byte) ((byte) '0' + (byte) (val & 7));\n                val = val >>> 3;\n                \n            }\n            if (val != 0){\n                throw new IllegalArgumentException\n                (value+\"=\"+Long.toOctalString(value)+ \" will not fit in octal number buffer of length \"+length);\n            }\n        }\n\n        for (; remaining >= 0; --remaining) { \n            buffer[offset + remaining] = (byte) '0';\n        }\n    }\n\n    \n    public static int formatOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-2; \n        formatUnsignedOctalString(value, buf, offset, idx);\n\n        buf[offset + idx++] = (byte) ' '; \n        buf[offset + idx]   = 0; \n\n        return offset + length;\n    }\n\n    \n    public static int formatLongOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-1; \n        \n        formatUnsignedOctalString(value, buf, offset, idx);\n        buf[offset + idx] = (byte) ' '; \n\n        return offset + length;\n    }\n\n    \n    public static int formatCheckSumOctalBytes(final long value, byte[] buf, final int offset, final int length) {\n\n        int idx=length-2; \n        formatUnsignedOctalString(value, buf, offset, idx);\n\n        buf[offset + idx++]   = 0; \n        buf[offset + idx]     = (byte) ' '; \n\n        return offset + length;\n    }\n\n    \n    public static long computeCheckSum(final byte[] buf) {\n        long sum = 0;\n\n        for (int i = 0; i < buf.length; ++i) {\n            sum += BYTE_MASK & buf[i];\n        }\n\n        return sum;\n    }\n}\n",
+      "buggy_signatures": [
+        "public static long parseOctal(final byte[] buffer, final int offset, final int length)",
+        "private static String exceptionMessage(byte[] buffer, final int offset, final int length, int current, final byte currentByte)",
+        "public static String parseName(byte[] buffer, final int offset, final int length)",
+        "public static int formatNameBytes(String name, byte[] buf, final int offset, final int length)",
+        "public static void formatUnsignedOctalString(final long value, byte[] buffer, final int offset, final int length)",
+        "public static int formatOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static int formatLongOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static int formatCheckSumOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static long computeCheckSum(final byte[] buf)"
+      ],
+      "fixed_signatures": [
+        "public static long parseOctal(final byte[] buffer, final int offset, final int length)",
+        "private static String exceptionMessage(byte[] buffer, final int offset, final int length, int current, final byte currentByte)",
+        "public static String parseName(byte[] buffer, final int offset, final int length)",
+        "public static int formatNameBytes(String name, byte[] buf, final int offset, final int length)",
+        "public static void formatUnsignedOctalString(final long value, byte[] buffer, final int offset, final int length)",
+        "public static int formatOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static int formatLongOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static int formatCheckSumOctalBytes(final long value, byte[] buf, final int offset, final int length)",
+        "public static long computeCheckSum(final byte[] buf)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static long parseOctal(final byte[] buffer, final int offset, final int length) {\n  long  result = 0;\n  boolean stillPadding = true;\n  int  end = offset + length;\n  int  start = offset;\n\n  for (int i = start; i < end; i++){\n  final byte currentByte = buffer[i];\n  if (currentByte == 0) {\n  break;\n  }\n\n  \n  if (currentByte == (byte) ' ' || currentByte == '0') {\n  if (stillPadding) {\n  continue;\n  }\n  if (currentByte == (byte) ' ') {\n  break;\n  }\n  }\n\n  \n  \n\n  stillPadding = false;\n  \n  if (currentByte < '0' || currentByte > '7'){\n  throw new IllegalArgumentException(\n  exceptionMessage(buffer, offset, length, start, currentByte));\n  }\n  result = (result << 3) + (currentByte - '0'); \n  \n  }\n\n  return result;\n  }",
+          "fixed_method": "  public static long parseOctal(final byte[] buffer, final int offset, final int length) {\n  long  result = 0;\n  int  end = offset + length;\n  int  start = offset;\n\n  if (length < 2){\n  throw new IllegalArgumentException(\"Length \"+length+\" must be at least 2\");\n  }\n\n  boolean allNUL = true;\n  for (int i = start; i < end; i++){\n  if (buffer[i] != 0){\n  allNUL = false;\n  break;\n  }\n  }\n  if (allNUL) {\n  return 0L;\n  }\n\n  \n  while (start < end){\n  if (buffer[start] == ' '){\n  start++;\n  } else {\n  break;\n  }\n  }\n\n  \n  byte trailer;\n  trailer = buffer[end-1];\n  if (trailer == 0 || trailer == ' '){\n  end--;\n  } else {\n  throw new IllegalArgumentException(\n  exceptionMessage(buffer, offset, length, end-1, trailer));\n  }\n  \n  trailer = buffer[end-1];\n  if (trailer == 0 || trailer == ' '){\n  end--;\n  }\n\n  for ( ;start < end; start++) {\n  final byte currentByte = buffer[start];\n  \n  if (currentByte < '0' || currentByte > '7'){\n  throw new IllegalArgumentException(\n  exceptionMessage(buffer, offset, length, start, currentByte));\n  }\n  result = (result << 3) + (currentByte - '0'); \n  \n  }\n\n  return result;\n  }",
+          "diff": [
+            "@@ -50,30 +50,50 @@",
+            "      */\n",
+            "     public static long parseOctal(final byte[] buffer, final int offset, final int length) {\n",
+            "         long    result = 0;\n",
+            "-        boolean stillPadding = true;\n",
+            "         int     end = offset + length;\n",
+            "         int     start = offset;\n",
+            " \n",
+            "+        if (length < 2){\n",
+            "+            throw new IllegalArgumentException(\"Length \"+length+\" must be at least 2\");\n",
+            "+        }\n",
+            "+\n",
+            "+        boolean allNUL = true;\n",
+            "         for (int i = start; i < end; i++){\n",
+            "-            final byte currentByte = buffer[i];\n",
+            "-            if (currentByte == 0) {\n",
+            "+            if (buffer[i] != 0){\n",
+            "+                allNUL = false;\n",
+            "                 break;\n",
+            "             }\n",
+            "+        }\n",
+            "+        if (allNUL) {\n",
+            "+            return 0L;\n",
+            "+        }\n",
+            " \n",
+            "         // Skip leading spaces\n",
+            "-            if (currentByte == (byte) ' ' || currentByte == '0') {\n",
+            "-                if (stillPadding) {\n",
+            "-                   continue;\n",
+            "-            }\n",
+            "-                if (currentByte == (byte) ' ') {\n",
+            "+        while (start < end){\n",
+            "+            if (buffer[start] == ' '){\n",
+            "+                start++;\n",
+            "+            } else {\n",
+            "                 break;\n",
+            "-                }\n",
+            "-            }\n",
+            "+            }\n",
+            "+        }\n",
+            " \n",
+            "         // Must have trailing NUL or space\n",
+            "+        byte trailer;\n",
+            "+        trailer = buffer[end-1];\n",
+            "+        if (trailer == 0 || trailer == ' '){\n",
+            "+            end--;\n",
+            "+        } else {\n",
+            "+            throw new IllegalArgumentException(\n",
+            "+                    exceptionMessage(buffer, offset, length, end-1, trailer));\n",
+            "+        }\n",
+            "         // May have additional NUL or space\n",
+            "-\n",
+            "-            stillPadding = false;\n",
+            "+        trailer = buffer[end-1];\n",
+            "+        if (trailer == 0 || trailer == ' '){\n",
+            "+            end--;\n",
+            "+        }\n",
+            "+\n",
+            "+        for ( ;start < end; start++) {\n",
+            "+            final byte currentByte = buffer[start];\n",
+            "             // CheckStyle:MagicNumber OFF\n",
+            "             if (currentByte < '0' || currentByte > '7'){\n",
+            "                 throw new IllegalArgumentException(\n"
+          ],
+          "changed_lines": 44
+        }
+      ]
+    }
+  ]
+}

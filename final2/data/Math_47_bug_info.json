@@ -1,0 +1,186 @@
+{
+  "bug_id": "47",
+  "failed_tests": {
+    "org.apache.commons.math.complex.ComplexTest": [
+      {
+        "methodName": "testAtanI",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        Assert.assertTrue(Complex.I.atan().isInfinite());",
+        "test_source": "  public void testAtanI() {\n  for (int i = -10; i < 10; i++) {\n  System.out.println(new Complex(0, 1 - 0.1 * i).atan());\n  }\n  Assert.assertTrue(Complex.I.atan().isInfinite());\n  }",
+        "stack": [
+          "ComplexTest.testAtanI line 579"
+        ]
+      },
+      {
+        "methodName": "testDivideZero",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<(NaN, NaN)> but was:<(Infinity, Infinity)>",
+        "fail_line": "        Assert.assertEquals(z, Complex.INF);",
+        "test_source": "  public void testDivideZero() {\n  Complex x = new Complex(3.0, 4.0);\n  Complex z = x.divide(Complex.ZERO);\n  Assert.assertEquals(z, Complex.INF);\n  }",
+        "stack": [
+          "ComplexTest.testDivideZero line 232"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/complex/Complex.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math.complex;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.math.FieldElement;\nimport org.apache.commons.math.exception.NullArgumentException;\nimport org.apache.commons.math.exception.NotPositiveException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.util.MathUtils;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class Complex implements FieldElement<Complex>, Serializable { public static final Complex I = new Complex(0.0, 1.0); public static final Complex NaN = new Complex(Double.NaN, Double.NaN); public static final Complex INF = new Complex(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY); public static final Complex ONE = new Complex(1.0, 0.0); public static final Complex ZERO = new Complex(0.0, 0.0); private static final long serialVersionUID = -6195664516687396620L; private final double imaginary; private final double real; private final transient boolean isNaN; private final transient boolean isInfinite; public Complex(double real) {\n        this(real, 0.0);\n    }\n\n    \n    public Complex(double real, double imaginary) {\n        this.real = real;\n        this.imaginary = imaginary;\n\n        isNaN = Double.isNaN(real) || Double.isNaN(imaginary);\n        isInfinite = !isNaN &&\n            (Double.isInfinite(real) || Double.isInfinite(imaginary));\n    }\n\n    \n    public double abs() {\n        if (isNaN) {\n            return Double.NaN;\n        }\n        if (isInfinite()) {\n            return Double.POSITIVE_INFINITY;\n        }\n        if (FastMath.abs(real) < FastMath.abs(imaginary)) {\n            if (imaginary == 0.0) {\n                return FastMath.abs(real);\n            }\n            double q = real / imaginary;\n            return FastMath.abs(imaginary) * FastMath.sqrt(1 + q * q);\n        } else {\n            if (real == 0.0) {\n                return FastMath.abs(imaginary);\n            }\n            double q = imaginary / real;\n            return FastMath.abs(real) * FastMath.sqrt(1 + q * q);\n        }\n    }\n\n    \n    public Complex add(Complex addend) throws NullArgumentException {\n        MathUtils.checkNotNull(addend);\n        if (isNaN || addend.isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real + addend.getReal(),\n                             imaginary + addend.getImaginary());\n    }\n\n    \n    public Complex add(double addend) {\n        if (isNaN || Double.isNaN(addend)) {\n            return NaN;\n        }\n\n        return createComplex(real + addend, imaginary);\n    }\n\n     \n    public Complex conjugate() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real, -imaginary);\n    }\n\n    \n    public Complex divide(Complex divisor) throws NullArgumentException {\n        MathUtils.checkNotNull(divisor);\n        if (isNaN || divisor.isNaN) {\n            return NaN;\n        }\n\n        if (divisor.getReal() == 0.0 && divisor.getImaginary() == 0.0) {\n            return NaN;\n        }\n\n        if (divisor.isInfinite() && !isInfinite()) {\n            return ZERO;\n        }\n\n        final double c = divisor.getReal();\n        final double d = divisor.getImaginary();\n\n        if (FastMath.abs(c) < FastMath.abs(d)) {\n            double q = c / d;\n            double denominator = c * q + d;\n            return createComplex((real * q + imaginary) / denominator,\n                (imaginary * q - real) / denominator);\n        } else {\n            double q = d / c;\n            double denominator = d * q + c;\n            return createComplex((imaginary * q + real) / denominator,\n                (imaginary - real * q) / denominator);\n        }\n    }\n\n    \n    public Complex divide(double divisor) {\n        if (isNaN || Double.isNaN(divisor)) {\n            return NaN;\n        }\n        if (divisor == 0d) {\n            return NaN;\n        }\n        if (Double.isInfinite(divisor)) {\n            return !isInfinite() ? ZERO : NaN;\n        }\n        return createComplex(real / divisor,\n                             imaginary  / divisor);\n    }\n\n    \n    @Override\n    public boolean equals(Object other) {\n        if (this == other) {\n            return true;\n        }\n        if (other instanceof Complex){\n            Complex c = (Complex)other;\n            if (c.isNaN) {\n                return isNaN;\n            } else {\n                return (real == c.real) && (imaginary == c.imaginary);\n            }\n        }\n        return false;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        if (isNaN) {\n            return 7;\n        }\n        return 37 * (17 * MathUtils.hash(imaginary) +\n            MathUtils.hash(real));\n    }\n\n    \n    public double getImaginary() {\n        return imaginary;\n    }\n\n    \n    public double getReal() {\n        return real;\n    }\n\n    \n    public boolean isNaN() {\n        return isNaN;\n    }\n\n    \n    public boolean isInfinite() {\n        return isInfinite;\n    }\n\n    \n    public Complex multiply(Complex factor) throws NullArgumentException {\n        MathUtils.checkNotNull(factor);\n        if (isNaN || factor.isNaN) {\n            return NaN;\n        }\n        if (Double.isInfinite(real) ||\n            Double.isInfinite(imaginary) ||\n            Double.isInfinite(factor.real) ||\n            Double.isInfinite(factor.imaginary)) {\n            \n            return INF;\n        }\n        return createComplex(real * factor.real - imaginary * factor.imaginary,\n                             real * factor.imaginary + imaginary * factor.real);\n    }\n\n    \n    public Complex multiply(double factor) {\n        if (isNaN || Double.isNaN(factor)) {\n            return NaN;\n        }\n        if (Double.isInfinite(real) ||\n            Double.isInfinite(imaginary) ||\n            Double.isInfinite(factor)) {\n            \n            return INF;\n        }\n        return createComplex(real * factor, imaginary * factor);\n    }\n\n    \n    public Complex negate() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(-real, -imaginary);\n    }\n\n    \n    public Complex subtract(Complex subtrahend) throws NullArgumentException {\n        MathUtils.checkNotNull(subtrahend);\n        if (isNaN || subtrahend.isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real - subtrahend.getReal(),\n                             imaginary - subtrahend.getImaginary());\n    }\n\n    \n    public Complex subtract(double subtrahend) {\n        if (isNaN || Double.isNaN(subtrahend)) {\n            return NaN;\n        }\n        return createComplex(real - subtrahend, imaginary);\n    }\n\n    \n    public Complex acos() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return this.add(this.sqrt1z().multiply(I)).log()\n            .multiply(I.negate());\n    }\n\n    \n    public Complex asin() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return sqrt1z().add(this.multiply(I)).log()\n            .multiply(I.negate());\n    }\n\n    \n    public Complex atan() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return this.add(I).divide(I.subtract(this)).log()\n            .multiply(I.divide(createComplex(2.0, 0.0)));\n    }\n\n    \n    public Complex cos() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.cos(real) * MathUtils.cosh(imaginary),\n                             -FastMath.sin(real) * MathUtils.sinh(imaginary));\n    }\n\n    \n    public Complex cosh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(MathUtils.cosh(real) * FastMath.cos(imaginary),\n                             MathUtils.sinh(real) * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex exp() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double expReal = FastMath.exp(real);\n        return createComplex(expReal *  FastMath.cos(imaginary),\n                             expReal * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex log() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.log(abs()),\n                             FastMath.atan2(imaginary, real));\n    }\n\n    \n    public Complex pow(Complex x) throws NullArgumentException {\n        MathUtils.checkNotNull(x);\n        return this.log().multiply(x).exp();\n    }\n\n    \n     public Complex pow(double x) {\n        return this.log().multiply(x).exp();\n    }\n\n    \n    public Complex sin() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.sin(real) * MathUtils.cosh(imaginary),\n                             FastMath.cos(real) * MathUtils.sinh(imaginary));\n    }\n\n    \n    public Complex sinh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(MathUtils.sinh(real) * FastMath.cos(imaginary),\n            MathUtils.cosh(real) * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex sqrt() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        if (real == 0.0 && imaginary == 0.0) {\n            return createComplex(0.0, 0.0);\n        }\n\n        double t = FastMath.sqrt((FastMath.abs(real) + abs()) / 2.0);\n        if (real >= 0.0) {\n            return createComplex(t, imaginary / (2.0 * t));\n        } else {\n            return createComplex(FastMath.abs(imaginary) / (2.0 * t),\n                                 MathUtils.indicator(imaginary) * t);\n        }\n    }\n\n    \n    public Complex sqrt1z() {\n        return createComplex(1.0, 0.0).subtract(this.multiply(this)).sqrt();\n    }\n\n    \n    public Complex tan() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double real2 = 2.0 * real;\n        double imaginary2 = 2.0 * imaginary;\n        double d = FastMath.cos(real2) + MathUtils.cosh(imaginary2);\n\n        return createComplex(FastMath.sin(real2) / d,\n                             MathUtils.sinh(imaginary2) / d);\n    }\n\n    \n    public Complex tanh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double real2 = 2.0 * real;\n        double imaginary2 = 2.0 * imaginary;\n        double d = MathUtils.cosh(real2) + FastMath.cos(imaginary2);\n\n        return createComplex(MathUtils.sinh(real2) / d,\n                             FastMath.sin(imaginary2) / d);\n    }\n\n\n\n    \n    public double getArgument() {\n        return FastMath.atan2(getImaginary(), getReal());\n    }\n\n    \n    public List<Complex> nthRoot(int n) {\n\n        if (n <= 0) {\n            throw new NotPositiveException(LocalizedFormats.CANNOT_COMPUTE_NTH_ROOT_FOR_NEGATIVE_N,\n                                           n);\n        }\n\n        final List<Complex> result = new ArrayList<Complex>();\n\n        if (isNaN) {\n            result.add(NaN);\n            return result;\n        }\n        if (isInfinite()) {\n            result.add(INF);\n            return result;\n        }\n\n        \n        final double nthRootOfAbs = FastMath.pow(abs(), 1.0 / n);\n\n        \n        final double nthPhi = getArgument() / n;\n        final double slice = 2 * FastMath.PI / n;\n        double innerPart = nthPhi;\n        for (int k = 0; k < n ; k++) {\n            \n            final double realPart = nthRootOfAbs *  FastMath.cos(innerPart);\n            final double imaginaryPart = nthRootOfAbs *  FastMath.sin(innerPart);\n            result.add(createComplex(realPart, imaginaryPart));\n            innerPart += slice;\n        }\n\n        return result;\n    }\n\n    \n    protected Complex createComplex(double realPart, double imaginaryPart) {\n        return new Complex(realPart, imaginaryPart);\n    }\n\n    \n    public static Complex valueOf(double realPart, double imaginaryPart) {\n        if (Double.isNaN(realPart) ||\n            Double.isNaN(imaginaryPart)) {\n            return NaN;\n        }\n        return new Complex(realPart, imaginaryPart);\n    }\n\n    \n    public static Complex valueOf(double realPart) {\n        if (Double.isNaN(realPart)) {\n            return NaN;\n        }\n        return new Complex(realPart);\n    }\n\n    \n    protected final Object readResolve() {\n        return createComplex(real, imaginary);\n    }\n\n    \n    public ComplexField getField() {\n        return ComplexField.getInstance();\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"(\" + real + \", \" + imaginary + \")\";\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math.complex;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.math.FieldElement;\nimport org.apache.commons.math.exception.NullArgumentException;\nimport org.apache.commons.math.exception.NotPositiveException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.util.MathUtils;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class Complex implements FieldElement<Complex>, Serializable { public static final Complex I = new Complex(0.0, 1.0); public static final Complex NaN = new Complex(Double.NaN, Double.NaN); public static final Complex INF = new Complex(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY); public static final Complex ONE = new Complex(1.0, 0.0); public static final Complex ZERO = new Complex(0.0, 0.0); private static final long serialVersionUID = -6195664516687396620L; private final double imaginary; private final double real; private final transient boolean isNaN; private final transient boolean isInfinite; private final transient boolean isZero; public Complex(double real) {\n        this(real, 0.0);\n    }\n\n    \n    public Complex(double real, double imaginary) {\n        this.real = real;\n        this.imaginary = imaginary;\n\n        isNaN = Double.isNaN(real) || Double.isNaN(imaginary);\n        isInfinite = !isNaN &&\n            (Double.isInfinite(real) || Double.isInfinite(imaginary));\n        isZero = real == 0 && imaginary == 0;\n    }\n\n    \n    public double abs() {\n        if (isNaN) {\n            return Double.NaN;\n        }\n        if (isInfinite()) {\n            return Double.POSITIVE_INFINITY;\n        }\n        if (FastMath.abs(real) < FastMath.abs(imaginary)) {\n            if (imaginary == 0.0) {\n                return FastMath.abs(real);\n            }\n            double q = real / imaginary;\n            return FastMath.abs(imaginary) * FastMath.sqrt(1 + q * q);\n        } else {\n            if (real == 0.0) {\n                return FastMath.abs(imaginary);\n            }\n            double q = imaginary / real;\n            return FastMath.abs(real) * FastMath.sqrt(1 + q * q);\n        }\n    }\n\n    \n    public Complex add(Complex addend) throws NullArgumentException {\n        MathUtils.checkNotNull(addend);\n        if (isNaN || addend.isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real + addend.getReal(),\n                             imaginary + addend.getImaginary());\n    }\n\n    \n    public Complex add(double addend) {\n        if (isNaN || Double.isNaN(addend)) {\n            return NaN;\n        }\n\n        return createComplex(real + addend, imaginary);\n    }\n\n     \n    public Complex conjugate() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real, -imaginary);\n    }\n\n    \n    public Complex divide(Complex divisor) throws NullArgumentException {\n        MathUtils.checkNotNull(divisor);\n        if (isNaN || divisor.isNaN) {\n            return NaN;\n        }\n\n        if (divisor.isZero) {\n            return isZero ? NaN : INF;\n        }\n\n        if (divisor.isInfinite() && !isInfinite()) {\n            return ZERO;\n        }\n\n        final double c = divisor.getReal();\n        final double d = divisor.getImaginary();\n\n        if (FastMath.abs(c) < FastMath.abs(d)) {\n            double q = c / d;\n            double denominator = c * q + d;\n            return createComplex((real * q + imaginary) / denominator,\n                (imaginary * q - real) / denominator);\n        } else {\n            double q = d / c;\n            double denominator = d * q + c;\n            return createComplex((imaginary * q + real) / denominator,\n                (imaginary - real * q) / denominator);\n        }\n    }\n\n    \n    public Complex divide(double divisor) {\n        if (isNaN || Double.isNaN(divisor)) {\n            return NaN;\n        }\n        if (divisor == 0d) {\n            return isZero ? NaN : INF;\n        }\n        if (Double.isInfinite(divisor)) {\n            return !isInfinite() ? ZERO : NaN;\n        }\n        return createComplex(real / divisor,\n                             imaginary  / divisor);\n    }\n\n    \n    @Override\n    public boolean equals(Object other) {\n        if (this == other) {\n            return true;\n        }\n        if (other instanceof Complex){\n            Complex c = (Complex)other;\n            if (c.isNaN) {\n                return isNaN;\n            } else {\n                return (real == c.real) && (imaginary == c.imaginary);\n            }\n        }\n        return false;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        if (isNaN) {\n            return 7;\n        }\n        return 37 * (17 * MathUtils.hash(imaginary) +\n            MathUtils.hash(real));\n    }\n\n    \n    public double getImaginary() {\n        return imaginary;\n    }\n\n    \n    public double getReal() {\n        return real;\n    }\n\n    \n    public boolean isNaN() {\n        return isNaN;\n    }\n\n    \n    public boolean isInfinite() {\n        return isInfinite;\n    }\n\n    \n    public Complex multiply(Complex factor) throws NullArgumentException {\n        MathUtils.checkNotNull(factor);\n        if (isNaN || factor.isNaN) {\n            return NaN;\n        }\n        if (Double.isInfinite(real) ||\n            Double.isInfinite(imaginary) ||\n            Double.isInfinite(factor.real) ||\n            Double.isInfinite(factor.imaginary)) {\n            \n            return INF;\n        }\n        return createComplex(real * factor.real - imaginary * factor.imaginary,\n                             real * factor.imaginary + imaginary * factor.real);\n    }\n\n    \n    public Complex multiply(double factor) {\n        if (isNaN || Double.isNaN(factor)) {\n            return NaN;\n        }\n        if (Double.isInfinite(real) ||\n            Double.isInfinite(imaginary) ||\n            Double.isInfinite(factor)) {\n            \n            return INF;\n        }\n        return createComplex(real * factor, imaginary * factor);\n    }\n\n    \n    public Complex negate() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(-real, -imaginary);\n    }\n\n    \n    public Complex subtract(Complex subtrahend) throws NullArgumentException {\n        MathUtils.checkNotNull(subtrahend);\n        if (isNaN || subtrahend.isNaN) {\n            return NaN;\n        }\n\n        return createComplex(real - subtrahend.getReal(),\n                             imaginary - subtrahend.getImaginary());\n    }\n\n    \n    public Complex subtract(double subtrahend) {\n        if (isNaN || Double.isNaN(subtrahend)) {\n            return NaN;\n        }\n        return createComplex(real - subtrahend, imaginary);\n    }\n\n    \n    public Complex acos() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return this.add(this.sqrt1z().multiply(I)).log()\n            .multiply(I.negate());\n    }\n\n    \n    public Complex asin() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return sqrt1z().add(this.multiply(I)).log()\n            .multiply(I.negate());\n    }\n\n    \n    public Complex atan() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return this.add(I).divide(I.subtract(this)).log()\n            .multiply(I.divide(createComplex(2.0, 0.0)));\n    }\n\n    \n    public Complex cos() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.cos(real) * MathUtils.cosh(imaginary),\n                             -FastMath.sin(real) * MathUtils.sinh(imaginary));\n    }\n\n    \n    public Complex cosh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(MathUtils.cosh(real) * FastMath.cos(imaginary),\n                             MathUtils.sinh(real) * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex exp() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double expReal = FastMath.exp(real);\n        return createComplex(expReal *  FastMath.cos(imaginary),\n                             expReal * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex log() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.log(abs()),\n                             FastMath.atan2(imaginary, real));\n    }\n\n    \n    public Complex pow(Complex x) throws NullArgumentException {\n        MathUtils.checkNotNull(x);\n        return this.log().multiply(x).exp();\n    }\n\n    \n     public Complex pow(double x) {\n        return this.log().multiply(x).exp();\n    }\n\n    \n    public Complex sin() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(FastMath.sin(real) * MathUtils.cosh(imaginary),\n                             FastMath.cos(real) * MathUtils.sinh(imaginary));\n    }\n\n    \n    public Complex sinh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        return createComplex(MathUtils.sinh(real) * FastMath.cos(imaginary),\n            MathUtils.cosh(real) * FastMath.sin(imaginary));\n    }\n\n    \n    public Complex sqrt() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        if (real == 0.0 && imaginary == 0.0) {\n            return createComplex(0.0, 0.0);\n        }\n\n        double t = FastMath.sqrt((FastMath.abs(real) + abs()) / 2.0);\n        if (real >= 0.0) {\n            return createComplex(t, imaginary / (2.0 * t));\n        } else {\n            return createComplex(FastMath.abs(imaginary) / (2.0 * t),\n                                 MathUtils.indicator(imaginary) * t);\n        }\n    }\n\n    \n    public Complex sqrt1z() {\n        return createComplex(1.0, 0.0).subtract(this.multiply(this)).sqrt();\n    }\n\n    \n    public Complex tan() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double real2 = 2.0 * real;\n        double imaginary2 = 2.0 * imaginary;\n        double d = FastMath.cos(real2) + MathUtils.cosh(imaginary2);\n\n        return createComplex(FastMath.sin(real2) / d,\n                             MathUtils.sinh(imaginary2) / d);\n    }\n\n    \n    public Complex tanh() {\n        if (isNaN) {\n            return NaN;\n        }\n\n        double real2 = 2.0 * real;\n        double imaginary2 = 2.0 * imaginary;\n        double d = MathUtils.cosh(real2) + FastMath.cos(imaginary2);\n\n        return createComplex(MathUtils.sinh(real2) / d,\n                             FastMath.sin(imaginary2) / d);\n    }\n\n\n\n    \n    public double getArgument() {\n        return FastMath.atan2(getImaginary(), getReal());\n    }\n\n    \n    public List<Complex> nthRoot(int n) {\n\n        if (n <= 0) {\n            throw new NotPositiveException(LocalizedFormats.CANNOT_COMPUTE_NTH_ROOT_FOR_NEGATIVE_N,\n                                           n);\n        }\n\n        final List<Complex> result = new ArrayList<Complex>();\n\n        if (isNaN) {\n            result.add(NaN);\n            return result;\n        }\n        if (isInfinite()) {\n            result.add(INF);\n            return result;\n        }\n\n        \n        final double nthRootOfAbs = FastMath.pow(abs(), 1.0 / n);\n\n        \n        final double nthPhi = getArgument() / n;\n        final double slice = 2 * FastMath.PI / n;\n        double innerPart = nthPhi;\n        for (int k = 0; k < n ; k++) {\n            \n            final double realPart = nthRootOfAbs *  FastMath.cos(innerPart);\n            final double imaginaryPart = nthRootOfAbs *  FastMath.sin(innerPart);\n            result.add(createComplex(realPart, imaginaryPart));\n            innerPart += slice;\n        }\n\n        return result;\n    }\n\n    \n    protected Complex createComplex(double realPart, double imaginaryPart) {\n        return new Complex(realPart, imaginaryPart);\n    }\n\n    \n    public static Complex valueOf(double realPart, double imaginaryPart) {\n        if (Double.isNaN(realPart) ||\n            Double.isNaN(imaginaryPart)) {\n            return NaN;\n        }\n        return new Complex(realPart, imaginaryPart);\n    }\n\n    \n    public static Complex valueOf(double realPart) {\n        if (Double.isNaN(realPart)) {\n            return NaN;\n        }\n        return new Complex(realPart);\n    }\n\n    \n    protected final Object readResolve() {\n        return createComplex(real, imaginary);\n    }\n\n    \n    public ComplexField getField() {\n        return ComplexField.getInstance();\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"(\" + real + \", \" + imaginary + \")\";\n    }\n}\n",
+      "buggy_signatures": [
+        "public Complex(double real, double imaginary)",
+        "public double abs()",
+        "public Complex add(Complex addend) throws NullArgumentException",
+        "public Complex add(double addend)",
+        "public Complex conjugate()",
+        "public Complex divide(Complex divisor) throws NullArgumentException",
+        "public Complex divide(double divisor)",
+        "public boolean equals(Object other)",
+        "public int hashCode()",
+        "public double getImaginary()",
+        "public double getReal()",
+        "public boolean isNaN()",
+        "public boolean isInfinite()",
+        "public Complex multiply(Complex factor) throws NullArgumentException",
+        "public Complex multiply(double factor)",
+        "public Complex negate()",
+        "public Complex subtract(Complex subtrahend) throws NullArgumentException",
+        "public Complex subtract(double subtrahend)",
+        "public Complex acos()",
+        "public Complex asin()",
+        "public Complex atan()",
+        "public Complex cos()",
+        "public Complex cosh()",
+        "public Complex exp()",
+        "public Complex log()",
+        "public Complex pow(Complex x) throws NullArgumentException",
+        "public Complex pow(double x)",
+        "public Complex sin()",
+        "public Complex sinh()",
+        "public Complex sqrt()",
+        "public Complex sqrt1z()",
+        "public Complex tan()",
+        "public Complex tanh()",
+        "public double getArgument()",
+        "public List<Complex> nthRoot(int n)",
+        "protected Complex createComplex(double realPart, double imaginaryPart)",
+        "public static Complex valueOf(double realPart, double imaginaryPart)",
+        "public static Complex valueOf(double realPart)",
+        "protected final Object readResolve()",
+        "public ComplexField getField()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public Complex(double real, double imaginary)",
+        "public double abs()",
+        "public Complex add(Complex addend) throws NullArgumentException",
+        "public Complex add(double addend)",
+        "public Complex conjugate()",
+        "public Complex divide(Complex divisor) throws NullArgumentException",
+        "public Complex divide(double divisor)",
+        "public boolean equals(Object other)",
+        "public int hashCode()",
+        "public double getImaginary()",
+        "public double getReal()",
+        "public boolean isNaN()",
+        "public boolean isInfinite()",
+        "public Complex multiply(Complex factor) throws NullArgumentException",
+        "public Complex multiply(double factor)",
+        "public Complex negate()",
+        "public Complex subtract(Complex subtrahend) throws NullArgumentException",
+        "public Complex subtract(double subtrahend)",
+        "public Complex acos()",
+        "public Complex asin()",
+        "public Complex atan()",
+        "public Complex cos()",
+        "public Complex cosh()",
+        "public Complex exp()",
+        "public Complex log()",
+        "public Complex pow(Complex x) throws NullArgumentException",
+        "public Complex pow(double x)",
+        "public Complex sin()",
+        "public Complex sinh()",
+        "public Complex sqrt()",
+        "public Complex sqrt1z()",
+        "public Complex tan()",
+        "public Complex tanh()",
+        "public double getArgument()",
+        "public List<Complex> nthRoot(int n)",
+        "protected Complex createComplex(double realPart, double imaginaryPart)",
+        "public static Complex valueOf(double realPart, double imaginaryPart)",
+        "public static Complex valueOf(double realPart)",
+        "protected final Object readResolve()",
+        "public ComplexField getField()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static final Complex ZERO = new Complex(0.0, 0.0); private static final long serialVersionUID = -6195664516687396620L; private final double imaginary; private final double real; private final transient boolean isNaN; private final transient boolean isInfinite; public Complex(double real) {\n  this(real, 0.0);\n  }",
+          "fixed_method": "  public static final Complex ZERO = new Complex(0.0, 0.0); private static final long serialVersionUID = -6195664516687396620L; private final double imaginary; private final double real; private final transient boolean isNaN; private final transient boolean isInfinite; private final transient boolean isZero; public Complex(double real) {\n  this(real, 0.0);\n  }",
+          "diff": [
+            "@@ -79,6 +79,7 @@",
+            "     /** Record whether this complex number is infinite. */\n",
+            "     private final transient boolean isInfinite;\n",
+            "     /** Record whether this complex number is zero. */\n",
+            "+    private final transient boolean isZero;\n",
+            " \n",
+            "     /**\n",
+            "      * Create a complex number given only the real part.\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public Complex(double real, double imaginary) {\n  this.real = real;\n  this.imaginary = imaginary;\n\n  isNaN = Double.isNaN(real) || Double.isNaN(imaginary);\n  isInfinite = !isNaN &&\n  (Double.isInfinite(real) || Double.isInfinite(imaginary));\n  }",
+          "fixed_method": "  public Complex(double real, double imaginary) {\n  this.real = real;\n  this.imaginary = imaginary;\n\n  isNaN = Double.isNaN(real) || Double.isNaN(imaginary);\n  isInfinite = !isNaN &&\n  (Double.isInfinite(real) || Double.isInfinite(imaginary));\n  isZero = real == 0 && imaginary == 0;\n  }",
+          "diff": [
+            "@@ -102,6 +103,7 @@",
+            "         isNaN = Double.isNaN(real) || Double.isNaN(imaginary);\n",
+            "         isInfinite = !isNaN &&\n",
+            "             (Double.isInfinite(real) || Double.isInfinite(imaginary));\n",
+            "+        isZero = real == 0 && imaginary == 0;\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public Complex divide(Complex divisor) throws NullArgumentException {\n  MathUtils.checkNotNull(divisor);\n  if (isNaN || divisor.isNaN) {\n  return NaN;\n  }\n\n  if (divisor.getReal() == 0.0 && divisor.getImaginary() == 0.0) {\n  return NaN;\n  }\n\n  if (divisor.isInfinite() && !isInfinite()) {\n  return ZERO;\n  }\n\n  final double c = divisor.getReal();\n  final double d = divisor.getImaginary();\n\n  if (FastMath.abs(c) < FastMath.abs(d)) {\n  double q = c / d;\n  double denominator = c * q + d;\n  return createComplex((real * q + imaginary) / denominator,\n  (imaginary * q - real) / denominator);\n  } else {\n  double q = d / c;\n  double denominator = d * q + c;\n  return createComplex((imaginary * q + real) / denominator,\n  (imaginary - real * q) / denominator);\n  }\n  }",
+          "fixed_method": "  public Complex divide(Complex divisor) throws NullArgumentException {\n  MathUtils.checkNotNull(divisor);\n  if (isNaN || divisor.isNaN) {\n  return NaN;\n  }\n\n  if (divisor.isZero) {\n  return isZero ? NaN : INF;\n  }\n\n  if (divisor.isInfinite() && !isInfinite()) {\n  return ZERO;\n  }\n\n  final double c = divisor.getReal();\n  final double d = divisor.getImaginary();\n\n  if (FastMath.abs(c) < FastMath.abs(d)) {\n  double q = c / d;\n  double denominator = c * q + d;\n  return createComplex((real * q + imaginary) / denominator,\n  (imaginary * q - real) / denominator);\n  } else {\n  double q = d / c;\n  double denominator = d * q + c;\n  return createComplex((imaginary * q + real) / denominator,\n  (imaginary - real * q) / denominator);\n  }\n  }",
+          "diff": [
+            "@@ -253,8 +255,8 @@",
+            "             return NaN;\n",
+            "         }\n",
+            " \n",
+            "-        if (divisor.getReal() == 0.0 && divisor.getImaginary() == 0.0) {\n",
+            "-            return NaN;\n",
+            "+        if (divisor.isZero) {\n",
+            "+            return isZero ? NaN : INF;\n",
+            "         }\n",
+            " \n",
+            "         if (divisor.isInfinite() && !isInfinite()) {\n"
+          ],
+          "changed_lines": 4
+        },
+        {
+          "buggy_method": "  public Complex divide(double divisor) {\n  if (isNaN || Double.isNaN(divisor)) {\n  return NaN;\n  }\n  if (divisor == 0d) {\n  return NaN;\n  }\n  if (Double.isInfinite(divisor)) {\n  return !isInfinite() ? ZERO : NaN;\n  }\n  return createComplex(real / divisor,\n  imaginary  / divisor);\n  }",
+          "fixed_method": "  public Complex divide(double divisor) {\n  if (isNaN || Double.isNaN(divisor)) {\n  return NaN;\n  }\n  if (divisor == 0d) {\n  return isZero ? NaN : INF;\n  }\n  if (Double.isInfinite(divisor)) {\n  return !isInfinite() ? ZERO : NaN;\n  }\n  return createComplex(real / divisor,\n  imaginary  / divisor);\n  }",
+          "diff": [
+            "@@ -290,7 +292,7 @@",
+            "             return NaN;\n",
+            "         }\n",
+            "         if (divisor == 0d) {\n",
+            "-            return NaN;\n",
+            "+            return isZero ? NaN : INF;\n",
+            "         }\n",
+            "         if (Double.isInfinite(divisor)) {\n",
+            "             return !isInfinite() ? ZERO : NaN;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

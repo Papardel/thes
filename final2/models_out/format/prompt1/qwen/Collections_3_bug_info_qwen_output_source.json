@@ -1,0 +1,10 @@
+{
+  "bug_id": "Collections_3_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 3\nTest Class: org.apache.commons.collections.TestCollectionUtils\nMethod: testRemoveAll\nError: junit.framework.AssertionFailedError\nMessage: expected:<1> but was:<2>\nFailing Line:         assertEquals(1, result.size());\nTest Source:\npublic void testRemoveAll() {\n  List base = new ArrayList();\n  base.add(\"A\");\n  base.add(\"B\");\n  base.add(\"C\");\n  List sub = new ArrayList();\n  sub.add(\"A\");\n  sub.add(\"C\");\n  sub.add(\"X\");\n  \n  Collection result = CollectionUtils.removeAll(base, sub);\n  assertEquals(1, result.size());\n  assertEquals(false, result.contains(\"A\"));\n  assertEquals(true, result.contains(\"B\"));\n  assertEquals(false, result.contains(\"C\"));\n  assertEquals(3, base.size());\n  assertEquals(true, base.contains(\"A\"));\n  assertEquals(true, base.contains(\"B\"));\n  assertEquals(true, base.contains(\"C\"));\n  assertEquals(3, sub.size());\n  assertEquals(true, sub.contains(\"A\"));\n  assertEquals(true, sub.contains(\"C\"));\n  assertEquals(true, sub.contains(\"X\"));\n  \n  try {\n  CollectionUtils.removeAll(null, null);\n  fail(\"expecting NullPointerException\");\n  } catch(NullPointerException npe){} \n  }\nStack Trace:\nTestCollectionUtils.testRemoveAll line 1283\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- classes within the same package and file as the test class.\n- the full stack trace or error message.\n\nRESPONSE: org.apache.commons.collections.CollectionUtils"
+    }
+  ]
+}

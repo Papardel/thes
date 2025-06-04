@@ -1,0 +1,91 @@
+{
+  "bug_id": "21",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.model.JXPath151Test": [
+      {
+        "methodName": "testMapValueEquality",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating <map/b != map/a> expected:<true> but was:<false>",
+        "fail_line": "        assertXPathValue(context, \"map/b != map/a\", Boolean.TRUE);",
+        "test_source": "  public void testMapValueEquality() {\n  assertXPathValue(context, \"map/b != map/a\", Boolean.TRUE);\n  assertXPathValue(context, \"map/a != map/b\", Boolean.TRUE);\n  assertXPathValue(context, \"map/a != map/c\", Boolean.FALSE);\n  assertXPathValue(context, \"map/a = map/b\", Boolean.FALSE);\n  assertXPathValue(context, \"map/a = map/c\", Boolean.TRUE);\n  assertXPathValue(context, \"not(map/a = map/b)\", Boolean.TRUE);\n  assertXPathValue(context, \"not(map/a = map/c)\", Boolean.FALSE);\n  }",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 52, JXPath151Test.testMapValueEquality line 43"
+        ]
+      }
+    ],
+    "org.apache.commons.jxpath.ri.model.MixedModelTest": [
+      {
+        "methodName": "testNull",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating value iterator <$testnull/nothing[1]> expected:<[null]> but was:<[]>",
+        "fail_line": "        assertXPathValueIterator(",
+        "test_source": "  public void testNull() {\n\n  assertXPathPointerLenient(context, \"$null\", \"$null\");\n\n  assertXPathPointerLenient(context, \"$null[3]\", \"$null[3]\");\n\n  assertXPathPointerLenient(\n  context,\n  \"$testnull/nothing\",\n  \"$testnull/nothing\");\n\n  assertXPathPointerLenient(\n  context,\n  \"$testnull/nothing[2]\",\n  \"$testnull/nothing[2]\");\n\n  assertXPathPointerLenient(context, \"beans[8]/int\", \"/beans[8]/int\");\n\n  assertXPathValueIterator(\n  context,\n  \"$testnull/nothing[1]\",\n  list(null));\n\n  JXPathContext ctx = JXPathContext.newContext(new TestNull());\n  assertXPathValue(ctx, \"nothing\", null);\n\n  assertXPathValue(ctx, \"child/nothing\", null);\n\n  assertXPathValue(ctx, \"array[2]\", null);\n\n  assertXPathValueLenient(ctx, \"nothing/something\", null);\n\n  assertXPathValueLenient(ctx, \"array[2]/something\", null);\n  }",
+        "stack": [
+          "JXPathTestCase.assertXPathValueIterator line 155, MixedModelTest.testNull line 315"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/model/beans/PropertyPointer.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.model.beans;\n\nimport org.apache.commons.jxpath.AbstractFactory;\nimport org.apache.commons.jxpath.JXPathAbstractFactoryException;\nimport org.apache.commons.jxpath.JXPathContext;\nimport org.apache.commons.jxpath.JXPathIntrospector;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.apache.commons.jxpath.util.ValueUtils;\n\n\npublic abstract class PropertyPointer extends NodePointer { public static final int UNSPECIFIED_PROPERTY = Integer.MIN_VALUE; protected int propertyIndex = UNSPECIFIED_PROPERTY; protected Object bean; public PropertyPointer(NodePointer parent) {\n        super(parent);\n    }\n\n    \n    public int getPropertyIndex() {\n        return propertyIndex;\n    }\n\n    \n    public void setPropertyIndex(int index) {\n        if (propertyIndex != index) {\n            propertyIndex = index;\n            setIndex(WHOLE_COLLECTION);\n        }\n    }\n\n    \n    public Object getBean() {\n        if (bean == null) {\n            bean = getImmediateParentPointer().getNode();\n        }\n        return bean;\n    }\n\n    public QName getName() {\n        return new QName(null, getPropertyName());\n    }\n\n    \n    public abstract String getPropertyName(); public abstract void setPropertyName(String propertyName); public abstract int getPropertyCount(); public abstract String[] getPropertyNames(); protected abstract boolean isActualProperty(); public boolean isActual() {\n        if (!isActualProperty()) {\n            return false;\n        }\n\n        return super.isActual();\n    }\n\n    private static final Object UNINITIALIZED = new Object(); private Object value = UNINITIALIZED; public Object getImmediateNode() {\n        if (value == UNINITIALIZED) {\n            value = index == WHOLE_COLLECTION ? ValueUtils.getValue(getBaseValue())\n                    : ValueUtils.getValue(getBaseValue(), index);\n        }\n        return value;\n    }\n\n    public boolean isCollection() {\n        Object value = getBaseValue();\n        return value != null && ValueUtils.isCollection(value);\n    }\n\n    public boolean isLeaf() {\n        Object value = getNode();\n        return value == null || JXPathIntrospector.getBeanInfo(value.getClass()).isAtomic();\n    }\n\n    \n    public int getLength() {\n        return ValueUtils.getLength(getBaseValue());\n    }\n\n    \n    public NodePointer getImmediateValuePointer() {\n        return NodePointer.newChildNodePointer(\n            (NodePointer) this.clone(),\n            getName(),\n            getImmediateNode());\n    }\n\n    public NodePointer createPath(JXPathContext context) {\n        if (getImmediateNode() == null) {\n            AbstractFactory factory = getAbstractFactory(context);\n            int inx = (index == WHOLE_COLLECTION ? 0 : index);\n            boolean success =\n                factory.createObject(\n                    context,\n                    this,\n                    getBean(),\n                    getPropertyName(),\n                    inx);\n            if (!success) {\n                throw new JXPathAbstractFactoryException(\"Factory \" + factory\n                        + \" could not create an object for path: \" + asPath());\n            }\n        }\n        return this;\n    }\n\n    public NodePointer createPath(JXPathContext context, Object value) {\n        \n        if (index != WHOLE_COLLECTION && index >= getLength()) {\n            createPath(context);\n        }\n        setValue(value);\n        return this;\n    }\n\n    public NodePointer createChild( JXPathContext context, QName name, int index, Object value) {\n        PropertyPointer prop = (PropertyPointer) clone();\n        if (name != null) {\n            prop.setPropertyName(name.toString());\n        }\n        prop.setIndex(index);\n        return prop.createPath(context, value);\n    }\n\n    public NodePointer createChild( JXPathContext context, QName name, int index) {\n        PropertyPointer prop = (PropertyPointer) clone();\n        if (name != null) {\n            prop.setPropertyName(name.toString());\n        }\n        prop.setIndex(index);\n        return prop.createPath(context);\n    }\n\n    public int hashCode() {\n        return getImmediateParentPointer().hashCode() + propertyIndex + index;\n    }\n\n    public boolean equals(Object object) {\n        if (object == this) {\n            return true;\n        }\n\n        if (!(object instanceof PropertyPointer)) {\n            return false;\n        }\n\n        PropertyPointer other = (PropertyPointer) object;\n        if (parent != other.parent && (parent == null || !parent.equals(other.parent))) {\n            return false;\n        }\n\n        if (getPropertyIndex() != other.getPropertyIndex()\n            || !getPropertyName().equals(other.getPropertyName())) {\n            return false;\n        }\n\n        int iThis = (index == WHOLE_COLLECTION ? 0 : index);\n        int iOther = (other.index == WHOLE_COLLECTION ? 0 : other.index);\n        return iThis == iOther;\n    }\n\n    public int compareChildNodePointers( NodePointer pointer1, NodePointer pointer2) {\n        return getValuePointer().compareChildNodePointers(pointer1, pointer2);\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.model.beans;\n\nimport org.apache.commons.jxpath.AbstractFactory;\nimport org.apache.commons.jxpath.JXPathAbstractFactoryException;\nimport org.apache.commons.jxpath.JXPathContext;\nimport org.apache.commons.jxpath.JXPathIntrospector;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.apache.commons.jxpath.util.ValueUtils;\n\n\npublic abstract class PropertyPointer extends NodePointer { public static final int UNSPECIFIED_PROPERTY = Integer.MIN_VALUE; protected int propertyIndex = UNSPECIFIED_PROPERTY; protected Object bean; public PropertyPointer(NodePointer parent) {\n        super(parent);\n    }\n\n    \n    public int getPropertyIndex() {\n        return propertyIndex;\n    }\n\n    \n    public void setPropertyIndex(int index) {\n        if (propertyIndex != index) {\n            propertyIndex = index;\n            setIndex(WHOLE_COLLECTION);\n        }\n    }\n\n    \n    public Object getBean() {\n        if (bean == null) {\n            bean = getImmediateParentPointer().getNode();\n        }\n        return bean;\n    }\n\n    public QName getName() {\n        return new QName(null, getPropertyName());\n    }\n\n    \n    public abstract String getPropertyName(); public abstract void setPropertyName(String propertyName); public abstract int getPropertyCount(); public abstract String[] getPropertyNames(); protected abstract boolean isActualProperty(); public boolean isActual() {\n        if (!isActualProperty()) {\n            return false;\n        }\n\n        return super.isActual();\n    }\n\n    private static final Object UNINITIALIZED = new Object(); private Object value = UNINITIALIZED; public Object getImmediateNode() {\n        if (value == UNINITIALIZED) {\n            value = index == WHOLE_COLLECTION ? ValueUtils.getValue(getBaseValue())\n                    : ValueUtils.getValue(getBaseValue(), index);\n        }\n        return value;\n    }\n\n    public boolean isCollection() {\n        Object value = getBaseValue();\n        return value != null && ValueUtils.isCollection(value);\n    }\n\n    public boolean isLeaf() {\n        Object value = getNode();\n        return value == null || JXPathIntrospector.getBeanInfo(value.getClass()).isAtomic();\n    }\n\n    \n    public int getLength() {\n        Object baseValue = getBaseValue();\n        return baseValue == null ? 1 : ValueUtils.getLength(baseValue);\n    }\n\n    \n    public NodePointer getImmediateValuePointer() {\n        return NodePointer.newChildNodePointer(\n            (NodePointer) this.clone(),\n            getName(),\n            getImmediateNode());\n    }\n\n    public NodePointer createPath(JXPathContext context) {\n        if (getImmediateNode() == null) {\n            AbstractFactory factory = getAbstractFactory(context);\n            int inx = (index == WHOLE_COLLECTION ? 0 : index);\n            boolean success =\n                factory.createObject(\n                    context,\n                    this,\n                    getBean(),\n                    getPropertyName(),\n                    inx);\n            if (!success) {\n                throw new JXPathAbstractFactoryException(\"Factory \" + factory\n                        + \" could not create an object for path: \" + asPath());\n            }\n        }\n        return this;\n    }\n\n    public NodePointer createPath(JXPathContext context, Object value) {\n        \n        if (index != WHOLE_COLLECTION && index >= getLength()) {\n            createPath(context);\n        }\n        setValue(value);\n        return this;\n    }\n\n    public NodePointer createChild( JXPathContext context, QName name, int index, Object value) {\n        PropertyPointer prop = (PropertyPointer) clone();\n        if (name != null) {\n            prop.setPropertyName(name.toString());\n        }\n        prop.setIndex(index);\n        return prop.createPath(context, value);\n    }\n\n    public NodePointer createChild( JXPathContext context, QName name, int index) {\n        PropertyPointer prop = (PropertyPointer) clone();\n        if (name != null) {\n            prop.setPropertyName(name.toString());\n        }\n        prop.setIndex(index);\n        return prop.createPath(context);\n    }\n\n    public int hashCode() {\n        return getImmediateParentPointer().hashCode() + propertyIndex + index;\n    }\n\n    public boolean equals(Object object) {\n        if (object == this) {\n            return true;\n        }\n\n        if (!(object instanceof PropertyPointer)) {\n            return false;\n        }\n\n        PropertyPointer other = (PropertyPointer) object;\n        if (parent != other.parent && (parent == null || !parent.equals(other.parent))) {\n            return false;\n        }\n\n        if (getPropertyIndex() != other.getPropertyIndex()\n            || !getPropertyName().equals(other.getPropertyName())) {\n            return false;\n        }\n\n        int iThis = (index == WHOLE_COLLECTION ? 0 : index);\n        int iOther = (other.index == WHOLE_COLLECTION ? 0 : other.index);\n        return iThis == iOther;\n    }\n\n    public int compareChildNodePointers( NodePointer pointer1, NodePointer pointer2) {\n        return getValuePointer().compareChildNodePointers(pointer1, pointer2);\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public int getPropertyIndex()",
+        "public void setPropertyIndex(int index)",
+        "public Object getBean()",
+        "public QName getName()",
+        "public abstract String getPropertyName(); public abstract void setPropertyName(String propertyName); public abstract int getPropertyCount(); public abstract String[] getPropertyNames(); protected abstract boolean isActualProperty(); public boolean isActual()",
+        "public boolean isCollection()",
+        "public boolean isLeaf()",
+        "public int getLength()",
+        "public NodePointer getImmediateValuePointer()",
+        "public NodePointer createPath(JXPathContext context)",
+        "public NodePointer createPath(JXPathContext context, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index)",
+        "public int hashCode()",
+        "public boolean equals(Object object)",
+        "public int compareChildNodePointers( NodePointer pointer1, NodePointer pointer2)"
+      ],
+      "fixed_signatures": [
+        "public int getPropertyIndex()",
+        "public void setPropertyIndex(int index)",
+        "public Object getBean()",
+        "public QName getName()",
+        "public abstract String getPropertyName(); public abstract void setPropertyName(String propertyName); public abstract int getPropertyCount(); public abstract String[] getPropertyNames(); protected abstract boolean isActualProperty(); public boolean isActual()",
+        "public boolean isCollection()",
+        "public boolean isLeaf()",
+        "public int getLength()",
+        "public NodePointer getImmediateValuePointer()",
+        "public NodePointer createPath(JXPathContext context)",
+        "public NodePointer createPath(JXPathContext context, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index)",
+        "public int hashCode()",
+        "public boolean equals(Object object)",
+        "public int compareChildNodePointers( NodePointer pointer1, NodePointer pointer2)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int getLength() {\n  return ValueUtils.getLength(getBaseValue());\n  }",
+          "fixed_method": "  public int getLength() {\n  Object baseValue = getBaseValue();\n  return baseValue == null ? 1 : ValueUtils.getLength(baseValue);\n  }",
+          "diff": [
+            "@@ -149,7 +149,8 @@",
+            "      * @return int length\n",
+            "      */\n",
+            "     public int getLength() {\n",
+            "-        return ValueUtils.getLength(getBaseValue());\n",
+            "+        Object baseValue = getBaseValue();\n",
+            "+        return baseValue == null ? 1 : ValueUtils.getLength(baseValue);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

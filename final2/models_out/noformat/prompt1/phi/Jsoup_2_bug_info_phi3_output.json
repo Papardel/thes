@@ -1,0 +1,13 @@
+{
+  "bug_id": "Jsoup_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 2\nTest Class: org.jsoup.parser.ParserTest\nMethod: handlesTextAfterData\nError: junit.framework.AssertionFailedError\nMessage: expected:<...dy>pre <script>inner[</script> aft]</body></html>> but was:<...dy>pre <script>inner[ aft</script>]</body></html>>\nFailing Line:         assertEquals(\"<html><head></head><body>pre <script>inner</script> aft</body></html>\", TextUtil.stripNewlines(doc.html()));\nTest Source:\n\nStack Trace:\nParserTest.handlesTextAfterData line 138\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "# Answer \nRESPONSE: org.jsoup.parser.ParserTest"
+    }
+  ],
+  "classes": [
+    "Parser"
+  ]
+}

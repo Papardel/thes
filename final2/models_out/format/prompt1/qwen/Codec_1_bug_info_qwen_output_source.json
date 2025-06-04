@@ -1,0 +1,30 @@
+{
+  "bug_id": "Codec_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.apache.commons.codec.language.CaverphoneTest\nMethod: testLocaleIndependence\nError: junit.framework.ComparisonFailure\nMessage: tr:  expected:<[A]111111111> but was:<[1]111111111>\nFailing Line: \nTest Source:\n\nStack Trace:\nStringEncoderAbstractTest.testLocaleIndependence line 91\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- the implementation of the method containing the error, e.g. JsonNodeCreatorTest.constructFromMap,\n- any inner classes, even if they are not static,\n- any anonymous classes,\n- any lambda expressions,\n- any interface.\n\nRESPONSE: java.util.AbstractList<String>"
+    },
+    {
+      "prompt_index": 2,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.apache.commons.codec.language.DoubleMetaphoneTest\nMethod: testLocaleIndependence\nError: junit.framework.ComparisonFailure\nMessage: tr:  expected:<[I]> but was:<[\u0130]>\nFailing Line: \nTest Source:\n\nStack Trace:\nStringEncoderAbstractTest.testLocaleIndependence line 91\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "```"
+    },
+    {
+      "prompt_index": 3,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.apache.commons.codec.language.MetaphoneTest\nMethod: testLocaleIndependence\nError: junit.framework.ComparisonFailure\nMessage: tr:  expected:<[I]> but was:<[\u0130]>\nFailing Line: \nTest Source:\n\nStack Trace:\nStringEncoderAbstractTest.testLocaleIndependence line 91\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "```\n\n\n\n\n\n\ns\n```"
+    },
+    {
+      "prompt_index": 4,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.apache.commons.codec.language.RefinedSoundexTest\nMethod: testLocaleIndependence\nError: junit.framework.AssertionFailedError\nMessage: tr: Index 239 out of bounds for length 26\nFailing Line: \nTest Source:\n\nStack Trace:\nStringEncoderAbstractTest.testLocaleIndependence line 89\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any JUnit framework class or interface.\n- any JDK class.\n- the main application class (e.g. org.example.Application).\n- any third-party library class.\n- any generated class (e.g. by Byte Buddy or ASM).\n\n- And do not return the full package name, only the class name."
+    },
+    {
+      "prompt_index": 5,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.apache.commons.codec.language.SoundexTest\nMethod: testLocaleIndependence\nError: junit.framework.AssertionFailedError\nMessage: tr: The character is not mapped: \u0130\nFailing Line: \nTest Source:\n\nStack Trace:\nStringEncoderAbstractTest.testLocaleIndependence line 89\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any third-party library class such as java.util.ArrayList or org.apache.commons.lang3.StringUtils.\n\nRESPONSE: com.fasterxml.jackson.databind.JsonMappingException$ReferenceHandling.RECURSE"
+    }
+  ]
+}

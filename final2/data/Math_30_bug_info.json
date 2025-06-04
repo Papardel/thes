@@ -1,0 +1,60 @@
+{
+  "bug_id": "30",
+  "failed_tests": {
+    "org.apache.commons.math3.stat.inference.MannWhitneyUTestTest": [
+      {
+        "methodName": "testBigDataSet",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        Assert.assertTrue(result > 0.1);",
+        "test_source": "  public void testBigDataSet() throws Exception {\n  double[] d1 = new double[1500];\n  double[] d2 = new double[1500];\n  for (int i = 0; i < 1500; i++) {\n  d1[i] = 2 * i;\n  d2[i] = 2 * i + 1;\n  }\n  double result = testStatistic.mannWhitneyUTest(d1, d2);\n  Assert.assertTrue(result > 0.1);\n  }",
+        "stack": [
+          "MannWhitneyUTestTest.testBigDataSet line 113"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/stat/inference/MannWhitneyUTest.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.stat.inference;\n\nimport org.apache.commons.math3.distribution.NormalDistribution;\nimport org.apache.commons.math3.exception.ConvergenceException;\nimport org.apache.commons.math3.exception.MaxCountExceededException;\nimport org.apache.commons.math3.exception.NoDataException;\nimport org.apache.commons.math3.exception.NullArgumentException;\nimport org.apache.commons.math3.stat.ranking.NaNStrategy;\nimport org.apache.commons.math3.stat.ranking.NaturalRanking;\nimport org.apache.commons.math3.stat.ranking.TiesStrategy;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class MannWhitneyUTest { private NaturalRanking naturalRanking; public MannWhitneyUTest() {\n        naturalRanking = new NaturalRanking(NaNStrategy.FIXED,\n                TiesStrategy.AVERAGE);\n    }\n\n    \n    public MannWhitneyUTest(final NaNStrategy nanStrategy, final TiesStrategy tiesStrategy) {\n        naturalRanking = new NaturalRanking(nanStrategy, tiesStrategy);\n    }\n\n    \n    private void ensureDataConformance(final double[] x, final double[] y) throws NullArgumentException, NoDataException {\n\n        if (x == null ||\n            y == null) {\n            throw new NullArgumentException();\n        }\n        if (x.length == 0 ||\n            y.length == 0) {\n            throw new NoDataException();\n        }\n    }\n\n    \n    private double[] concatenateSamples(final double[] x, final double[] y) {\n        final double[] z = new double[x.length + y.length];\n\n        System.arraycopy(x, 0, z, 0, x.length);\n        System.arraycopy(y, 0, z, x.length, y.length);\n\n        return z;\n    }\n\n    \n    public double mannWhitneyU(final double[] x, final double[] y) throws NullArgumentException, NoDataException {\n\n        ensureDataConformance(x, y);\n\n        final double[] z = concatenateSamples(x, y);\n        final double[] ranks = naturalRanking.rank(z);\n\n        double sumRankX = 0;\n\n        \n        for (int i = 0; i < x.length; ++i) {\n            sumRankX += ranks[i];\n        }\n\n        \n        final double U1 = sumRankX - (x.length * (x.length + 1)) / 2;\n\n        \n        final double U2 = x.length * y.length - U1;\n\n        return FastMath.max(U1, U2);\n    }\n\n    \n    private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException {\n\n        final int n1n2prod = n1 * n2;\n\n        \n        final double EU = n1n2prod / 2.0;\n        final double VarU = n1n2prod * (n1 + n2 + 1) / 12.0;\n\n        final double z = (Umin - EU) / FastMath.sqrt(VarU);\n\n        final NormalDistribution standardNormal = new NormalDistribution(0, 1);\n\n        return 2 * standardNormal.cumulativeProbability(z);\n    }\n\n    \n    public double mannWhitneyUTest(final double[] x, final double[] y) throws NullArgumentException, NoDataException, ConvergenceException, MaxCountExceededException {\n\n        ensureDataConformance(x, y);\n\n        final double Umax = mannWhitneyU(x, y);\n\n        \n        final double Umin = x.length * y.length - Umax;\n\n        return calculateAsymptoticPValue(Umin, x.length, y.length);\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.stat.inference;\n\nimport org.apache.commons.math3.distribution.NormalDistribution;\nimport org.apache.commons.math3.exception.ConvergenceException;\nimport org.apache.commons.math3.exception.MaxCountExceededException;\nimport org.apache.commons.math3.exception.NoDataException;\nimport org.apache.commons.math3.exception.NullArgumentException;\nimport org.apache.commons.math3.stat.ranking.NaNStrategy;\nimport org.apache.commons.math3.stat.ranking.NaturalRanking;\nimport org.apache.commons.math3.stat.ranking.TiesStrategy;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class MannWhitneyUTest { private NaturalRanking naturalRanking; public MannWhitneyUTest() {\n        naturalRanking = new NaturalRanking(NaNStrategy.FIXED,\n                TiesStrategy.AVERAGE);\n    }\n\n    \n    public MannWhitneyUTest(final NaNStrategy nanStrategy, final TiesStrategy tiesStrategy) {\n        naturalRanking = new NaturalRanking(nanStrategy, tiesStrategy);\n    }\n\n    \n    private void ensureDataConformance(final double[] x, final double[] y) throws NullArgumentException, NoDataException {\n\n        if (x == null ||\n            y == null) {\n            throw new NullArgumentException();\n        }\n        if (x.length == 0 ||\n            y.length == 0) {\n            throw new NoDataException();\n        }\n    }\n\n    \n    private double[] concatenateSamples(final double[] x, final double[] y) {\n        final double[] z = new double[x.length + y.length];\n\n        System.arraycopy(x, 0, z, 0, x.length);\n        System.arraycopy(y, 0, z, x.length, y.length);\n\n        return z;\n    }\n\n    \n    public double mannWhitneyU(final double[] x, final double[] y) throws NullArgumentException, NoDataException {\n\n        ensureDataConformance(x, y);\n\n        final double[] z = concatenateSamples(x, y);\n        final double[] ranks = naturalRanking.rank(z);\n\n        double sumRankX = 0;\n\n        \n        for (int i = 0; i < x.length; ++i) {\n            sumRankX += ranks[i];\n        }\n\n        \n        final double U1 = sumRankX - (x.length * (x.length + 1)) / 2;\n\n        \n        final double U2 = x.length * y.length - U1;\n\n        return FastMath.max(U1, U2);\n    }\n\n    \n    private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException {\n\n        final double n1n2prod = n1 * n2;\n\n        \n        final double EU = n1n2prod / 2.0;\n        final double VarU = n1n2prod * (n1 + n2 + 1) / 12.0;\n\n        final double z = (Umin - EU) / FastMath.sqrt(VarU);\n\n        final NormalDistribution standardNormal = new NormalDistribution(0, 1);\n\n        return 2 * standardNormal.cumulativeProbability(z);\n    }\n\n    \n    public double mannWhitneyUTest(final double[] x, final double[] y) throws NullArgumentException, NoDataException, ConvergenceException, MaxCountExceededException {\n\n        ensureDataConformance(x, y);\n\n        final double Umax = mannWhitneyU(x, y);\n\n        \n        final double Umin = x.length * y.length - Umax;\n\n        return calculateAsymptoticPValue(Umin, x.length, y.length);\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class MannWhitneyUTest { private NaturalRanking naturalRanking; public MannWhitneyUTest()",
+        "public MannWhitneyUTest(final NaNStrategy nanStrategy, final TiesStrategy tiesStrategy)",
+        "private void ensureDataConformance(final double[] x, final double[] y) throws NullArgumentException, NoDataException",
+        "private double[] concatenateSamples(final double[] x, final double[] y)",
+        "public double mannWhitneyU(final double[] x, final double[] y) throws NullArgumentException, NoDataException",
+        "private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException",
+        "public double mannWhitneyUTest(final double[] x, final double[] y) throws NullArgumentException, NoDataException, ConvergenceException, MaxCountExceededException"
+      ],
+      "fixed_signatures": [
+        "public class MannWhitneyUTest { private NaturalRanking naturalRanking; public MannWhitneyUTest()",
+        "public MannWhitneyUTest(final NaNStrategy nanStrategy, final TiesStrategy tiesStrategy)",
+        "private void ensureDataConformance(final double[] x, final double[] y) throws NullArgumentException, NoDataException",
+        "private double[] concatenateSamples(final double[] x, final double[] y)",
+        "public double mannWhitneyU(final double[] x, final double[] y) throws NullArgumentException, NoDataException",
+        "private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException",
+        "public double mannWhitneyUTest(final double[] x, final double[] y) throws NullArgumentException, NoDataException, ConvergenceException, MaxCountExceededException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException {\n\n  final int n1n2prod = n1 * n2;\n\n  \n  final double EU = n1n2prod / 2.0;\n  final double VarU = n1n2prod * (n1 + n2 + 1) / 12.0;\n\n  final double z = (Umin - EU) / FastMath.sqrt(VarU);\n\n  final NormalDistribution standardNormal = new NormalDistribution(0, 1);\n\n  return 2 * standardNormal.cumulativeProbability(z);\n  }",
+          "fixed_method": "  private double calculateAsymptoticPValue(final double Umin, final int n1, final int n2) throws ConvergenceException, MaxCountExceededException {\n\n  final double n1n2prod = n1 * n2;\n\n  \n  final double EU = n1n2prod / 2.0;\n  final double VarU = n1n2prod * (n1 + n2 + 1) / 12.0;\n\n  final double z = (Umin - EU) / FastMath.sqrt(VarU);\n\n  final NormalDistribution standardNormal = new NormalDistribution(0, 1);\n\n  return 2 * standardNormal.cumulativeProbability(z);\n  }",
+          "diff": [
+            "@@ -170,7 +170,7 @@",
+            "                                              final int n2)\n",
+            "         throws ConvergenceException, MaxCountExceededException {\n",
+            " \n",
+            "-        final int n1n2prod = n1 * n2;\n",
+            "+        final double n1n2prod = n1 * n2;\n",
+            " \n",
+            "         // http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U#Normal_approximation\n",
+            "         final double EU = n1n2prod / 2.0;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

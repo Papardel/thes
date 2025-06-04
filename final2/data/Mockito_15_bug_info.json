@@ -1,0 +1,68 @@
+{
+  "bug_id": "15",
+  "failed_tests": {
+    "org.mockitousage.bugs.InjectMocksShouldTryPropertySettersFirstBeforeFieldAccessTest": [
+      {
+        "methodName": "shouldInjectUsingPropertySetterIfAvailable",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(awaitingInjection.propertySetterUsed);",
+        "test_source": "  public void shouldInjectUsingPropertySetterIfAvailable() {\n  assertTrue(awaitingInjection.propertySetterUsed);\n  }",
+        "stack": [
+          "InjectMocksShouldTryPropertySettersFirstBeforeFieldAccessTest.shouldInjectUsingPropertySetterIfAvailable line 25, JUnit45AndHigherRunnerImpl.run line 37, MockitoJUnitRunner.run line 62"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/configuration/injection/FinalMockCandidateFilter.java",
+      "buggy_full_code": "package org.mockito.internal.configuration.injection;\n\nimport org.mockito.exceptions.base.MockitoException;\nimport org.mockito.internal.util.reflection.FieldSetter;\n\nimport java.lang.reflect.Field;\nimport java.util.Collection;\n\n\npublic class FinalMockCandidateFilter implements MockCandidateFilter { public OngoingInjecter filterCandidate(final Collection<Object> mocks, final Field field, final Object fieldInstance) {\n        if(mocks.size() == 1) {\n            final Object matchingMock = mocks.iterator().next();\n\n            return new OngoingInjecter() {\n                public boolean thenInject() {\n                    try {\n                            new FieldSetter(fieldInstance, field).set(matchingMock);\n                    } catch (Exception e) {\n                        throw new MockitoException(\"Problems injecting dependency in \" + field.getName(), e);\n                    }\n                    return true;\n                }\n            };\n        }\n\n        return new OngoingInjecter() {\n            public boolean thenInject() {\n                return false;\n            }\n        };\n\n    }\n}\n",
+      "fixed_full_code": "package org.mockito.internal.configuration.injection;\n\nimport org.mockito.exceptions.base.MockitoException;\nimport org.mockito.internal.util.reflection.BeanPropertySetter;\nimport org.mockito.internal.util.reflection.FieldSetter;\n\nimport java.lang.reflect.Field;\nimport java.util.Collection;\n\n\npublic class FinalMockCandidateFilter implements MockCandidateFilter { public OngoingInjecter filterCandidate(final Collection<Object> mocks, final Field field, final Object fieldInstance) {\n        if(mocks.size() == 1) {\n            final Object matchingMock = mocks.iterator().next();\n\n            return new OngoingInjecter() {\n                public boolean thenInject() {\n                    try {\n                        if (!new BeanPropertySetter(fieldInstance, field).set(matchingMock)) {\n                            new FieldSetter(fieldInstance, field).set(matchingMock);\n                        }\n                    } catch (Exception e) {\n                        throw new MockitoException(\"Problems injecting dependency in \" + field.getName(), e);\n                    }\n                    return true;\n                }\n            };\n        }\n\n        return new OngoingInjecter() {\n            public boolean thenInject() {\n                return false;\n            }\n        };\n\n    }\n}\n",
+      "buggy_signatures": [
+        "public class FinalMockCandidateFilter implements MockCandidateFilter { public OngoingInjecter filterCandidate(final Collection<Object> mocks, final Field field, final Object fieldInstance)",
+        "public boolean thenInject()",
+        "public boolean thenInject()"
+      ],
+      "fixed_signatures": [
+        "public class FinalMockCandidateFilter implements MockCandidateFilter { public OngoingInjecter filterCandidate(final Collection<Object> mocks, final Field field, final Object fieldInstance)",
+        "public boolean thenInject()",
+        "public boolean thenInject()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -1,6 +1,7 @@",
+            " package org.mockito.internal.configuration.injection;\n",
+            " \n",
+            " import org.mockito.exceptions.base.MockitoException;\n",
+            "+import org.mockito.internal.util.reflection.BeanPropertySetter;\n",
+            " import org.mockito.internal.util.reflection.FieldSetter;\n",
+            " \n",
+            " import java.lang.reflect.Field;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public boolean thenInject() {\n  try {\n  new FieldSetter(fieldInstance, field).set(matchingMock);\n  } catch (Exception e) {\n  throw new MockitoException(\"Problems injecting dependency in \" + field.getName(), e);\n  }\n  return true;\n  }",
+          "fixed_method": "  public boolean thenInject() {\n  try {\n  if (!new BeanPropertySetter(fieldInstance, field).set(matchingMock)) {\n  new FieldSetter(fieldInstance, field).set(matchingMock);\n  }\n  } catch (Exception e) {\n  throw new MockitoException(\"Problems injecting dependency in \" + field.getName(), e);\n  }\n  return true;\n  }",
+          "diff": [
+            "@@ -22,7 +23,9 @@",
+            "             return new OngoingInjecter() {\n",
+            "                 public boolean thenInject() {\n",
+            "                     try {\n",
+            "+                        if (!new BeanPropertySetter(fieldInstance, field).set(matchingMock)) {\n",
+            "                             new FieldSetter(fieldInstance, field).set(matchingMock);\n",
+            "+                        }\n",
+            "                     } catch (Exception e) {\n",
+            "                         throw new MockitoException(\"Problems injecting dependency in \" + field.getName(), e);\n",
+            "                     }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

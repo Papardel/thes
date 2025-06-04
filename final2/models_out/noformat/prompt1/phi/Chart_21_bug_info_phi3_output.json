@@ -1,0 +1,13 @@
+{
+  "bug_id": "Chart_21_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 21\nTest Class: org.jfree.data.statistics.junit.DefaultBoxAndWhiskerCategoryDatasetTests\nMethod: testGetRangeBounds\nError: junit.framework.AssertionFailedError\nMessage: expected:<Range[8.5,9.6]> but was:<Range[8.6,9.6]>\nFailing Line:         assertEquals(new Range(8.5, 9.6), d1.getRangeBounds(false));\nTest Source:\npublic void testGetRangeBounds() {\n  DefaultBoxAndWhiskerCategoryDataset d1 \n  = new DefaultBoxAndWhiskerCategoryDataset();\n  d1.add(new BoxAndWhiskerItem(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, \n  new ArrayList()), \"R1\", \"C1\");\n  assertEquals(new Range(7.0, 8.0), d1.getRangeBounds(false));\n  assertEquals(new Range(7.0, 8.0), d1.getRangeBounds(true));\n  \n  d1.add(new BoxAndWhiskerItem(1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, \n  new ArrayList()), \"R1\", \"C1\");\n  assertEquals(new Range(7.5, 8.5), d1.getRangeBounds(false));\n  assertEquals(new Range(7.5, 8.5), d1.getRangeBounds(true));\n  \n  d1.add(new BoxAndWhiskerItem(2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, \n  new ArrayList()), \"R2\", \"C1\");\n  assertEquals(new Range(7.5, 9.5), d1.getRangeBounds(false));\n  assertEquals(new Range(7.5, 9.5), d1.getRangeBounds(true));\n  \n  \n  \n  d1.add(new BoxAndWhiskerItem(1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 8.6, 9.6, \n  new ArrayList()), \"R1\", \"C1\");\n  assertEquals(new Range(8.5, 9.6), d1.getRangeBounds(false));\n  assertEquals(new Range(8.5, 9.6), d1.getRangeBounds(true));\n  }\nStack Trace:\nDefaultBoxAndWhiskerCategoryDatasetTests.testGetRangeBounds line 292\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name ends with \u201cTest\u201d, \u201cTests\u201d, \u201cTestUtil\u201d, \u201cTestUtils\u201d, or \u201cTestHelper\u201d,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line \u2014 nothing else.",
+      "response": "In this case, the fully-qualified Java source class that contains the bug is:\n\norg.jfree.data.statistics.junit.DefaultBoxAndWhiskerCategoryDatasetTests"
+    }
+  ],
+  "classes": [
+    "DefaultBoxAndWhiskerCategoryDataset"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "bug_id": "3",
+  "failed_tests": {
+    "org.apache.commons.cli.PatternOptionBuilderTest": [
+      {
+        "methodName": "testSimplePattern",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "number flag n expected:<4.5> but was:<4.5>",
+        "fail_line": "           assertEquals(\"number flag n\", new Double(4.5), line.getOptionObject(\"n\"));",
+        "test_source": "  public void testSimplePattern()\n  {\n  try {\n  Options options = PatternOptionBuilder.parsePattern(\"a:b@cde>f+n%t/\");\n  String[] args = new String[] { \"-c\", \"-a\", \"foo\", \"-b\", \"java.util.Vector\", \"-e\", \"build.xml\", \"-f\", \"java.util.Calendar\", \"-n\", \"4.5\", \"-t\", \"http://jakarta.apache.org/\" };\n  \n  CommandLineParser parser = new PosixParser();\n  CommandLine line = parser.parse(options,args);\n\n  // tests the char methods of CommandLine that delegate to\n  // the String methods\n  assertEquals(\"flag a\", \"foo\", line.getOptionValue(\"a\"));\n  assertEquals(\"flag a\", \"foo\", line.getOptionValue('a'));\n  assertEquals(\"string flag a\", \"foo\", line.getOptionObject(\"a\"));\n  assertEquals(\"string flag a\", \"foo\", line.getOptionObject('a'));\n  assertEquals(\"object flag b\", new java.util.Vector(), line.getOptionObject(\"b\"));\n  assertEquals(\"object flag b\", new java.util.Vector(), line.getOptionObject('b'));\n  assertEquals(\"boolean true flag c\", true, line.hasOption(\"c\"));\n  assertEquals(\"boolean true flag c\", true, line.hasOption('c'));\n  assertEquals(\"boolean false flag d\", false, line.hasOption(\"d\"));\n  assertEquals(\"boolean false flag d\", false, line.hasOption('d'));\n  assertEquals(\"file flag e\", new java.io.File(\"build.xml\"), line.getOptionObject(\"e\"));\n  assertEquals(\"file flag e\", new java.io.File(\"build.xml\"), line.getOptionObject('e'));\n  assertEquals(\"class flag f\", java.util.Calendar.class, line.getOptionObject(\"f\"));\n  assertEquals(\"class flag f\", java.util.Calendar.class, line.getOptionObject('f'));\n  assertEquals(\"number flag n\", new Double(4.5), line.getOptionObject(\"n\"));\n  assertEquals(\"number flag n\", new Double(4.5), line.getOptionObject('n'));\n  assertEquals(\"url flag t\", new java.net.URL(\"http://jakarta.apache.org/\"), line.getOptionObject(\"t\"));\n  assertEquals(\"url flag t\", new java.net.URL(\"http://jakarta.apache.org/\"), line.getOptionObject('t'));\n  /// DATES NOT SUPPORTED YET.\n  //  assertEquals(\"number flag t\", new java.util.Date(1023400137276L), line.getOptionObject('z'));\n  //  input is:  \"Thu Jun 06 17:48:57 EDT 2002\"\n  }\n  catch( ParseException exp ) {\n  fail( exp.getMessage() );\n  }\n  catch( java.net.MalformedURLException exp ) {\n  fail( exp.getMessage() );\n  }\n  }",
+        "stack": [
+          "PatternOptionBuilderTest.testSimplePattern line 70"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/TypeHandler.java",
+      "buggy_full_code": "\npackage org.apache.commons.cli;\n\nimport java.io.File;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\n\nimport java.util.Date;\n\n\npublic class TypeHandler {\n\n    \n    public static Object createValue(String str, Object obj)\n    {\n        return createValue(str, (Class) obj);\n    }\n\n    \n    public static Object createValue(String str, Class clazz)\n    {\n        if (PatternOptionBuilder.STRING_VALUE == clazz)\n        {\n            return str;\n        }\n        else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n        {\n            return createObject(str);\n        }\n        else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n        {\n            return createNumber(str);\n        }\n        else if (PatternOptionBuilder.DATE_VALUE == clazz)\n        {\n            return createDate(str);\n        }\n        else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n        {\n            return createClass(str);\n        }\n        else if (PatternOptionBuilder.FILE_VALUE == clazz)\n        {\n            return createFile(str);\n        }\n        else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n        {\n            return createFile(str);\n        }\n        else if (PatternOptionBuilder.FILES_VALUE == clazz)\n        {\n            return createFiles(str);\n        }\n        else if (PatternOptionBuilder.URL_VALUE == clazz)\n        {\n            return createURL(str);\n        }\n        else\n        {\n            return null;\n        }\n    }\n\n    \n    public static Object createObject(String str)\n    {\n        Class cl = null;\n\n        try\n        {\n            cl = Class.forName(str);\n        }\n        catch (ClassNotFoundException cnfe)\n        {\n            System.err.println(\"Unable to find: \" + str);\n\n            return null;\n        }\n\n        Object instance = null;\n\n        try\n        {\n            instance = cl.newInstance();\n        }\n        catch (InstantiationException cnfe)\n        {\n            System.err.println(\"InstantiationException; Unable to create: \"\n                               + str);\n\n            return null;\n        }\n        catch (IllegalAccessException cnfe)\n        {\n            System.err.println(\"IllegalAccessException; Unable to create: \"\n                               + str);\n\n            return null;\n        }\n\n        return instance;\n    }\n\n    \n    public static Number createNumber(String str)\n    {\n        try\n        {\n            return org.apache.commons.lang.math.NumberUtils.createNumber(str);\n        }\n        catch (NumberFormatException nfe)\n        {\n            System.err.println(nfe.getMessage());\n        }\n\n        return null;\n    }\n\n    \n    public static Class createClass(String str)\n    {\n        try\n        {\n            return Class.forName(str);\n        }\n        catch (ClassNotFoundException cnfe)\n        {\n            System.err.println(\"Unable to find: \" + str);\n\n            return null;\n        }\n    }\n\n    \n    public static Date createDate(String str)\n    {\n        Date date = null;\n\n        if (date == null)\n        {\n            System.err.println(\"Unable to parse: \" + str);\n        }\n\n        return date;\n    }\n\n    \n    public static URL createURL(String str)\n    {\n        try\n        {\n            return new URL(str);\n        }\n        catch (MalformedURLException mue)\n        {\n            System.err.println(\"Unable to parse: \" + str);\n\n            return null;\n        }\n    }\n\n    \n    public static File createFile(String str)\n    {\n        return new File(str);\n    }\n\n    \n    public static File[] createFiles(String str)\n    {\n        \n        \n        return null;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.cli;\n\nimport java.io.File;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\n\nimport java.util.Date;\n\n\npublic class TypeHandler {\n\n    \n    public static Object createValue(String str, Object obj)\n    {\n        return createValue(str, (Class) obj);\n    }\n\n    \n    public static Object createValue(String str, Class clazz)\n    {\n        if (PatternOptionBuilder.STRING_VALUE == clazz)\n        {\n            return str;\n        }\n        else if (PatternOptionBuilder.OBJECT_VALUE == clazz)\n        {\n            return createObject(str);\n        }\n        else if (PatternOptionBuilder.NUMBER_VALUE == clazz)\n        {\n            return createNumber(str);\n        }\n        else if (PatternOptionBuilder.DATE_VALUE == clazz)\n        {\n            return createDate(str);\n        }\n        else if (PatternOptionBuilder.CLASS_VALUE == clazz)\n        {\n            return createClass(str);\n        }\n        else if (PatternOptionBuilder.FILE_VALUE == clazz)\n        {\n            return createFile(str);\n        }\n        else if (PatternOptionBuilder.EXISTING_FILE_VALUE == clazz)\n        {\n            return createFile(str);\n        }\n        else if (PatternOptionBuilder.FILES_VALUE == clazz)\n        {\n            return createFiles(str);\n        }\n        else if (PatternOptionBuilder.URL_VALUE == clazz)\n        {\n            return createURL(str);\n        }\n        else\n        {\n            return null;\n        }\n    }\n\n    \n    public static Object createObject(String str)\n    {\n        Class cl = null;\n\n        try\n        {\n            cl = Class.forName(str);\n        }\n        catch (ClassNotFoundException cnfe)\n        {\n            System.err.println(\"Unable to find: \" + str);\n\n            return null;\n        }\n\n        Object instance = null;\n\n        try\n        {\n            instance = cl.newInstance();\n        }\n        catch (InstantiationException cnfe)\n        {\n            System.err.println(\"InstantiationException; Unable to create: \"\n                               + str);\n\n            return null;\n        }\n        catch (IllegalAccessException cnfe)\n        {\n            System.err.println(\"IllegalAccessException; Unable to create: \"\n                               + str);\n\n            return null;\n        }\n\n        return instance;\n    }\n\n    \n    public static Number createNumber(String str)\n    {\n        try\n        {\n            if( str != null )\n            {\n                if( str.indexOf('.') != -1 )\n                {\n                    return Double.valueOf(str);\n                }\n                else\n                {\n                    return Long.valueOf(str);\n                }\n            }\n        }\n        catch (NumberFormatException nfe)\n        {\n            System.err.println(nfe.getMessage());\n        }\n\n        return null;\n    }\n\n    \n    public static Class createClass(String str)\n    {\n        try\n        {\n            return Class.forName(str);\n        }\n        catch (ClassNotFoundException cnfe)\n        {\n            System.err.println(\"Unable to find: \" + str);\n\n            return null;\n        }\n    }\n\n    \n    public static Date createDate(String str)\n    {\n        Date date = null;\n\n        if (date == null)\n        {\n            System.err.println(\"Unable to parse: \" + str);\n        }\n\n        return date;\n    }\n\n    \n    public static URL createURL(String str)\n    {\n        try\n        {\n            return new URL(str);\n        }\n        catch (MalformedURLException mue)\n        {\n            System.err.println(\"Unable to parse: \" + str);\n\n            return null;\n        }\n    }\n\n    \n    public static File createFile(String str)\n    {\n        return new File(str);\n    }\n\n    \n    public static File[] createFiles(String str)\n    {\n        \n        \n        return null;\n    }\n}\n",
+      "buggy_signatures": [
+        "public static Object createValue(String str, Object obj)",
+        "public static Object createValue(String str, Class clazz)",
+        "public static Object createObject(String str)",
+        "public static Number createNumber(String str)",
+        "public static Class createClass(String str)",
+        "public static Date createDate(String str)",
+        "public static URL createURL(String str)",
+        "public static File createFile(String str)",
+        "public static File[] createFiles(String str)"
+      ],
+      "fixed_signatures": [
+        "public static Object createValue(String str, Object obj)",
+        "public static Object createValue(String str, Class clazz)",
+        "public static Object createObject(String str)",
+        "public static Number createNumber(String str)",
+        "public static Class createClass(String str)",
+        "public static Date createDate(String str)",
+        "public static URL createURL(String str)",
+        "public static File createFile(String str)",
+        "public static File[] createFiles(String str)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static Number createNumber(String str)\n  {\n  try\n  {\n  return org.apache.commons.lang.math.NumberUtils.createNumber(str);\n  }\n  catch (NumberFormatException nfe)\n  {\n  System.err.println(nfe.getMessage());\n  }\n\n  return null;\n  }",
+          "fixed_method": "  public static Number createNumber(String str)\n  {\n  try\n  {\n  if( str != null )\n  {\n  if( str.indexOf('.') != -1 )\n  {\n  return Double.valueOf(str);\n  }\n  else\n  {\n  return Long.valueOf(str);\n  }\n  }\n  }\n  catch (NumberFormatException nfe)\n  {\n  System.err.println(nfe.getMessage());\n  }\n\n  return null;\n  }",
+          "diff": [
+            "@@ -158,7 +158,17 @@",
+            "     {\n",
+            "         try\n",
+            "         {\n",
+            "-            return org.apache.commons.lang.math.NumberUtils.createNumber(str);\n",
+            "+            if( str != null )\n",
+            "+            {\n",
+            "+                if( str.indexOf('.') != -1 )\n",
+            "+                {\n",
+            "+                    return Double.valueOf(str);\n",
+            "+                }\n",
+            "+                else\n",
+            "+                {\n",
+            "+                    return Long.valueOf(str);\n",
+            "+                }\n",
+            "+            }\n",
+            "         }\n",
+            "         catch (NumberFormatException nfe)\n",
+            "         {\n"
+          ],
+          "changed_lines": 12
+        }
+      ]
+    }
+  ]
+}

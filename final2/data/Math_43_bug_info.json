@@ -1,0 +1,182 @@
+{
+  "bug_id": "43",
+  "failed_tests": {
+    "org.apache.commons.math.stat.descriptive.SummaryStatisticsTest": [
+      {
+        "methodName": "testOverrideMeanWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2.5> but was:<NaN>",
+        "fail_line": "        Assert.assertEquals((new Mean()).evaluate(scores),stats.getMean(), 0); ",
+        "test_source": "  public void testOverrideMeanWithMathClass() throws Exception {\n  double[] scores = {1, 2, 3, 4};\n  SummaryStatistics stats = new SummaryStatistics();\n  stats.setMeanImpl(new Mean()); \n  for(double i : scores) {\n  stats.addValue(i);\n  }\n  Assert.assertEquals((new Mean()).evaluate(scores),stats.getMean(), 0); \n  }",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideMeanWithMathClass line 335"
+        ]
+      },
+      {
+        "methodName": "testOverrideGeoMeanWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2.213363839400643> but was:<NaN>",
+        "fail_line": "        Assert.assertEquals((new GeometricMean()).evaluate(scores),stats.getGeometricMean(), 0); ",
+        "test_source": "  public void testOverrideGeoMeanWithMathClass() throws Exception {\n  double[] scores = {1, 2, 3, 4};\n  SummaryStatistics stats = new SummaryStatistics();\n  stats.setGeoMeanImpl(new GeometricMean()); \n  for(double i : scores) {\n  stats.addValue(i);\n  }\n  Assert.assertEquals((new GeometricMean()).evaluate(scores),stats.getGeometricMean(), 0); \n  }",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideGeoMeanWithMathClass line 346"
+        ]
+      },
+      {
+        "methodName": "testOverrideVarianceWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1.25> but was:<NaN>",
+        "fail_line": "        Assert.assertEquals((new Variance(false)).evaluate(scores),stats.getVariance(), 0); ",
+        "test_source": "  public void testOverrideVarianceWithMathClass() throws Exception {\n  double[] scores = {1, 2, 3, 4};\n  SummaryStatistics stats = new SummaryStatistics();\n  stats.setVarianceImpl(new Variance(false)); //use \"population variance\"\n  for(double i : scores) {\n  stats.addValue(i);\n  }\n  Assert.assertEquals((new Variance(false)).evaluate(scores),stats.getVariance(), 0); \n  }",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideVarianceWithMathClass line 324"
+        ]
+      }
+    ],
+    "org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatisticsTest": [
+      {
+        "methodName": "testOverrideMeanWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2.5> but was:<NaN>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideMeanWithMathClass line 335"
+        ]
+      },
+      {
+        "methodName": "testOverrideGeoMeanWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2.213363839400643> but was:<NaN>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideGeoMeanWithMathClass line 346"
+        ]
+      },
+      {
+        "methodName": "testOverrideVarianceWithMathClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1.25> but was:<NaN>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "SummaryStatisticsTest.testOverrideVarianceWithMathClass line 324"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/stat/descriptive/SummaryStatistics.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.stat.descriptive;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.exception.MathIllegalStateException;\nimport org.apache.commons.math.exception.NullArgumentException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.stat.descriptive.moment.GeometricMean;\nimport org.apache.commons.math.stat.descriptive.moment.Mean;\nimport org.apache.commons.math.stat.descriptive.moment.SecondMoment;\nimport org.apache.commons.math.stat.descriptive.moment.Variance;\nimport org.apache.commons.math.stat.descriptive.rank.Max;\nimport org.apache.commons.math.stat.descriptive.rank.Min;\nimport org.apache.commons.math.stat.descriptive.summary.Sum;\nimport org.apache.commons.math.stat.descriptive.summary.SumOfLogs;\nimport org.apache.commons.math.stat.descriptive.summary.SumOfSquares;\nimport org.apache.commons.math.util.MathUtils;\nimport org.apache.commons.math.util.Precision;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class SummaryStatistics implements StatisticalSummary, Serializable { private static final long serialVersionUID = -2021321786743555871L; protected long n = 0; protected SecondMoment secondMoment = new SecondMoment(); protected Sum sum = new Sum(); protected SumOfSquares sumsq = new SumOfSquares(); protected Min min = new Min(); protected Max max = new Max(); protected SumOfLogs sumLog = new SumOfLogs(); protected GeometricMean geoMean = new GeometricMean(sumLog); protected Mean mean = new Mean(secondMoment); protected Variance variance = new Variance(secondMoment); private StorelessUnivariateStatistic sumImpl = sum; private StorelessUnivariateStatistic sumsqImpl = sumsq; private StorelessUnivariateStatistic minImpl = min; private StorelessUnivariateStatistic maxImpl = max; private StorelessUnivariateStatistic sumLogImpl = sumLog; private StorelessUnivariateStatistic geoMeanImpl = geoMean; private StorelessUnivariateStatistic meanImpl = mean; private StorelessUnivariateStatistic varianceImpl = variance; public SummaryStatistics() {\n    }\n\n    \n    public SummaryStatistics(SummaryStatistics original) {\n        copy(original, this);\n    }\n\n    \n    public StatisticalSummary getSummary() {\n        return new StatisticalSummaryValues(getMean(), getVariance(), getN(),\n                getMax(), getMin(), getSum());\n    }\n\n    \n    public void addValue(double value) {\n        sumImpl.increment(value);\n        sumsqImpl.increment(value);\n        minImpl.increment(value);\n        maxImpl.increment(value);\n        sumLogImpl.increment(value);\n        secondMoment.increment(value);\n        \n        \n        if (!(meanImpl instanceof Mean)) {\n            meanImpl.increment(value);\n        }\n        if (!(varianceImpl instanceof Variance)) {\n            varianceImpl.increment(value);\n        }\n        if (!(geoMeanImpl instanceof GeometricMean)) {\n            geoMeanImpl.increment(value);\n        }\n        n++;\n    }\n\n    \n    public long getN() {\n        return n;\n    }\n\n    \n    public double getSum() {\n        return sumImpl.getResult();\n    }\n\n    \n    public double getSumsq() {\n        return sumsqImpl.getResult();\n    }\n\n    \n    public double getMean() {\n        return meanImpl.getResult();\n    }\n\n    \n    public double getStandardDeviation() {\n        double stdDev = Double.NaN;\n        if (getN() > 0) {\n            if (getN() > 1) {\n                stdDev = FastMath.sqrt(getVariance());\n            } else {\n                stdDev = 0.0;\n            }\n        }\n        return stdDev;\n    }\n\n    \n    public double getVariance() {\n        return varianceImpl.getResult();\n    }\n\n    \n    public double getPopulationVariance() {\n        Variance populationVariance = new Variance(secondMoment);\n        populationVariance.setBiasCorrected(false);\n        return populationVariance.getResult();\n    }\n\n    \n    public double getMax() {\n        return maxImpl.getResult();\n    }\n\n    \n    public double getMin() {\n        return minImpl.getResult();\n    }\n\n    \n    public double getGeometricMean() {\n        return geoMeanImpl.getResult();\n    }\n\n    \n    public double getSumOfLogs() {\n        return sumLogImpl.getResult();\n    }\n\n    \n    public double getSecondMoment() {\n        return secondMoment.getResult();\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder outBuffer = new StringBuilder();\n        String endl = \"\\n\";\n        outBuffer.append(\"SummaryStatistics:\").append(endl);\n        outBuffer.append(\"n: \").append(getN()).append(endl);\n        outBuffer.append(\"min: \").append(getMin()).append(endl);\n        outBuffer.append(\"max: \").append(getMax()).append(endl);\n        outBuffer.append(\"mean: \").append(getMean()).append(endl);\n        outBuffer.append(\"geometric mean: \").append(getGeometricMean())\n            .append(endl);\n        outBuffer.append(\"variance: \").append(getVariance()).append(endl);\n        outBuffer.append(\"sum of squares: \").append(getSumsq()).append(endl);\n        outBuffer.append(\"standard deviation: \").append(getStandardDeviation())\n            .append(endl);\n        outBuffer.append(\"sum of logs: \").append(getSumOfLogs()).append(endl);\n        return outBuffer.toString();\n    }\n\n    \n    public void clear() {\n        this.n = 0;\n        minImpl.clear();\n        maxImpl.clear();\n        sumImpl.clear();\n        sumLogImpl.clear();\n        sumsqImpl.clear();\n        geoMeanImpl.clear();\n        secondMoment.clear();\n        if (meanImpl != mean) {\n            meanImpl.clear();\n        }\n        if (varianceImpl != variance) {\n            varianceImpl.clear();\n        }\n    }\n\n    \n    @Override\n    public boolean equals(Object object) {\n        if (object == this) {\n            return true;\n        }\n        if (object instanceof SummaryStatistics == false) {\n            return false;\n        }\n        SummaryStatistics stat = (SummaryStatistics)object;\n        return Precision.equalsIncludingNaN(stat.getGeometricMean(), getGeometricMean()) &&\n               Precision.equalsIncludingNaN(stat.getMax(),           getMax())           &&\n               Precision.equalsIncludingNaN(stat.getMean(),          getMean())          &&\n               Precision.equalsIncludingNaN(stat.getMin(),           getMin())           &&\n               Precision.equalsIncludingNaN(stat.getN(),             getN())             &&\n               Precision.equalsIncludingNaN(stat.getSum(),           getSum())           &&\n               Precision.equalsIncludingNaN(stat.getSumsq(),         getSumsq())         &&\n               Precision.equalsIncludingNaN(stat.getVariance(),      getVariance());\n    }\n\n    \n    @Override\n    public int hashCode() {\n        int result = 31 + MathUtils.hash(getGeometricMean());\n        result = result * 31 + MathUtils.hash(getGeometricMean());\n        result = result * 31 + MathUtils.hash(getMax());\n        result = result * 31 + MathUtils.hash(getMean());\n        result = result * 31 + MathUtils.hash(getMin());\n        result = result * 31 + MathUtils.hash(getN());\n        result = result * 31 + MathUtils.hash(getSum());\n        result = result * 31 + MathUtils.hash(getSumsq());\n        result = result * 31 + MathUtils.hash(getVariance());\n        return result;\n    }\n\n    \n    \n    public StorelessUnivariateStatistic getSumImpl() {\n        return sumImpl;\n    }\n\n    \n    public void setSumImpl(StorelessUnivariateStatistic sumImpl) {\n        checkEmpty();\n        this.sumImpl = sumImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getSumsqImpl() {\n        return sumsqImpl;\n    }\n\n    \n    public void setSumsqImpl(StorelessUnivariateStatistic sumsqImpl) {\n        checkEmpty();\n        this.sumsqImpl = sumsqImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMinImpl() {\n        return minImpl;\n    }\n\n    \n    public void setMinImpl(StorelessUnivariateStatistic minImpl) {\n        checkEmpty();\n        this.minImpl = minImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMaxImpl() {\n        return maxImpl;\n    }\n\n    \n    public void setMaxImpl(StorelessUnivariateStatistic maxImpl) {\n        checkEmpty();\n        this.maxImpl = maxImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getSumLogImpl() {\n        return sumLogImpl;\n    }\n\n    \n    public void setSumLogImpl(StorelessUnivariateStatistic sumLogImpl) {\n        checkEmpty();\n        this.sumLogImpl = sumLogImpl;\n        geoMean.setSumLogImpl(sumLogImpl);\n    }\n\n    \n    public StorelessUnivariateStatistic getGeoMeanImpl() {\n        return geoMeanImpl;\n    }\n\n    \n    public void setGeoMeanImpl(StorelessUnivariateStatistic geoMeanImpl) {\n        checkEmpty();\n        this.geoMeanImpl = geoMeanImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMeanImpl() {\n        return meanImpl;\n    }\n\n    \n    public void setMeanImpl(StorelessUnivariateStatistic meanImpl) {\n        checkEmpty();\n        this.meanImpl = meanImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getVarianceImpl() {\n        return varianceImpl;\n    }\n\n    \n    public void setVarianceImpl(StorelessUnivariateStatistic varianceImpl) {\n        checkEmpty();\n        this.varianceImpl = varianceImpl;\n    }\n\n    \n    private void checkEmpty() {\n        if (n > 0) {\n            throw new MathIllegalStateException(\n                LocalizedFormats.VALUES_ADDED_BEFORE_CONFIGURING_STATISTIC, n);\n        }\n    }\n\n    \n    public SummaryStatistics copy() {\n        SummaryStatistics result = new SummaryStatistics();\n        copy(this, result);\n        return result;\n    }\n\n    \n    public static void copy(SummaryStatistics source, SummaryStatistics dest) throws NullArgumentException {\n        MathUtils.checkNotNull(source);\n        MathUtils.checkNotNull(dest);\n        dest.maxImpl = source.maxImpl.copy();\n        dest.minImpl = source.minImpl.copy();\n        dest.sumImpl = source.sumImpl.copy();\n        dest.sumLogImpl = source.sumLogImpl.copy();\n        dest.sumsqImpl = source.sumsqImpl.copy();\n        dest.secondMoment = source.secondMoment.copy();\n        dest.n = source.n;\n\n        \n        if (source.getVarianceImpl() instanceof Variance) {\n            dest.varianceImpl = new Variance(dest.secondMoment);\n        } else {\n            dest.varianceImpl = source.varianceImpl.copy();\n        }\n        if (source.meanImpl instanceof Mean) {\n            dest.meanImpl = new Mean(dest.secondMoment);\n        } else {\n            dest.meanImpl = source.meanImpl.copy();\n        }\n        if (source.getGeoMeanImpl() instanceof GeometricMean) {\n            dest.geoMeanImpl = new GeometricMean((SumOfLogs) dest.sumLogImpl);\n        } else {\n            dest.geoMeanImpl = source.geoMeanImpl.copy();\n        }\n\n        \n        \n        if (source.geoMean == source.geoMeanImpl) {\n            dest.geoMean = (GeometricMean) dest.geoMeanImpl;\n        } else {\n            GeometricMean.copy(source.geoMean, dest.geoMean);\n        }\n        if (source.max == source.maxImpl) {\n            dest.max = (Max) dest.maxImpl;\n        } else {\n            Max.copy(source.max, dest.max);\n        }\n        if (source.mean == source.meanImpl) {\n            dest.mean = (Mean) dest.meanImpl;\n        } else {\n            Mean.copy(source.mean, dest.mean);\n        }\n        if (source.min == source.minImpl) {\n            dest.min = (Min) dest.minImpl;\n        } else {\n            Min.copy(source.min, dest.min);\n        }\n        if (source.sum == source.sumImpl) {\n            dest.sum = (Sum) dest.sumImpl;\n        } else {\n            Sum.copy(source.sum, dest.sum);\n        }\n        if (source.variance == source.varianceImpl) {\n            dest.variance = (Variance) dest.varianceImpl;\n        } else {\n            Variance.copy(source.variance, dest.variance);\n        }\n        if (source.sumLog == source.sumLogImpl) {\n            dest.sumLog = (SumOfLogs) dest.sumLogImpl;\n        } else {\n            SumOfLogs.copy(source.sumLog, dest.sumLog);\n        }\n        if (source.sumsq == source.sumsqImpl) {\n            dest.sumsq = (SumOfSquares) dest.sumsqImpl;\n        } else {\n            SumOfSquares.copy(source.sumsq, dest.sumsq);\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.stat.descriptive;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.exception.MathIllegalStateException;\nimport org.apache.commons.math.exception.NullArgumentException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.stat.descriptive.moment.GeometricMean;\nimport org.apache.commons.math.stat.descriptive.moment.Mean;\nimport org.apache.commons.math.stat.descriptive.moment.SecondMoment;\nimport org.apache.commons.math.stat.descriptive.moment.Variance;\nimport org.apache.commons.math.stat.descriptive.rank.Max;\nimport org.apache.commons.math.stat.descriptive.rank.Min;\nimport org.apache.commons.math.stat.descriptive.summary.Sum;\nimport org.apache.commons.math.stat.descriptive.summary.SumOfLogs;\nimport org.apache.commons.math.stat.descriptive.summary.SumOfSquares;\nimport org.apache.commons.math.util.MathUtils;\nimport org.apache.commons.math.util.Precision;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class SummaryStatistics implements StatisticalSummary, Serializable { private static final long serialVersionUID = -2021321786743555871L; protected long n = 0; protected SecondMoment secondMoment = new SecondMoment(); protected Sum sum = new Sum(); protected SumOfSquares sumsq = new SumOfSquares(); protected Min min = new Min(); protected Max max = new Max(); protected SumOfLogs sumLog = new SumOfLogs(); protected GeometricMean geoMean = new GeometricMean(sumLog); protected Mean mean = new Mean(secondMoment); protected Variance variance = new Variance(secondMoment); private StorelessUnivariateStatistic sumImpl = sum; private StorelessUnivariateStatistic sumsqImpl = sumsq; private StorelessUnivariateStatistic minImpl = min; private StorelessUnivariateStatistic maxImpl = max; private StorelessUnivariateStatistic sumLogImpl = sumLog; private StorelessUnivariateStatistic geoMeanImpl = geoMean; private StorelessUnivariateStatistic meanImpl = mean; private StorelessUnivariateStatistic varianceImpl = variance; public SummaryStatistics() {\n    }\n\n    \n    public SummaryStatistics(SummaryStatistics original) {\n        copy(original, this);\n    }\n\n    \n    public StatisticalSummary getSummary() {\n        return new StatisticalSummaryValues(getMean(), getVariance(), getN(),\n                getMax(), getMin(), getSum());\n    }\n\n    \n    public void addValue(double value) {\n        sumImpl.increment(value);\n        sumsqImpl.increment(value);\n        minImpl.increment(value);\n        maxImpl.increment(value);\n        sumLogImpl.increment(value);\n        secondMoment.increment(value);\n        \n        \n        if (meanImpl != mean) {\n            meanImpl.increment(value);\n        }\n        if (varianceImpl != variance) {\n            varianceImpl.increment(value);\n        }\n        if (geoMeanImpl != geoMean) {\n            geoMeanImpl.increment(value);\n        }\n        n++;\n    }\n\n    \n    public long getN() {\n        return n;\n    }\n\n    \n    public double getSum() {\n        return sumImpl.getResult();\n    }\n\n    \n    public double getSumsq() {\n        return sumsqImpl.getResult();\n    }\n\n    \n    public double getMean() {\n        return meanImpl.getResult();\n    }\n\n    \n    public double getStandardDeviation() {\n        double stdDev = Double.NaN;\n        if (getN() > 0) {\n            if (getN() > 1) {\n                stdDev = FastMath.sqrt(getVariance());\n            } else {\n                stdDev = 0.0;\n            }\n        }\n        return stdDev;\n    }\n\n    \n    public double getVariance() {\n        return varianceImpl.getResult();\n    }\n\n    \n    public double getPopulationVariance() {\n        Variance populationVariance = new Variance(secondMoment);\n        populationVariance.setBiasCorrected(false);\n        return populationVariance.getResult();\n    }\n\n    \n    public double getMax() {\n        return maxImpl.getResult();\n    }\n\n    \n    public double getMin() {\n        return minImpl.getResult();\n    }\n\n    \n    public double getGeometricMean() {\n        return geoMeanImpl.getResult();\n    }\n\n    \n    public double getSumOfLogs() {\n        return sumLogImpl.getResult();\n    }\n\n    \n    public double getSecondMoment() {\n        return secondMoment.getResult();\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder outBuffer = new StringBuilder();\n        String endl = \"\\n\";\n        outBuffer.append(\"SummaryStatistics:\").append(endl);\n        outBuffer.append(\"n: \").append(getN()).append(endl);\n        outBuffer.append(\"min: \").append(getMin()).append(endl);\n        outBuffer.append(\"max: \").append(getMax()).append(endl);\n        outBuffer.append(\"mean: \").append(getMean()).append(endl);\n        outBuffer.append(\"geometric mean: \").append(getGeometricMean())\n            .append(endl);\n        outBuffer.append(\"variance: \").append(getVariance()).append(endl);\n        outBuffer.append(\"sum of squares: \").append(getSumsq()).append(endl);\n        outBuffer.append(\"standard deviation: \").append(getStandardDeviation())\n            .append(endl);\n        outBuffer.append(\"sum of logs: \").append(getSumOfLogs()).append(endl);\n        return outBuffer.toString();\n    }\n\n    \n    public void clear() {\n        this.n = 0;\n        minImpl.clear();\n        maxImpl.clear();\n        sumImpl.clear();\n        sumLogImpl.clear();\n        sumsqImpl.clear();\n        geoMeanImpl.clear();\n        secondMoment.clear();\n        if (meanImpl != mean) {\n            meanImpl.clear();\n        }\n        if (varianceImpl != variance) {\n            varianceImpl.clear();\n        }\n    }\n\n    \n    @Override\n    public boolean equals(Object object) {\n        if (object == this) {\n            return true;\n        }\n        if (object instanceof SummaryStatistics == false) {\n            return false;\n        }\n        SummaryStatistics stat = (SummaryStatistics)object;\n        return Precision.equalsIncludingNaN(stat.getGeometricMean(), getGeometricMean()) &&\n               Precision.equalsIncludingNaN(stat.getMax(),           getMax())           &&\n               Precision.equalsIncludingNaN(stat.getMean(),          getMean())          &&\n               Precision.equalsIncludingNaN(stat.getMin(),           getMin())           &&\n               Precision.equalsIncludingNaN(stat.getN(),             getN())             &&\n               Precision.equalsIncludingNaN(stat.getSum(),           getSum())           &&\n               Precision.equalsIncludingNaN(stat.getSumsq(),         getSumsq())         &&\n               Precision.equalsIncludingNaN(stat.getVariance(),      getVariance());\n    }\n\n    \n    @Override\n    public int hashCode() {\n        int result = 31 + MathUtils.hash(getGeometricMean());\n        result = result * 31 + MathUtils.hash(getGeometricMean());\n        result = result * 31 + MathUtils.hash(getMax());\n        result = result * 31 + MathUtils.hash(getMean());\n        result = result * 31 + MathUtils.hash(getMin());\n        result = result * 31 + MathUtils.hash(getN());\n        result = result * 31 + MathUtils.hash(getSum());\n        result = result * 31 + MathUtils.hash(getSumsq());\n        result = result * 31 + MathUtils.hash(getVariance());\n        return result;\n    }\n\n    \n    \n    public StorelessUnivariateStatistic getSumImpl() {\n        return sumImpl;\n    }\n\n    \n    public void setSumImpl(StorelessUnivariateStatistic sumImpl) {\n        checkEmpty();\n        this.sumImpl = sumImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getSumsqImpl() {\n        return sumsqImpl;\n    }\n\n    \n    public void setSumsqImpl(StorelessUnivariateStatistic sumsqImpl) {\n        checkEmpty();\n        this.sumsqImpl = sumsqImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMinImpl() {\n        return minImpl;\n    }\n\n    \n    public void setMinImpl(StorelessUnivariateStatistic minImpl) {\n        checkEmpty();\n        this.minImpl = minImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMaxImpl() {\n        return maxImpl;\n    }\n\n    \n    public void setMaxImpl(StorelessUnivariateStatistic maxImpl) {\n        checkEmpty();\n        this.maxImpl = maxImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getSumLogImpl() {\n        return sumLogImpl;\n    }\n\n    \n    public void setSumLogImpl(StorelessUnivariateStatistic sumLogImpl) {\n        checkEmpty();\n        this.sumLogImpl = sumLogImpl;\n        geoMean.setSumLogImpl(sumLogImpl);\n    }\n\n    \n    public StorelessUnivariateStatistic getGeoMeanImpl() {\n        return geoMeanImpl;\n    }\n\n    \n    public void setGeoMeanImpl(StorelessUnivariateStatistic geoMeanImpl) {\n        checkEmpty();\n        this.geoMeanImpl = geoMeanImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getMeanImpl() {\n        return meanImpl;\n    }\n\n    \n    public void setMeanImpl(StorelessUnivariateStatistic meanImpl) {\n        checkEmpty();\n        this.meanImpl = meanImpl;\n    }\n\n    \n    public StorelessUnivariateStatistic getVarianceImpl() {\n        return varianceImpl;\n    }\n\n    \n    public void setVarianceImpl(StorelessUnivariateStatistic varianceImpl) {\n        checkEmpty();\n        this.varianceImpl = varianceImpl;\n    }\n\n    \n    private void checkEmpty() {\n        if (n > 0) {\n            throw new MathIllegalStateException(\n                LocalizedFormats.VALUES_ADDED_BEFORE_CONFIGURING_STATISTIC, n);\n        }\n    }\n\n    \n    public SummaryStatistics copy() {\n        SummaryStatistics result = new SummaryStatistics();\n        copy(this, result);\n        return result;\n    }\n\n    \n    public static void copy(SummaryStatistics source, SummaryStatistics dest) throws NullArgumentException {\n        MathUtils.checkNotNull(source);\n        MathUtils.checkNotNull(dest);\n        dest.maxImpl = source.maxImpl.copy();\n        dest.minImpl = source.minImpl.copy();\n        dest.sumImpl = source.sumImpl.copy();\n        dest.sumLogImpl = source.sumLogImpl.copy();\n        dest.sumsqImpl = source.sumsqImpl.copy();\n        dest.secondMoment = source.secondMoment.copy();\n        dest.n = source.n;\n\n        \n        if (source.getVarianceImpl() instanceof Variance) {\n            dest.varianceImpl = new Variance(dest.secondMoment);\n        } else {\n            dest.varianceImpl = source.varianceImpl.copy();\n        }\n        if (source.meanImpl instanceof Mean) {\n            dest.meanImpl = new Mean(dest.secondMoment);\n        } else {\n            dest.meanImpl = source.meanImpl.copy();\n        }\n        if (source.getGeoMeanImpl() instanceof GeometricMean) {\n            dest.geoMeanImpl = new GeometricMean((SumOfLogs) dest.sumLogImpl);\n        } else {\n            dest.geoMeanImpl = source.geoMeanImpl.copy();\n        }\n\n        \n        \n        if (source.geoMean == source.geoMeanImpl) {\n            dest.geoMean = (GeometricMean) dest.geoMeanImpl;\n        } else {\n            GeometricMean.copy(source.geoMean, dest.geoMean);\n        }\n        if (source.max == source.maxImpl) {\n            dest.max = (Max) dest.maxImpl;\n        } else {\n            Max.copy(source.max, dest.max);\n        }\n        if (source.mean == source.meanImpl) {\n            dest.mean = (Mean) dest.meanImpl;\n        } else {\n            Mean.copy(source.mean, dest.mean);\n        }\n        if (source.min == source.minImpl) {\n            dest.min = (Min) dest.minImpl;\n        } else {\n            Min.copy(source.min, dest.min);\n        }\n        if (source.sum == source.sumImpl) {\n            dest.sum = (Sum) dest.sumImpl;\n        } else {\n            Sum.copy(source.sum, dest.sum);\n        }\n        if (source.variance == source.varianceImpl) {\n            dest.variance = (Variance) dest.varianceImpl;\n        } else {\n            Variance.copy(source.variance, dest.variance);\n        }\n        if (source.sumLog == source.sumLogImpl) {\n            dest.sumLog = (SumOfLogs) dest.sumLogImpl;\n        } else {\n            SumOfLogs.copy(source.sumLog, dest.sumLog);\n        }\n        if (source.sumsq == source.sumsqImpl) {\n            dest.sumsq = (SumOfSquares) dest.sumsqImpl;\n        } else {\n            SumOfSquares.copy(source.sumsq, dest.sumsq);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public SummaryStatistics(SummaryStatistics original)",
+        "public StatisticalSummary getSummary()",
+        "public void addValue(double value)",
+        "public long getN()",
+        "public double getSum()",
+        "public double getSumsq()",
+        "public double getMean()",
+        "public double getStandardDeviation()",
+        "public double getVariance()",
+        "public double getPopulationVariance()",
+        "public double getMax()",
+        "public double getMin()",
+        "public double getGeometricMean()",
+        "public double getSumOfLogs()",
+        "public double getSecondMoment()",
+        "public String toString()",
+        "public void clear()",
+        "public boolean equals(Object object)",
+        "public int hashCode()",
+        "public StorelessUnivariateStatistic getSumImpl()",
+        "public void setSumImpl(StorelessUnivariateStatistic sumImpl)",
+        "public StorelessUnivariateStatistic getSumsqImpl()",
+        "public void setSumsqImpl(StorelessUnivariateStatistic sumsqImpl)",
+        "public StorelessUnivariateStatistic getMinImpl()",
+        "public void setMinImpl(StorelessUnivariateStatistic minImpl)",
+        "public StorelessUnivariateStatistic getMaxImpl()",
+        "public void setMaxImpl(StorelessUnivariateStatistic maxImpl)",
+        "public StorelessUnivariateStatistic getSumLogImpl()",
+        "public void setSumLogImpl(StorelessUnivariateStatistic sumLogImpl)",
+        "public StorelessUnivariateStatistic getGeoMeanImpl()",
+        "public void setGeoMeanImpl(StorelessUnivariateStatistic geoMeanImpl)",
+        "public StorelessUnivariateStatistic getMeanImpl()",
+        "public void setMeanImpl(StorelessUnivariateStatistic meanImpl)",
+        "public StorelessUnivariateStatistic getVarianceImpl()",
+        "public void setVarianceImpl(StorelessUnivariateStatistic varianceImpl)",
+        "private void checkEmpty()",
+        "public SummaryStatistics copy()",
+        "public static void copy(SummaryStatistics source, SummaryStatistics dest) throws NullArgumentException"
+      ],
+      "fixed_signatures": [
+        "public SummaryStatistics(SummaryStatistics original)",
+        "public StatisticalSummary getSummary()",
+        "public void addValue(double value)",
+        "public long getN()",
+        "public double getSum()",
+        "public double getSumsq()",
+        "public double getMean()",
+        "public double getStandardDeviation()",
+        "public double getVariance()",
+        "public double getPopulationVariance()",
+        "public double getMax()",
+        "public double getMin()",
+        "public double getGeometricMean()",
+        "public double getSumOfLogs()",
+        "public double getSecondMoment()",
+        "public String toString()",
+        "public void clear()",
+        "public boolean equals(Object object)",
+        "public int hashCode()",
+        "public StorelessUnivariateStatistic getSumImpl()",
+        "public void setSumImpl(StorelessUnivariateStatistic sumImpl)",
+        "public StorelessUnivariateStatistic getSumsqImpl()",
+        "public void setSumsqImpl(StorelessUnivariateStatistic sumsqImpl)",
+        "public StorelessUnivariateStatistic getMinImpl()",
+        "public void setMinImpl(StorelessUnivariateStatistic minImpl)",
+        "public StorelessUnivariateStatistic getMaxImpl()",
+        "public void setMaxImpl(StorelessUnivariateStatistic maxImpl)",
+        "public StorelessUnivariateStatistic getSumLogImpl()",
+        "public void setSumLogImpl(StorelessUnivariateStatistic sumLogImpl)",
+        "public StorelessUnivariateStatistic getGeoMeanImpl()",
+        "public void setGeoMeanImpl(StorelessUnivariateStatistic geoMeanImpl)",
+        "public StorelessUnivariateStatistic getMeanImpl()",
+        "public void setMeanImpl(StorelessUnivariateStatistic meanImpl)",
+        "public StorelessUnivariateStatistic getVarianceImpl()",
+        "public void setVarianceImpl(StorelessUnivariateStatistic varianceImpl)",
+        "private void checkEmpty()",
+        "public SummaryStatistics copy()",
+        "public static void copy(SummaryStatistics source, SummaryStatistics dest) throws NullArgumentException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void addValue(double value) {\n  sumImpl.increment(value);\n  sumsqImpl.increment(value);\n  minImpl.increment(value);\n  maxImpl.increment(value);\n  sumLogImpl.increment(value);\n  secondMoment.increment(value);\n  \n  \n  if (!(meanImpl instanceof Mean)) {\n  meanImpl.increment(value);\n  }\n  if (!(varianceImpl instanceof Variance)) {\n  varianceImpl.increment(value);\n  }\n  if (!(geoMeanImpl instanceof GeometricMean)) {\n  geoMeanImpl.increment(value);\n  }\n  n++;\n  }",
+          "fixed_method": "  public void addValue(double value) {\n  sumImpl.increment(value);\n  sumsqImpl.increment(value);\n  minImpl.increment(value);\n  maxImpl.increment(value);\n  sumLogImpl.increment(value);\n  secondMoment.increment(value);\n  \n  \n  if (meanImpl != mean) {\n  meanImpl.increment(value);\n  }\n  if (varianceImpl != variance) {\n  varianceImpl.increment(value);\n  }\n  if (geoMeanImpl != geoMean) {\n  geoMeanImpl.increment(value);\n  }\n  n++;\n  }",
+          "diff": [
+            "@@ -155,13 +155,13 @@",
+            "         secondMoment.increment(value);\n",
+            "         // If mean, variance or geomean have been overridden,\n",
+            "         // need to increment these\n",
+            "-        if (!(meanImpl instanceof Mean)) {\n",
+            "+        if (meanImpl != mean) {\n",
+            "             meanImpl.increment(value);\n",
+            "         }\n",
+            "-        if (!(varianceImpl instanceof Variance)) {\n",
+            "+        if (varianceImpl != variance) {\n",
+            "             varianceImpl.increment(value);\n",
+            "         }\n",
+            "-        if (!(geoMeanImpl instanceof GeometricMean)) {\n",
+            "+        if (geoMeanImpl != geoMean) {\n",
+            "             geoMeanImpl.increment(value);\n",
+            "         }\n",
+            "         n++;\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "bug_id": "1",
+  "failed_tests": {
+    "org.jsoup.parser.ParserTest": [
+      {
+        "methodName": "createsStructureFromBodySnippet",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[foo bar baz]> but was:<[bar baz foo]>",
+        "fail_line": "        assertEquals (\"foo bar baz\", doc.text());",
+        "test_source": "",
+        "stack": [
+          "ParserTest.createsStructureFromBodySnippet line 110"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/Document.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.apache.commons.lang.Validate;\nimport org.jsoup.parser.Tag;\n\nimport java.util.List;\nimport java.util.ArrayList;\n\n\npublic class Document extends Element { public Document(String baseUri) {\n        super(Tag.valueOf(\"#root\"), baseUri);\n    }\n\n    \n    static public Document createShell(String baseUri) {\n        Validate.notNull(baseUri);\n\n        Document doc = new Document(baseUri);\n        Element html = doc.appendElement(\"html\");\n        html.appendElement(\"head\");\n        html.appendElement(\"body\");\n\n        return doc;\n    }\n\n    \n    public Element head() {\n        return getElementsByTag(\"head\").first();\n    }\n\n    \n    public Element body() {\n        return getElementsByTag(\"body\").first();\n    }\n\n    \n    public String title() {\n        Element titleEl = getElementsByTag(\"title\").first();\n        return titleEl != null ? titleEl.text().trim() : \"\";\n    }\n\n    \n    public void title(String title) {\n        Validate.notNull(title);\n        Element titleEl = getElementsByTag(\"title\").first();\n        if (titleEl == null) { \n            head().appendElement(\"title\").text(title);\n        } else {\n            titleEl.text(title);\n        }\n    }\n\n    \n    public Element createElement(String tagName) {\n        return new Element(Tag.valueOf(tagName), this.baseUri());\n    }\n\n    \n    public Document normalise() {\n        if (select(\"html\").isEmpty())\n            appendElement(\"html\");\n        if (head() == null)\n            select(\"html\").first().prependElement(\"head\");\n        if (body() == null)\n            select(\"html\").first().appendElement(\"body\");\n\n        \n        \n        normalise(head());\n        normalise(select(\"html\").first());\n        normalise(this);        \n\n        return this;\n    }\n\n    \n    private void normalise(Element element) {\n        List<Node> toMove = new ArrayList<Node>();\n        for (Node node: element.childNodes) {\n            if (node instanceof TextNode) {\n                TextNode tn = (TextNode) node;\n                if (!tn.isBlank())\n                    toMove.add(tn);\n            }\n        }\n\n        for (Node node: toMove) {\n            element.removeChild(node);\n            body().appendChild(new TextNode(\" \", \"\"));\n            body().appendChild(node);\n        }\n    }\n\n    @Override\n    public String outerHtml() {\n        return super.html(); \n    }\n\n    \n    @Override\n    public Element text(String text) {\n        body().text(text); \n        return this;\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#document\";\n    }\n}\n\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.apache.commons.lang.Validate;\nimport org.jsoup.parser.Tag;\n\nimport java.util.List;\nimport java.util.ArrayList;\n\n\npublic class Document extends Element { public Document(String baseUri) {\n        super(Tag.valueOf(\"#root\"), baseUri);\n    }\n\n    \n    static public Document createShell(String baseUri) {\n        Validate.notNull(baseUri);\n\n        Document doc = new Document(baseUri);\n        Element html = doc.appendElement(\"html\");\n        html.appendElement(\"head\");\n        html.appendElement(\"body\");\n\n        return doc;\n    }\n\n    \n    public Element head() {\n        return getElementsByTag(\"head\").first();\n    }\n\n    \n    public Element body() {\n        return getElementsByTag(\"body\").first();\n    }\n\n    \n    public String title() {\n        Element titleEl = getElementsByTag(\"title\").first();\n        return titleEl != null ? titleEl.text().trim() : \"\";\n    }\n\n    \n    public void title(String title) {\n        Validate.notNull(title);\n        Element titleEl = getElementsByTag(\"title\").first();\n        if (titleEl == null) { \n            head().appendElement(\"title\").text(title);\n        } else {\n            titleEl.text(title);\n        }\n    }\n\n    \n    public Element createElement(String tagName) {\n        return new Element(Tag.valueOf(tagName), this.baseUri());\n    }\n\n    \n    public Document normalise() {\n        if (select(\"html\").isEmpty())\n            appendElement(\"html\");\n        if (head() == null)\n            select(\"html\").first().prependElement(\"head\");\n        if (body() == null)\n            select(\"html\").first().appendElement(\"body\");\n\n        \n        \n        normalise(head());\n        normalise(select(\"html\").first());\n        normalise(this);        \n\n        return this;\n    }\n\n    \n    private void normalise(Element element) {\n        List<Node> toMove = new ArrayList<Node>();\n        for (Node node: element.childNodes) {\n            if (node instanceof TextNode) {\n                TextNode tn = (TextNode) node;\n                if (!tn.isBlank())\n                    toMove.add(tn);\n            }\n        }\n\n        for (Node node: toMove) {\n            element.removeChild(node);\n            body().prependChild(node);\n            body().prependChild(new TextNode(\" \", \"\"));\n        }\n    }\n\n    @Override\n    public String outerHtml() {\n        return super.html(); \n    }\n\n    \n    @Override\n    public Element text(String text) {\n        body().text(text); \n        return this;\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#document\";\n    }\n}\n\n",
+      "buggy_signatures": [
+        "public class Document extends Element { public Document(String baseUri)",
+        "static public Document createShell(String baseUri)",
+        "public Element head()",
+        "public Element body()",
+        "public String title()",
+        "public void title(String title)",
+        "public Element createElement(String tagName)",
+        "public Document normalise()",
+        "private void normalise(Element element)",
+        "public String outerHtml()",
+        "public Element text(String text)",
+        "public String nodeName()"
+      ],
+      "fixed_signatures": [
+        "public class Document extends Element { public Document(String baseUri)",
+        "static public Document createShell(String baseUri)",
+        "public Element head()",
+        "public Element body()",
+        "public String title()",
+        "public void title(String title)",
+        "public Element createElement(String tagName)",
+        "public Document normalise()",
+        "private void normalise(Element element)",
+        "public String outerHtml()",
+        "public Element text(String text)",
+        "public String nodeName()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private void normalise(Element element) {\n  List<Node> toMove = new ArrayList<Node>();\n  for (Node node: element.childNodes) {\n  if (node instanceof TextNode) {\n  TextNode tn = (TextNode) node;\n  if (!tn.isBlank())\n  toMove.add(tn);\n  }\n  }\n\n  for (Node node: toMove) {\n  element.removeChild(node);\n  body().appendChild(new TextNode(\" \", \"\"));\n  body().appendChild(node);\n  }\n  }",
+          "fixed_method": "  private void normalise(Element element) {\n  List<Node> toMove = new ArrayList<Node>();\n  for (Node node: element.childNodes) {\n  if (node instanceof TextNode) {\n  TextNode tn = (TextNode) node;\n  if (!tn.isBlank())\n  toMove.add(tn);\n  }\n  }\n\n  for (Node node: toMove) {\n  element.removeChild(node);\n  body().prependChild(node);\n  body().prependChild(new TextNode(\" \", \"\"));\n  }\n  }",
+          "diff": [
+            "@@ -122,8 +122,8 @@",
+            " \n",
+            "         for (Node node: toMove) {\n",
+            "             element.removeChild(node);\n",
+            "-            body().appendChild(new TextNode(\" \", \"\"));\n",
+            "-            body().appendChild(node);\n",
+            "+            body().prependChild(node);\n",
+            "+            body().prependChild(new TextNode(\" \", \"\"));\n",
+            "         }\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

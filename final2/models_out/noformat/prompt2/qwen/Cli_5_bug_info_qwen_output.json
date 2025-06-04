@@ -1,0 +1,15 @@
+{
+  "bug_id": "Cli_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 5\n--------------------\nSource:\npublic void testStripLeadingHyphens() {\n  assertEquals(\"f\", Util.stripLeadingHyphens(\"-f\"));\n  assertEquals(\"foo\", Util.stripLeadingHyphens(\"--foo\"));\n  assertNull(Util.stripLeadingHyphens(null));\n  }\nStack:\nUtil.stripLeadingHyphens line 36, UtilTest.testStripLeadingHyphens line 28\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.apache.commons.cli.Util\n    - String stripLeadingHyphens(String str)\n    - String stripLeadingAndTrailingQuotes(String str)\n\nYour task:\nList the FIVE most suspicious method (or constructor)Output format (exactly):\nRESPONSE:\n<sig-1>\n<sig-2>\n<sig-3>\n<sig-4>\n<sig-5>",
+      "response": ""
+    },
+    {
+      "prompt_index": 2,
+      "prompt": "Bug ID: 5\n--------------------\nSource:\npublic void testOrder() throws ParseException {\n  Option optionA = new Option(\"a\", \"first\");\n  Options opts = new Options();\n  opts.addOption(optionA);\n  PosixParser posixParser = new PosixParser();\n  CommandLine line = posixParser.parse(opts, null);\n  assertFalse(line.hasOption(null));\n  }\nStack:\nUtil.stripLeadingHyphens line 36, CommandLine.resolveOption line 166, CommandLine.hasOption line 68, BugCLI133Test.testOrder line 32\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.apache.commons.cli.Util\n    - String stripLeadingHyphens(String str)\n    - String stripLeadingAndTrailingQuotes(String str)\n\nYour task:\nList the FIVE most suspicious method (or constructor)Output format (exactly):\nRESPONSE:\n<sig-1>\n<sig-2>\n<sig-3>\n<sig-4>\n<sig-5>",
+      "response": ""
+    }
+  ]
+}

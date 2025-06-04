@@ -1,0 +1,125 @@
+{
+  "bug_id": "30",
+  "failed_tests": {
+    "org.jsoup.safety.CleanerTest": [
+      {
+        "methodName": "testIsValid",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertFalse(Jsoup.isValid(nok3, Whitelist.basic()));",
+        "test_source": "",
+        "stack": [
+          "CleanerTest.testIsValid line 99"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/safety/Cleaner.java",
+      "buggy_full_code": "package org.jsoup.safety;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\nimport org.jsoup.parser.Tag;\n\nimport java.util.List;\n\n\npublic class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist) {\n        Validate.notNull(whitelist);\n        this.whitelist = whitelist;\n    }\n\n    \n    public Document clean(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        if (dirtyDocument.body() != null) \n            copySafeNodes(dirtyDocument.body(), clean.body());\n\n        return clean;\n    }\n\n    \n    public boolean isValid(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        int numDiscarded = copySafeNodes(dirtyDocument.body(), clean.body());\n        return numDiscarded == 0;\n    }\n\n    \n    private int copySafeNodes(Element root, Element destination) {\n        List<Node> sourceChildren = root.childNodes();\n        int numDiscarded = 0;\n\n        for (Node source : sourceChildren) {\n            if (source instanceof Element) {\n                Element sourceEl = (Element) source;\n\n                if (whitelist.isSafeTag(sourceEl.tagName())) { \n                    ElementMeta meta = createSafeElement(sourceEl);\n                    Element destChild = meta.el;\n                    destination.appendChild(destChild);\n\n                    numDiscarded += meta.numAttribsDiscarded;\n                    numDiscarded += copySafeNodes(sourceEl, destChild);\n                } else {\n                    numDiscarded++;\n                    numDiscarded += copySafeNodes(sourceEl, destination);\n                }\n            } else if (source instanceof TextNode) {\n                TextNode sourceText = (TextNode) source;\n                TextNode destText = new TextNode(sourceText.getWholeText(), source.baseUri());\n                destination.appendChild(destText);\n            }\n        }\n        return numDiscarded;\n\n\n    }\n\n    private ElementMeta createSafeElement(Element sourceEl) {\n        String sourceTag = sourceEl.tagName();\n        Attributes destAttrs = new Attributes();\n        Element dest = new Element(Tag.valueOf(sourceTag), sourceEl.baseUri(), destAttrs);\n        int numDiscarded = 0;\n\n        Attributes sourceAttrs = sourceEl.attributes();\n        for (Attribute sourceAttr : sourceAttrs) {\n            if (whitelist.isSafeAttribute(sourceTag, sourceEl, sourceAttr))\n                destAttrs.put(sourceAttr);\n            else\n                numDiscarded++;\n        }\n        Attributes enforcedAttrs = whitelist.getEnforcedAttributes(sourceTag);\n        destAttrs.addAll(enforcedAttrs);\n\n        return new ElementMeta(dest, numDiscarded);\n    }\n\n    private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded) {\n            this.el = el;\n            this.numAttribsDiscarded = numAttribsDiscarded;\n        }\n    }\n\n}\n",
+      "fixed_full_code": "package org.jsoup.safety;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\nimport org.jsoup.parser.Tag;\nimport org.jsoup.select.NodeTraversor;\nimport org.jsoup.select.NodeVisitor;\n\nimport java.util.List;\n\n\npublic class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist) {\n        Validate.notNull(whitelist);\n        this.whitelist = whitelist;\n    }\n\n    \n    public Document clean(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        if (dirtyDocument.body() != null) \n            copySafeNodes(dirtyDocument.body(), clean.body());\n\n        return clean;\n    }\n\n    \n    public boolean isValid(Document dirtyDocument) {\n        Validate.notNull(dirtyDocument);\n\n        Document clean = Document.createShell(dirtyDocument.baseUri());\n        int numDiscarded = copySafeNodes(dirtyDocument.body(), clean.body());\n        return numDiscarded == 0;\n    }\n\n    \n    private final class CleaningVisitor implements NodeVisitor { private int numDiscarded = 0; private final Element root; private Element destination; private CleaningVisitor(Element root, Element destination) {\n            this.root = root;\n            this.destination = destination;\n        }\n\n        public void head(Node source, int depth) {\n            if (source instanceof Element) {\n                Element sourceEl = (Element) source;\n\n                if (whitelist.isSafeTag(sourceEl.tagName())) { \n                    ElementMeta meta = createSafeElement(sourceEl);\n                    Element destChild = meta.el;\n                    destination.appendChild(destChild);\n\n                    numDiscarded += meta.numAttribsDiscarded;\n                    destination = destChild;\n                } else if (source != root) { \n                    numDiscarded++;\n                }\n            } else if (source instanceof TextNode) {\n                TextNode sourceText = (TextNode) source;\n                TextNode destText = new TextNode(sourceText.getWholeText(), source.baseUri());\n                destination.appendChild(destText);\n            } else { \n                numDiscarded++;\n            }\n        }\n\n        public void tail(Node source, int depth) {\n            if (source instanceof Element && whitelist.isSafeTag(source.nodeName())) {\n                destination = destination.parent(); \n            }\n        }\n    }\n\n    private int copySafeNodes(Element source, Element dest) {\n        CleaningVisitor cleaningVisitor = new CleaningVisitor(source, dest);\n        NodeTraversor traversor = new NodeTraversor(cleaningVisitor);\n        traversor.traverse(source);\n        return cleaningVisitor.numDiscarded;\n    }\n\n    private ElementMeta createSafeElement(Element sourceEl) {\n        String sourceTag = sourceEl.tagName();\n        Attributes destAttrs = new Attributes();\n        Element dest = new Element(Tag.valueOf(sourceTag), sourceEl.baseUri(), destAttrs);\n        int numDiscarded = 0;\n\n        Attributes sourceAttrs = sourceEl.attributes();\n        for (Attribute sourceAttr : sourceAttrs) {\n            if (whitelist.isSafeAttribute(sourceTag, sourceEl, sourceAttr))\n                destAttrs.put(sourceAttr);\n            else\n                numDiscarded++;\n        }\n        Attributes enforcedAttrs = whitelist.getEnforcedAttributes(sourceTag);\n        destAttrs.addAll(enforcedAttrs);\n\n        return new ElementMeta(dest, numDiscarded);\n    }\n\n    private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded) {\n            this.el = el;\n            this.numAttribsDiscarded = numAttribsDiscarded;\n        }\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist)",
+        "public Document clean(Document dirtyDocument)",
+        "public boolean isValid(Document dirtyDocument)",
+        "private int copySafeNodes(Element root, Element destination)",
+        "private ElementMeta createSafeElement(Element sourceEl)",
+        "private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded)"
+      ],
+      "fixed_signatures": [
+        "public class Cleaner { private Whitelist whitelist; public Cleaner(Whitelist whitelist)",
+        "public Document clean(Document dirtyDocument)",
+        "public boolean isValid(Document dirtyDocument)",
+        "public void head(Node source, int depth)",
+        "public void tail(Node source, int depth)",
+        "private int copySafeNodes(Element source, Element dest)",
+        "private ElementMeta createSafeElement(Element sourceEl)",
+        "private static class ElementMeta { Element el; int numAttribsDiscarded; ElementMeta(Element el, int numAttribsDiscarded)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -3,6 +3,8 @@",
+            " import org.jsoup.helper.Validate;\n",
+            " import org.jsoup.nodes.*;\n",
+            " import org.jsoup.parser.Tag;\n",
+            "+import org.jsoup.select.NodeTraversor;\n",
+            "+import org.jsoup.select.NodeVisitor;\n",
+            " \n",
+            " import java.util.List;\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  private int copySafeNodes(Element root, Element destination) {\n  List<Node> sourceChildren = root.childNodes();\n  int numDiscarded = 0;\n\n  for (Node source : sourceChildren) {\n  if (source instanceof Element) {\n  Element sourceEl = (Element) source;\n\n  if (whitelist.isSafeTag(sourceEl.tagName())) { \n  ElementMeta meta = createSafeElement(sourceEl);\n  Element destChild = meta.el;\n  destination.appendChild(destChild);\n\n  numDiscarded += meta.numAttribsDiscarded;\n  numDiscarded += copySafeNodes(sourceEl, destChild);\n  } else {\n  numDiscarded++;\n  numDiscarded += copySafeNodes(sourceEl, destination);\n  }\n  } else if (source instanceof TextNode) {\n  TextNode sourceText = (TextNode) source;\n  TextNode destText = new TextNode(sourceText.getWholeText(), source.baseUri());\n  destination.appendChild(destText);\n  }\n  }\n  return numDiscarded;\n\n\n  }",
+          "fixed_method": "  public boolean isValid(Document dirtyDocument) {\n  Validate.notNull(dirtyDocument);\n\n  Document clean = Document.createShell(dirtyDocument.baseUri());\n  int numDiscarded = copySafeNodes(dirtyDocument.body(), clean.body());\n  return numDiscarded == 0;\n  }",
+          "diff": [
+            "@@ -67,11 +69,17 @@",
+            "     /**\n",
+            "      Iterates the input and copies trusted nodes (tags, attributes, text) into the destination.\n",
+            "      */\n",
+            "-    private int copySafeNodes(Element root, Element destination) {\n",
+            "-        List<Node> sourceChildren = root.childNodes();\n",
+            "-        int numDiscarded = 0;\n",
+            "+    private final class CleaningVisitor implements NodeVisitor {\n",
+            "+        private int numDiscarded = 0;\n",
+            "+        private final Element root;\n",
+            "+        private Element destination; // current element to append nodes to\n",
+            " \n",
+            "-        for (Node source : sourceChildren) {\n",
+            "+        private CleaningVisitor(Element root, Element destination) {\n",
+            "+            this.root = root;\n",
+            "+            this.destination = destination;\n",
+            "+        }\n",
+            "+\n",
+            "+        public void head(Node source, int depth) {\n",
+            "             if (source instanceof Element) {\n",
+            "                 Element sourceEl = (Element) source;\n",
+            " \n",
+            "@@ -81,20 +89,31 @@",
+            "                     destination.appendChild(destChild);\n",
+            " \n",
+            "                     numDiscarded += meta.numAttribsDiscarded;\n",
+            "-                    numDiscarded += copySafeNodes(sourceEl, destChild);\n",
+            "-                } else {\n",
+            "+                    destination = destChild;\n",
+            "+                } else if (source != root) { // not a safe tag, so don't add. don't count root against discarded.\n",
+            "                     numDiscarded++;\n",
+            "-                    numDiscarded += copySafeNodes(sourceEl, destination);\n",
+            "                 }\n",
+            "             } else if (source instanceof TextNode) {\n",
+            "                 TextNode sourceText = (TextNode) source;\n",
+            "                 TextNode destText = new TextNode(sourceText.getWholeText(), source.baseUri());\n",
+            "                 destination.appendChild(destText);\n",
+            "+            } else { // else, we don't care about comments, xml proc instructions, etc\n",
+            "+                numDiscarded++;\n",
+            "             }\n",
+            "         }\n",
+            "-        return numDiscarded;\n",
+            " \n",
+            "+        public void tail(Node source, int depth) {\n",
+            "+            if (source instanceof Element && whitelist.isSafeTag(source.nodeName())) {\n",
+            "+                destination = destination.parent(); // would have descended, so pop destination stack\n",
+            "+            }\n",
+            "+        }\n",
+            "+    }\n",
+            " \n",
+            "+    private int copySafeNodes(Element source, Element dest) {\n",
+            "+        CleaningVisitor cleaningVisitor = new CleaningVisitor(source, dest);\n",
+            "+        NodeTraversor traversor = new NodeTraversor(cleaningVisitor);\n",
+            "+        traversor.traverse(source);\n",
+            "+        return cleaningVisitor.numDiscarded;\n",
+            "     }\n",
+            " \n",
+            "     private ElementMeta createSafeElement(Element sourceEl) {\n"
+          ],
+          "changed_lines": 33
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "bug_id": "11",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.model.dom.DOMModelTest": [
+      {
+        "methodName": "testNamespaceMapping",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating <vendor[1]/product[1]/rate:amount[1]/@rate:discount> expected:<10%> but was:<20%>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 55, XMLModelTestCase.testNamespaceMapping line 800"
+        ]
+      }
+    ],
+    "org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest": [
+      {
+        "methodName": "testNamespaceMapping",
+        "error": "org.apache.commons.jxpath.JXPathNotFoundException",
+        "message": "No value for xpath: vendor[1]/product[1]/rate:amount[1]/@rate:discount",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "JXPathContextReferenceImpl.getValue line 355, JXPathContextReferenceImpl.getValue line 289, JXPathTestCase.assertXPathValue line 54, XMLModelTestCase.testNamespaceMapping line 800"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/model/dom/DOMAttributeIterator.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.model.dom;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodeIterator;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.w3c.dom.Attr;\nimport org.w3c.dom.Element;\nimport org.w3c.dom.NamedNodeMap;\nimport org.w3c.dom.Node;\n\n\npublic class DOMAttributeIterator implements NodeIterator { private NodePointer parent; private QName name; private List attributes; private int position = 0; public DOMAttributeIterator(NodePointer parent, QName name) {\n        this.parent = parent;\n        this.name = name;\n        attributes = new ArrayList();\n        Node node = (Node) parent.getNode();\n        if (node.getNodeType() == Node.ELEMENT_NODE) {\n            String lname = name.getName();\n            if (!lname.equals(\"*\")) {\n                Attr attr = getAttribute((Element) node, name);\n                if (attr != null) {\n                    attributes.add(attr);\n                }\n            }\n            else {\n                NamedNodeMap map = node.getAttributes();\n                int count = map.getLength();\n                for (int i = 0; i < count; i++) {\n                    Attr attr = (Attr) map.item(i);\n                    if (testAttr(attr, name)) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n        }\n    }\n\n    private boolean testAttr(Attr attr, QName testName) {\n        String nodePrefix = DOMNodePointer.getPrefix(attr);\n        String nodeLocalName = DOMNodePointer.getLocalName(attr);\n\n        if (nodePrefix != null && nodePrefix.equals(\"xmlns\")) {\n            return false;\n        }\n\n        if (nodePrefix == null && nodeLocalName.equals(\"xmlns\")) {\n            return false;\n        }\n\n        String testLocalName = name.getName();\n        if (testLocalName.equals(\"*\") || testLocalName.equals(nodeLocalName)) {\n            String testPrefix = testName.getPrefix();\n\n            if (equalStrings(testPrefix, nodePrefix)) {\n                return true;\n            }\n\n            String testNS = null;\n            if (testPrefix != null) {\n                testNS = parent.getNamespaceURI(testPrefix);\n            }\n\n            String nodeNS = null;\n            if (nodePrefix != null) {\n                nodeNS = parent.getNamespaceURI(nodePrefix);\n            }\n            return equalStrings(testNS, nodeNS);\n        }\n        return false;\n    }\n\n    private static boolean equalStrings(String s1, String s2) {\n        return s1 == s2 || s1 != null && s1.equals(s2);\n    }\n\n    private Attr getAttribute(Element element, QName name) {\n        String testPrefix = name.getPrefix();\n        String testNS = null;\n\n        if (testPrefix != null) {\n            testNS = parent.getNamespaceURI(testPrefix);\n        }\n\n        if (testNS != null) {\n            Attr attr = element.getAttributeNodeNS(testNS, name.getName());\n            if (attr != null) {\n                return attr;\n            }\n\n            \n            \n            \n            NamedNodeMap nnm = element.getAttributes();\n            for (int i = 0; i < nnm.getLength(); i++) {\n                attr = (Attr) nnm.item(i);\n                if (testAttr(attr, name)) {\n                    return attr;\n                }\n            }\n            return null;\n        }\n        return element.getAttributeNode(name.getName());\n    }\n\n    public NodePointer getNodePointer() {\n        if (position == 0) {\n            if (!setPosition(1)) {\n                return null;\n            }\n            position = 0;\n        }\n        int index = position - 1;\n        if (index < 0) {\n            index = 0;\n        }\n        return new DOMAttributePointer(parent, (Attr) attributes.get(index));\n    }\n\n    public int getPosition() {\n        return position;\n    }\n\n    public boolean setPosition(int position) {\n        this.position = position;\n        return position >= 1 && position <= attributes.size();\n    }\n}",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.model.dom;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\nimport org.apache.commons.jxpath.ri.NamespaceResolver;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodeIterator;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.w3c.dom.Attr;\nimport org.w3c.dom.Element;\nimport org.w3c.dom.NamedNodeMap;\nimport org.w3c.dom.Node;\n\n\npublic class DOMAttributeIterator implements NodeIterator { private NodePointer parent; private QName name; private List attributes; private int position = 0; public DOMAttributeIterator(NodePointer parent, QName name) {\n        this.parent = parent;\n        this.name = name;\n        attributes = new ArrayList();\n        Node node = (Node) parent.getNode();\n        if (node.getNodeType() == Node.ELEMENT_NODE) {\n            String lname = name.getName();\n            if (!lname.equals(\"*\")) {\n                Attr attr = getAttribute((Element) node, name);\n                if (attr != null) {\n                    attributes.add(attr);\n                }\n            }\n            else {\n                NamedNodeMap map = node.getAttributes();\n                int count = map.getLength();\n                for (int i = 0; i < count; i++) {\n                    Attr attr = (Attr) map.item(i);\n                    if (testAttr(attr, name)) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n        }\n    }\n\n    private boolean testAttr(Attr attr, QName testName) {\n        String nodePrefix = DOMNodePointer.getPrefix(attr);\n        String nodeLocalName = DOMNodePointer.getLocalName(attr);\n\n        if (nodePrefix != null && nodePrefix.equals(\"xmlns\")) {\n            return false;\n        }\n\n        if (nodePrefix == null && nodeLocalName.equals(\"xmlns\")) {\n            return false;\n        }\n\n        String testLocalName = name.getName();\n        if (testLocalName.equals(\"*\") || testLocalName.equals(nodeLocalName)) {\n            String testPrefix = testName.getPrefix();\n\n            if (equalStrings(testPrefix, nodePrefix)) {\n                return true;\n            }\n\n            String testNS = null;\n            if (testPrefix != null) {\n                testNS = parent.getNamespaceURI(testPrefix);\n            }\n\n            String nodeNS = null;\n            if (nodePrefix != null) {\n                nodeNS = parent.getNamespaceURI(nodePrefix);\n            }\n            return equalStrings(testNS, nodeNS);\n        }\n        return false;\n    }\n\n    private static boolean equalStrings(String s1, String s2) {\n        return s1 == s2 || s1 != null && s1.equals(s2);\n    }\n\n    private Attr getAttribute(Element element, QName name) {\n        String testPrefix = name.getPrefix();\n        String testNS = null;\n\n        if (testPrefix != null) {\n            NamespaceResolver nsr = parent.getNamespaceResolver();\n            testNS = nsr == null ? null : nsr.getNamespaceURI(testPrefix);\n            testNS = testNS == null ? parent.getNamespaceURI(testPrefix) : testNS;\n        }\n\n        if (testNS != null) {\n            Attr attr = element.getAttributeNodeNS(testNS, name.getName());\n            if (attr != null) {\n                return attr;\n            }\n\n            \n            \n            \n            NamedNodeMap nnm = element.getAttributes();\n            for (int i = 0; i < nnm.getLength(); i++) {\n                attr = (Attr) nnm.item(i);\n                if (testAttr(attr, name)) {\n                    return attr;\n                }\n            }\n            return null;\n        }\n        return element.getAttributeNode(name.getName());\n    }\n\n    public NodePointer getNodePointer() {\n        if (position == 0) {\n            if (!setPosition(1)) {\n                return null;\n            }\n            position = 0;\n        }\n        int index = position - 1;\n        if (index < 0) {\n            index = 0;\n        }\n        return new DOMAttributePointer(parent, (Attr) attributes.get(index));\n    }\n\n    public int getPosition() {\n        return position;\n    }\n\n    public boolean setPosition(int position) {\n        this.position = position;\n        return position >= 1 && position <= attributes.size();\n    }\n}",
+      "buggy_signatures": [
+        "private boolean testAttr(Attr attr, QName testName)",
+        "private static boolean equalStrings(String s1, String s2)",
+        "private Attr getAttribute(Element element, QName name)",
+        "public NodePointer getNodePointer()",
+        "public int getPosition()",
+        "public boolean setPosition(int position)"
+      ],
+      "fixed_signatures": [
+        "private boolean testAttr(Attr attr, QName testName)",
+        "private static boolean equalStrings(String s1, String s2)",
+        "private Attr getAttribute(Element element, QName name)",
+        "public NodePointer getNodePointer()",
+        "public int getPosition()",
+        "public boolean setPosition(int position)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -19,6 +19,7 @@",
+            " import java.util.ArrayList;\n",
+            " import java.util.List;\n",
+            " \n",
+            "+import org.apache.commons.jxpath.ri.NamespaceResolver;\n",
+            " import org.apache.commons.jxpath.ri.QName;\n",
+            " import org.apache.commons.jxpath.ri.model.NodeIterator;\n",
+            " import org.apache.commons.jxpath.ri.model.NodePointer;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  private Attr getAttribute(Element element, QName name) {\n  String testPrefix = name.getPrefix();\n  String testNS = null;\n\n  if (testPrefix != null) {\n  testNS = parent.getNamespaceURI(testPrefix);\n  }\n\n  if (testNS != null) {\n  Attr attr = element.getAttributeNodeNS(testNS, name.getName());\n  if (attr != null) {\n  return attr;\n  }\n\n  \n  \n  \n  NamedNodeMap nnm = element.getAttributes();\n  for (int i = 0; i < nnm.getLength(); i++) {\n  attr = (Attr) nnm.item(i);\n  if (testAttr(attr, name)) {\n  return attr;\n  }\n  }\n  return null;\n  }\n  return element.getAttributeNode(name.getName());\n  }",
+          "fixed_method": "  private Attr getAttribute(Element element, QName name) {\n  String testPrefix = name.getPrefix();\n  String testNS = null;\n\n  if (testPrefix != null) {\n  NamespaceResolver nsr = parent.getNamespaceResolver();\n  testNS = nsr == null ? null : nsr.getNamespaceURI(testPrefix);\n  testNS = testNS == null ? parent.getNamespaceURI(testPrefix) : testNS;\n  }\n\n  if (testNS != null) {\n  Attr attr = element.getAttributeNodeNS(testNS, name.getName());\n  if (attr != null) {\n  return attr;\n  }\n\n  \n  \n  \n  NamedNodeMap nnm = element.getAttributes();\n  for (int i = 0; i < nnm.getLength(); i++) {\n  attr = (Attr) nnm.item(i);\n  if (testAttr(attr, name)) {\n  return attr;\n  }\n  }\n  return null;\n  }\n  return element.getAttributeNode(name.getName());\n  }",
+          "diff": [
+            "@@ -108,7 +109,9 @@",
+            "         String testNS = null;\n",
+            " \n",
+            "         if (testPrefix != null) {\n",
+            "-            testNS = parent.getNamespaceURI(testPrefix);\n",
+            "+            NamespaceResolver nsr = parent.getNamespaceResolver();\n",
+            "+            testNS = nsr == null ? null : nsr.getNamespaceURI(testPrefix);\n",
+            "+            testNS = testNS == null ? parent.getNamespaceURI(testPrefix) : testNS;\n",
+            "         }\n",
+            " \n",
+            "         if (testNS != null) {\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    },
+    {
+      "name": "org/apache/commons/jxpath/ri/model/jdom/JDOMAttributeIterator.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.model.jdom;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\n\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodeIterator;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.jdom.Attribute;\nimport org.jdom.Element;\nimport org.jdom.Namespace;\n\n\npublic class JDOMAttributeIterator implements NodeIterator { private NodePointer parent; private List attributes; private int position = 0; public JDOMAttributeIterator(NodePointer parent, QName name) {\n        this.parent = parent;\n        if (parent.getNode() instanceof Element) {\n            Element element = (Element) parent.getNode();\n            String prefix = name.getPrefix();\n            Namespace ns = null;\n            if (prefix != null) {\n                if (prefix.equals(\"xml\")) {\n                    ns = Namespace.XML_NAMESPACE;\n                }\n                else {\n                        ns = element.getNamespace(prefix);\n                        if (ns == null) {\n                            \n                            attributes = Collections.EMPTY_LIST;\n                            return;\n                        }\n                }\n            }\n            else {\n                ns = Namespace.NO_NAMESPACE;\n            }\n\n            String lname = name.getName();\n            if (!lname.equals(\"*\")) {\n                attributes = new ArrayList();\n                if (ns != null) {\n                    Attribute attr = element.getAttribute(lname, ns);\n                    if (attr != null) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n            else {\n                attributes = new ArrayList();\n                List allAttributes = element.getAttributes();\n                for (int i = 0; i < allAttributes.size(); i++) {\n                    Attribute attr = (Attribute) allAttributes.get(i);\n                    if (attr.getNamespace().equals(ns)) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n        }\n    }\n\n    public NodePointer getNodePointer() {\n        if (position == 0) {\n            if (!setPosition(1)) {\n                return null;\n            }\n            position = 0;\n        }\n        int index = position - 1;\n        if (index < 0) {\n            index = 0;\n        }\n        return new JDOMAttributePointer(\n            parent,\n            (Attribute) attributes.get(index));\n    }\n\n    public int getPosition() {\n        return position;\n    }\n\n    public boolean setPosition(int position) {\n        if (attributes == null) {\n            return false;\n        }\n        this.position = position;\n        return position >= 1 && position <= attributes.size();\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.model.jdom;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\n\nimport org.apache.commons.jxpath.ri.NamespaceResolver;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodeIterator;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\nimport org.jdom.Attribute;\nimport org.jdom.Element;\nimport org.jdom.Namespace;\n\n\npublic class JDOMAttributeIterator implements NodeIterator { private NodePointer parent; private List attributes; private int position = 0; public JDOMAttributeIterator(NodePointer parent, QName name) {\n        this.parent = parent;\n        if (parent.getNode() instanceof Element) {\n            Element element = (Element) parent.getNode();\n            String prefix = name.getPrefix();\n            Namespace ns = null;\n            if (prefix != null) {\n                if (prefix.equals(\"xml\")) {\n                    ns = Namespace.XML_NAMESPACE;\n                }\n                else {\n                    NamespaceResolver nsr = parent.getNamespaceResolver();\n                    if (nsr != null) {\n                        String uri = nsr.getNamespaceURI(prefix);\n                        if (uri != null) {\n                            ns = Namespace.getNamespace(prefix, uri);\n                        }\n                    }\n                    if (ns == null) {\n                        ns = element.getNamespace(prefix);\n                        if (ns == null) {\n                            \n                            attributes = Collections.EMPTY_LIST;\n                            return;\n                        }\n                    }\n                }\n            }\n            else {\n                ns = Namespace.NO_NAMESPACE;\n            }\n\n            String lname = name.getName();\n            if (!lname.equals(\"*\")) {\n                attributes = new ArrayList();\n                if (ns != null) {\n                    Attribute attr = element.getAttribute(lname, ns);\n                    if (attr != null) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n            else {\n                attributes = new ArrayList();\n                List allAttributes = element.getAttributes();\n                for (int i = 0; i < allAttributes.size(); i++) {\n                    Attribute attr = (Attribute) allAttributes.get(i);\n                    if (attr.getNamespace().equals(ns)) {\n                        attributes.add(attr);\n                    }\n                }\n            }\n        }\n    }\n\n    public NodePointer getNodePointer() {\n        if (position == 0) {\n            if (!setPosition(1)) {\n                return null;\n            }\n            position = 0;\n        }\n        int index = position - 1;\n        if (index < 0) {\n            index = 0;\n        }\n        return new JDOMAttributePointer(\n            parent,\n            (Attribute) attributes.get(index));\n    }\n\n    public int getPosition() {\n        return position;\n    }\n\n    public boolean setPosition(int position) {\n        if (attributes == null) {\n            return false;\n        }\n        this.position = position;\n        return position >= 1 && position <= attributes.size();\n    }\n}",
+      "buggy_signatures": [
+        "public NodePointer getNodePointer()",
+        "public int getPosition()",
+        "public boolean setPosition(int position)"
+      ],
+      "fixed_signatures": [
+        "public NodePointer getNodePointer()",
+        "public int getPosition()",
+        "public boolean setPosition(int position)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -20,6 +20,7 @@",
+            " import java.util.Collections;\n",
+            " import java.util.List;\n",
+            " \n",
+            "+import org.apache.commons.jxpath.ri.NamespaceResolver;\n",
+            " import org.apache.commons.jxpath.ri.QName;\n",
+            " import org.apache.commons.jxpath.ri.model.NodeIterator;\n",
+            " import org.apache.commons.jxpath.ri.model.NodePointer;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public JDOMAttributeIterator(NodePointer parent, QName name) {\n  this.parent = parent;\n  if (parent.getNode() instanceof Element) {\n  Element element = (Element) parent.getNode();\n  String prefix = name.getPrefix();\n  Namespace ns = null;\n  if (prefix != null) {\n  if (prefix.equals(\"xml\")) {\n  ns = Namespace.XML_NAMESPACE;\n  }\n  else {\n  ns = element.getNamespace(prefix);\n  if (ns == null) {\n  \n  attributes = Collections.EMPTY_LIST;\n  return;\n  }\n  }\n  }\n  else {\n  ns = Namespace.NO_NAMESPACE;\n  }\n\n  String lname = name.getName();\n  if (!lname.equals(\"*\")) {\n  attributes = new ArrayList();\n  if (ns != null) {\n  Attribute attr = element.getAttribute(lname, ns);\n  if (attr != null) {\n  attributes.add(attr);\n  }\n  }\n  }\n  else {\n  attributes = new ArrayList();\n  List allAttributes = element.getAttributes();\n  for (int i = 0; i < allAttributes.size(); i++) {\n  Attribute attr = (Attribute) allAttributes.get(i);\n  if (attr.getNamespace().equals(ns)) {\n  attributes.add(attr);\n  }\n  }\n  }\n  }\n  }",
+          "fixed_method": "  public JDOMAttributeIterator(NodePointer parent, QName name) {\n  this.parent = parent;\n  if (parent.getNode() instanceof Element) {\n  Element element = (Element) parent.getNode();\n  String prefix = name.getPrefix();\n  Namespace ns = null;\n  if (prefix != null) {\n  if (prefix.equals(\"xml\")) {\n  ns = Namespace.XML_NAMESPACE;\n  }\n  else {\n  NamespaceResolver nsr = parent.getNamespaceResolver();\n  if (nsr != null) {\n  String uri = nsr.getNamespaceURI(prefix);\n  if (uri != null) {\n  ns = Namespace.getNamespace(prefix, uri);\n  }\n  }\n  if (ns == null) {\n  ns = element.getNamespace(prefix);\n  if (ns == null) {\n  \n  attributes = Collections.EMPTY_LIST;\n  return;\n  }\n  }\n  }\n  }\n  else {\n  ns = Namespace.NO_NAMESPACE;\n  }\n\n  String lname = name.getName();\n  if (!lname.equals(\"*\")) {\n  attributes = new ArrayList();\n  if (ns != null) {\n  Attribute attr = element.getAttribute(lname, ns);\n  if (attr != null) {\n  attributes.add(attr);\n  }\n  }\n  }\n  else {\n  attributes = new ArrayList();\n  List allAttributes = element.getAttributes();\n  for (int i = 0; i < allAttributes.size(); i++) {\n  Attribute attr = (Attribute) allAttributes.get(i);\n  if (attr.getNamespace().equals(ns)) {\n  attributes.add(attr);\n  }\n  }\n  }\n  }\n  }",
+          "diff": [
+            "@@ -49,12 +50,21 @@",
+            "                     ns = Namespace.XML_NAMESPACE;\n",
+            "                 }\n",
+            "                 else {\n",
+            "+                    NamespaceResolver nsr = parent.getNamespaceResolver();\n",
+            "+                    if (nsr != null) {\n",
+            "+                        String uri = nsr.getNamespaceURI(prefix);\n",
+            "+                        if (uri != null) {\n",
+            "+                            ns = Namespace.getNamespace(prefix, uri);\n",
+            "+                        }\n",
+            "+                    }\n",
+            "+                    if (ns == null) {\n",
+            "                         ns = element.getNamespace(prefix);\n",
+            "                         if (ns == null) {\n",
+            "                             // TBD: no attributes\n",
+            "                             attributes = Collections.EMPTY_LIST;\n",
+            "                             return;\n",
+            "                         }\n",
+            "+                    }\n",
+            "                 }\n",
+            "             }\n",
+            "             else {\n"
+          ],
+          "changed_lines": 9
+        },
+        {
+          "buggy_method": "  public boolean setPosition(int position) {\n  if (attributes == null) {\n  return false;\n  }\n  this.position = position;\n  return position >= 1 && position <= attributes.size();\n  }",
+          "fixed_method": "  public boolean setPosition(int position) {\n  if (attributes == null) {\n  return false;\n  }\n  this.position = position;\n  return position >= 1 && position <= attributes.size();\n  }",
+          "diff": [
+            "@@ -111,4 +121,4 @@",
+            "         this.position = position;\n",
+            "         return position >= 1 && position <= attributes.size();\n",
+            "     }\n",
+            "-}\n",
+            "+}"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

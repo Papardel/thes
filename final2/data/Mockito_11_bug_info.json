@@ -1,0 +1,88 @@
+{
+  "bug_id": "11",
+  "failed_tests": {
+    "org.mockito.internal.creation.DelegatingMethodTest": [
+      {
+        "methodName": "equals_should_return_true_when_equal",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(delegatingMethod.equals(equal));",
+        "test_source": "  public void equals_should_return_true_when_equal() throws Exception {\n  DelegatingMethod equal = new DelegatingMethod(someMethod);\n  assertTrue(delegatingMethod.equals(equal));\n  }",
+        "stack": [
+          "DelegatingMethodTest.equals_should_return_true_when_equal line 30"
+        ]
+      },
+      {
+        "methodName": "equals_should_return_true_when_self",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(delegatingMethod.equals(delegatingMethod));",
+        "test_source": "  public void equals_should_return_true_when_self() throws Exception {\n  assertTrue(delegatingMethod.equals(delegatingMethod));\n  }",
+        "stack": [
+          "DelegatingMethodTest.equals_should_return_true_when_self line 35"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/creation/DelegatingMethod.java",
+      "buggy_full_code": "\npackage org.mockito.internal.creation;\n\nimport org.mockito.internal.invocation.MockitoMethod;\n\nimport java.lang.reflect.Method;\nimport java.lang.reflect.Modifier;\n\npublic class DelegatingMethod implements MockitoMethod { private final Method method; public DelegatingMethod(Method method) {\n        assert method != null : \"Method cannot be null\";\n        this.method = method;\n    }\n\n    public Class<?>[] getExceptionTypes() {\n        return method.getExceptionTypes();\n    }\n\n    public Method getJavaMethod() {\n        return method;\n    }\n\n    public String getName() {\n        return method.getName();\n    }\n\n    public Class<?>[] getParameterTypes() {\n        return method.getParameterTypes();\n    }\n\n    public Class<?> getReturnType() {\n        return method.getReturnType();\n    }\n\n    public boolean isVarArgs() {\n        return method.isVarArgs();\n    }\n\n    public boolean isAbstract() {\n        return (method.getModifiers() & Modifier.ABSTRACT) != 0;\n    }\n\n    \n    @Override\n    public boolean equals(Object o) {\n            return method.equals(o);\n    }\n\n    @Override\n    public int hashCode() {\n        return 1;\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal.creation;\n\nimport org.mockito.internal.invocation.MockitoMethod;\n\nimport java.lang.reflect.Method;\nimport java.lang.reflect.Modifier;\n\npublic class DelegatingMethod implements MockitoMethod { private final Method method; public DelegatingMethod(Method method) {\n        assert method != null : \"Method cannot be null\";\n        this.method = method;\n    }\n\n    public Class<?>[] getExceptionTypes() {\n        return method.getExceptionTypes();\n    }\n\n    public Method getJavaMethod() {\n        return method;\n    }\n\n    public String getName() {\n        return method.getName();\n    }\n\n    public Class<?>[] getParameterTypes() {\n        return method.getParameterTypes();\n    }\n\n    public Class<?> getReturnType() {\n        return method.getReturnType();\n    }\n\n    public boolean isVarArgs() {\n        return method.isVarArgs();\n    }\n\n    public boolean isAbstract() {\n        return (method.getModifiers() & Modifier.ABSTRACT) != 0;\n    }\n\n    \n    @Override\n    public boolean equals(Object o) {\n        if (this == o) {\n            return true;\n        }\n        if (o instanceof DelegatingMethod) {\n            DelegatingMethod that = (DelegatingMethod) o;\n            return method.equals(that.method);\n        } else {\n            return method.equals(o);\n        }\n    }\n\n    @Override\n    public int hashCode() {\n        return method.hashCode();\n    }\n}",
+      "buggy_signatures": [
+        "public class DelegatingMethod implements MockitoMethod { private final Method method; public DelegatingMethod(Method method)",
+        "public Class<?>[] getExceptionTypes()",
+        "public Method getJavaMethod()",
+        "public String getName()",
+        "public Class<?>[] getParameterTypes()",
+        "public Class<?> getReturnType()",
+        "public boolean isVarArgs()",
+        "public boolean isAbstract()",
+        "public boolean equals(Object o)",
+        "public int hashCode()"
+      ],
+      "fixed_signatures": [
+        "public class DelegatingMethod implements MockitoMethod { private final Method method; public DelegatingMethod(Method method)",
+        "public Class<?>[] getExceptionTypes()",
+        "public Method getJavaMethod()",
+        "public String getName()",
+        "public Class<?>[] getParameterTypes()",
+        "public Class<?> getReturnType()",
+        "public boolean isVarArgs()",
+        "public boolean isAbstract()",
+        "public boolean equals(Object o)",
+        "public int hashCode()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int hashCode() {\n  return 1;\n  }",
+          "fixed_method": "  public boolean equals(Object o) {\n  if (this == o) {\n  return true;\n  }\n  if (o instanceof DelegatingMethod) {\n  DelegatingMethod that = (DelegatingMethod) o;\n  return method.equals(that.method);\n  } else {\n  return method.equals(o);\n  }\n  }",
+          "diff": [
+            "@@ -52,11 +52,19 @@",
+            "      */\n",
+            "     @Override\n",
+            "     public boolean equals(Object o) {\n",
+            "+        if (this == o) {\n",
+            "+            return true;\n",
+            "+        }\n",
+            "+        if (o instanceof DelegatingMethod) {\n",
+            "+            DelegatingMethod that = (DelegatingMethod) o;\n",
+            "+            return method.equals(that.method);\n",
+            "+        } else {\n",
+            "             return method.equals(o);\n",
+            "+        }\n",
+            "     }\n",
+            " \n",
+            "     @Override\n",
+            "     public int hashCode() {\n",
+            "-        return 1;\n",
+            "+        return method.hashCode();\n",
+            "     }\n",
+            " }"
+          ],
+          "changed_lines": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,556 @@
+{
+  "bug_id": "34",
+  "failed_tests": {
+    "org.apache.commons.lang3.builder.ToStringBuilderTest": [
+      {
+        "methodName": "testObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        validateNullToStringStyleRegistry();",
+        "test_source": "  public void testObjectCycle() {\n  ObjectCycle a = new ObjectCycle();\n  ObjectCycle b = new ObjectCycle();\n  a.obj = b;\n  b.obj = a;\n\n  String expected = toBaseString(a) + \"[\" + toBaseString(b) + \"[\" + toBaseString(a) + \"]]\";\n  assertEquals(expected, a.toString());\n  validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testObjectCycle line 837"
+        ]
+      },
+      {
+        "methodName": "testReflectionHierarchy",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionHierarchy() {\n  ReflectionTestFixtureA baseA = new ReflectionTestFixtureA();\n  String baseStr = this.toBaseString(baseA);\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA));\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA, null));\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA, null, false));\n  assertEquals(baseStr + \"[a=a,transientA=t]\", ToStringBuilder.reflectionToString(baseA, null, true));\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA, null, false, null));\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA, null, false, Object.class));\n  assertEquals(baseStr + \"[a=a]\", ToStringBuilder.reflectionToString(baseA, null, false, ReflectionTestFixtureA.class));\n\n  ReflectionTestFixtureB baseB = new ReflectionTestFixtureB();\n  baseStr = this.toBaseString(baseB);\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB, null));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB, null, false));\n  assertEquals(baseStr + \"[b=b,transientB=t,a=a,transientA=t]\", ToStringBuilder.reflectionToString(baseB, null, true));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB, null, false, null));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB, null, false, Object.class));\n  assertEquals(baseStr + \"[b=b,a=a]\", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureA.class));\n  assertEquals(baseStr + \"[b=b]\", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureB.class));\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionHierarchy line 335"
+        ]
+      },
+      {
+        "methodName": "testSelfInstanceTwoVarsReflectionObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testSelfInstanceTwoVarsReflectionObjectCycle() throws Exception {\n  SelfInstanceTwoVarsReflectionTestFixture test = new SelfInstanceTwoVarsReflectionTestFixture();\n  assertEquals(this.toBaseString(test) + \"[typeIsSelf=\" + this.toBaseString(test) + \",otherType=\" + test.getOtherType().toString() + \"]\", test.toString());\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testSelfInstanceTwoVarsReflectionObjectCycle line 533"
+        ]
+      },
+      {
+        "methodName": "testReflectionArrayCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionArrayCycle() throws Exception {\n  Object[] objects = new Object[1];\n  objects[0] = objects;\n  assertEquals(\n  this.toBaseString(objects) + \"[{\" + this.toBaseString(objects) + \"}]\",\n  ToStringBuilder.reflectionToString(objects));\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionArrayCycle line 382"
+        ]
+      },
+      {
+        "methodName": "testReflectionLongArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionLongArrayArray() {\n  long[][] array = new long[][] { { 1, 2 }, null, { 5 } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1,2},<null>,{5}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionLongArrayArray line 243"
+        ]
+      },
+      {
+        "methodName": "testReflectionArrayArrayCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionArrayArrayCycle() throws Exception {\n  Object[][] objects = new Object[2][2];\n  objects[0][0] = objects;\n  objects[0][1] = objects;\n  objects[1][0] = objects;\n  objects[1][1] = objects;\n  String basicToString = this.toBaseString(objects);\n  assertEquals(\n  basicToString\n  + \"[{{\"\n  + basicToString\n  + \",\"\n  + basicToString\n  + \"},{\"\n  + basicToString\n  + \",\"\n  + basicToString\n  + \"}}]\",\n  ToStringBuilder.reflectionToString(objects));\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionArrayArrayCycle line 421"
+        ]
+      },
+      {
+        "methodName": "testReflectionFloatArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionFloatArray() {\n  float[] array = new float[] { 1.0f, 2.9876f, -3.00001f, 4.3f };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1.0,2.9876,-3.00001,4.3}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionFloatArray line 213"
+        ]
+      },
+      {
+        "methodName": "testReflectionDoubleArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionDoubleArrayArray() {\n  double[][] array = new double[][] { { 1.0, 2.29686 }, null, { Double.NaN } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1.0,2.29686},<null>,{NaN}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionDoubleArrayArray line 288"
+        ]
+      },
+      {
+        "methodName": "testReflectionBooleanArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionBooleanArray() {\n  boolean[] array = new boolean[] { true, false, false };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{true,false,false}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionBooleanArray line 222"
+        ]
+      },
+      {
+        "methodName": "testReflectionyteArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionyteArray() {\n  byte[] array = new byte[] { 1, 2, -3, 4 };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1,2,-3,4}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionyteArray line 186"
+        ]
+      },
+      {
+        "methodName": "testReflectionDoubleArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionDoubleArray() {\n  double[] array = new double[] { 1.0, 2.9876, -3.00001, 4.3 };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1.0,2.9876,-3.00001,4.3}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionDoubleArray line 204"
+        ]
+      },
+      {
+        "methodName": "testReflectionIntArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionIntArrayArray() {\n  int[][] array = new int[][] { { 1, 2 }, null, { 5 } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1,2},<null>,{5}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionIntArrayArray line 252"
+        ]
+      },
+      {
+        "methodName": "testReflectionLongArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionLongArray() {\n  long[] array = new long[] { 1, 2, -3, 4 };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1,2,-3,4}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionLongArray line 159"
+        ]
+      },
+      {
+        "methodName": "testReflectionhortArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionhortArrayArray() {\n  short[][] array = new short[][] { { 1, 2 }, null, { 5 } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1,2},<null>,{5}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionhortArrayArray line 261"
+        ]
+      },
+      {
+        "methodName": "testReflectionObjectArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionObjectArray() {\n  Object[] array = new Object[] { null, base, new int[] { 3, 6 } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{<null>,5,{3,6}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionObjectArray line 150"
+        ]
+      },
+      {
+        "methodName": "testReflectionObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionObjectCycle() throws Exception {\n  ReflectionTestCycleA a = new ReflectionTestCycleA();\n  ReflectionTestCycleB b = new ReflectionTestCycleB();\n  a.b = b;\n  b.a = a;\n  assertEquals(\n  this.toBaseString(a) + \"[b=\" + this.toBaseString(b) + \"[a=\" + this.toBaseString(a) + \"]]\",\n  a.toString());\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionObjectCycle line 550"
+        ]
+      },
+      {
+        "methodName": "testReflectionBooleanArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionBooleanArrayArray() {\n  boolean[][] array = new boolean[][] { { true, false }, null, { false } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{true,false},<null>,{false}}]\", ToStringBuilder.reflectionToString(array));\n  assertEquals(baseStr + \"[{{true,false},<null>,{false}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionBooleanArrayArray line 298"
+        ]
+      },
+      {
+        "methodName": "testSimpleReflectionObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testSimpleReflectionObjectCycle() throws Exception {\n  SimpleReflectionTestFixture simple = new SimpleReflectionTestFixture();\n  simple.o = simple;\n  assertEquals(this.toBaseString(simple) + \"[o=\" + this.toBaseString(simple) + \"]\", simple.toString());\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testSimpleReflectionObjectCycle line 510"
+        ]
+      },
+      {
+        "methodName": "testReflectionByteArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionByteArrayArray() {\n  byte[][] array = new byte[][] { { 1, 2 }, null, { 5 } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1,2},<null>,{5}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionByteArrayArray line 270"
+        ]
+      },
+      {
+        "methodName": "testReflectionArrayCycleLevel2",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionArrayCycleLevel2() throws Exception {\n  Object[] objects = new Object[1];\n  Object[] objectsLevel2 = new Object[1];\n  objects[0] = objectsLevel2;\n  objectsLevel2[0] = objects;\n  assertEquals(\n  this.toBaseString(objects) + \"[{{\" + this.toBaseString(objects) + \"}}]\",\n  ToStringBuilder.reflectionToString(objects));\n  assertEquals(\n  this.toBaseString(objectsLevel2) + \"[{{\" + this.toBaseString(objectsLevel2) + \"}}]\",\n  ToStringBuilder.reflectionToString(objectsLevel2));\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionArrayCycleLevel2 line 399"
+        ]
+      },
+      {
+        "methodName": "testReflectionArrayAndObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionArrayAndObjectCycle() throws Exception {\n  Object[] objects = new Object[1];\n  SimpleReflectionTestFixture simple = new SimpleReflectionTestFixture(objects);\n  objects[0] = simple;\n  assertEquals(\n  this.toBaseString(objects)\n  + \"[{\"\n  + this.toBaseString(simple)\n  + \"[o=\"\n  + this.toBaseString(objects)\n  + \"]\"\n  + \"}]\",\n  ToStringBuilder.reflectionToString(objects));\n  assertEquals(\n  this.toBaseString(simple)\n  + \"[o={\"\n  + this.toBaseString(simple)\n  + \"}]\",\n  ToStringBuilder.reflectionToString(simple));\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionArrayAndObjectCycle line 578"
+        ]
+      },
+      {
+        "methodName": "testReflectionCharArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionCharArrayArray() {\n  char[][] array = new char[][] { { 'A', 'B' }, null, { 'p' } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{A,B},<null>,{p}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionCharArrayArray line 279"
+        ]
+      },
+      {
+        "methodName": "testReflectionShortArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionShortArray() {\n  short[] array = new short[] { 1, 2, -3, 4 };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1,2,-3,4}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionShortArray line 177"
+        ]
+      },
+      {
+        "methodName": "testSelfInstanceVarReflectionObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testSelfInstanceVarReflectionObjectCycle() throws Exception {\n  SelfInstanceVarReflectionTestFixture test = new SelfInstanceVarReflectionTestFixture();\n  assertEquals(this.toBaseString(test) + \"[typeIsSelf=\" + this.toBaseString(test) + \"]\", test.toString());\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testSelfInstanceVarReflectionObjectCycle line 521"
+        ]
+      },
+      {
+        "methodName": "testReflectionIntArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionIntArray() {\n  int[] array = new int[] { 1, 2, -3, 4 };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{1,2,-3,4}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionIntArray line 168"
+        ]
+      },
+      {
+        "methodName": "testReflectionCharArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionCharArray() {\n  char[] array = new char[] { 'A', '2', '_', 'D' };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{A,2,_,D}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionCharArray line 195"
+        ]
+      },
+      {
+        "methodName": "testReflectionFloatArrayArray",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: {}",
+        "fail_line": "        this.validateNullToStringStyleRegistry();",
+        "test_source": "  public void testReflectionFloatArrayArray() {\n  float[][] array = new float[][] { { 1.0f, 2.29686f }, null, { Float.NaN } };\n  String baseStr = this.toBaseString(array);\n  assertEquals(baseStr + \"[{{1.0,2.29686},<null>,{NaN}}]\", ToStringBuilder.reflectionToString(array));\n  array = null;\n  assertReflectionArray(\"<null>\", array);\n  this.validateNullToStringStyleRegistry();\n  }",
+        "stack": [
+          "ToStringBuilderTest.validateNullToStringStyleRegistry line 586, ToStringBuilderTest.testReflectionFloatArrayArray line 233"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/builder/ToStringStyle.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang3.builder;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.WeakHashMap;\n\nimport org.apache.commons.lang3.ClassUtils;\nimport org.apache.commons.lang3.ObjectUtils;\nimport org.apache.commons.lang3.SystemUtils;\n\n\npublic abstract class ToStringStyle implements Serializable { public static final ToStringStyle DEFAULT_STYLE = new DefaultToStringStyle(); public static final ToStringStyle MULTI_LINE_STYLE = new MultiLineToStringStyle(); public static final ToStringStyle NO_FIELD_NAMES_STYLE = new NoFieldNameToStringStyle(); public static final ToStringStyle SHORT_PREFIX_STYLE = new ShortPrefixToStringStyle(); public static final ToStringStyle SIMPLE_STYLE = new SimpleToStringStyle(); private static final ThreadLocal<WeakHashMap<Object, Object>> REGISTRY = new ThreadLocal<WeakHashMap<Object,Object>>(); static Map<Object, Object> getRegistry() {\n        return REGISTRY.get() != null ? REGISTRY.get() : Collections.<Object, Object>emptyMap();\n    }\n\n    \n    static boolean isRegistered(Object value) {\n        Map<Object, Object> m = getRegistry();\n        return m.containsKey(value);\n    }\n\n    \n    static void register(Object value) {\n        if (value != null) {\n            WeakHashMap<Object, Object> m;\n            synchronized (ToStringStyle.class) {\n                m = REGISTRY.get();\n                if (m == null) {\n                    m = new WeakHashMap<Object, Object>();\n                    REGISTRY.set(m);\n                }\n            }\n            m.put(value, null);\n        }\n    }\n\n    \n    static void unregister(Object value) {\n        if (value != null) {\n            WeakHashMap<Object, Object> m;\n            synchronized (ToStringStyle.class) {\n                m = REGISTRY.get();\n                if (m != null) {\n                    m.remove(value);\n                    if (m.isEmpty()) {\n                        REGISTRY.remove();\n                    }\n                }\n            }\n        }\n    }\n\n    \n    private boolean useFieldNames = true; private boolean useClassName = true; private boolean useShortClassName = false; private boolean useIdentityHashCode = true; private String contentStart = \"[\"; private String contentEnd = \"]\"; private String fieldNameValueSeparator = \"=\"; private boolean fieldSeparatorAtStart = false; private boolean fieldSeparatorAtEnd = false; private String fieldSeparator = \",\"; private String arrayStart = \"{\"; private String arraySeparator = \",\"; private boolean arrayContentDetail = true; private String arrayEnd = \"}\"; private boolean defaultFullDetail = true; private String nullText = \"<null>\"; private String sizeStartText = \"<size=\"; private String sizeEndText = \">\"; private String summaryObjectStartText = \"<\"; private String summaryObjectEndText = \">\"; protected ToStringStyle() {\n        super();\n    }\n\n    \n\n    \n    public void appendSuper(StringBuffer buffer, String superToString) {\n        appendToString(buffer, superToString);\n    }\n\n    \n    public void appendToString(StringBuffer buffer, String toString) {\n        if (toString != null) {\n            int pos1 = toString.indexOf(contentStart) + contentStart.length();\n            int pos2 = toString.lastIndexOf(contentEnd);\n            if (pos1 != pos2 && pos1 >= 0 && pos2 >= 0) {\n                String data = toString.substring(pos1, pos2);\n                if (fieldSeparatorAtStart) {\n                    removeLastFieldSeparator(buffer);\n                }\n                buffer.append(data);\n                appendFieldSeparator(buffer);\n            }\n        }\n    }\n\n    \n    public void appendStart(StringBuffer buffer, Object object) {\n        if (object != null) {\n            appendClassName(buffer, object);\n            appendIdentityHashCode(buffer, object);\n            appendContentStart(buffer);\n            if (fieldSeparatorAtStart) {\n                appendFieldSeparator(buffer);\n            }\n        }\n    }\n\n    \n    public void appendEnd(StringBuffer buffer, Object object) {\n        if (this.fieldSeparatorAtEnd == false) {\n            removeLastFieldSeparator(buffer);\n        }\n        appendContentEnd(buffer);\n        unregister(object);\n    }\n\n    \n    protected void removeLastFieldSeparator(StringBuffer buffer) {\n        int len = buffer.length();\n        int sepLen = fieldSeparator.length();\n        if (len > 0 && sepLen > 0 && len >= sepLen) {\n            boolean match = true;\n            for (int i = 0; i < sepLen; i++) {\n                if (buffer.charAt(len - 1 - i) != fieldSeparator.charAt(sepLen - 1 - i)) {\n                    match = false;\n                    break;\n                }\n            }\n            if (match) {\n                buffer.setLength(len - sepLen);\n            }\n        }\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (value == null) {\n            appendNullText(buffer, fieldName);\n\n        } else {\n            appendInternal(buffer, fieldName, value, isFullDetail(fullDetail));\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendInternal(StringBuffer buffer, String fieldName, Object value, boolean detail) {\n        if (isRegistered(value)\n            && !(value instanceof Number || value instanceof Boolean || value instanceof Character)) {\n           appendCyclicObject(buffer, fieldName, value);\n           return;\n        }\n\n        register(value);\n\n        try {\n            if (value instanceof Collection<?>) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Collection<?>) value);\n                } else {\n                    appendSummarySize(buffer, fieldName, ((Collection<?>) value).size());\n                }\n\n            } else if (value instanceof Map<?, ?>) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Map<?, ?>) value);\n                } else {\n                    appendSummarySize(buffer, fieldName, ((Map<?, ?>) value).size());\n                }\n\n            } else if (value instanceof long[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (long[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (long[]) value);\n                }\n\n            } else if (value instanceof int[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (int[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (int[]) value);\n                }\n\n            } else if (value instanceof short[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (short[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (short[]) value);\n                }\n\n            } else if (value instanceof byte[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (byte[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (byte[]) value);\n                }\n\n            } else if (value instanceof char[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (char[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (char[]) value);\n                }\n\n            } else if (value instanceof double[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (double[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (double[]) value);\n                }\n\n            } else if (value instanceof float[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (float[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (float[]) value);\n                }\n\n            } else if (value instanceof boolean[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (boolean[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (boolean[]) value);\n                }\n\n            } else if (value.getClass().isArray()) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Object[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (Object[]) value);\n                }\n\n            } else {\n                    if (detail) {\n                        appendDetail(buffer, fieldName, value);\n                    } else {\n                        appendSummary(buffer, fieldName, value);\n                    }\n            }\n        } finally {\n            unregister(value);\n        }\n    }\n\n    \n    protected void appendCyclicObject(StringBuffer buffer, String fieldName, Object value) {\n       ObjectUtils.identityToString(buffer, value);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Object value) {\n        buffer.append(value);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Collection<?> coll) {\n        buffer.append(coll);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Map<?, ?> map) {\n        buffer.append(map);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, Object value) {\n        buffer.append(summaryObjectStartText);\n        buffer.append(getShortClassName(value.getClass()));\n        buffer.append(summaryObjectEndText);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, long value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, long value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, int value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, int value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, short value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, short value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, byte value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, byte value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, char value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, char value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, double value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, double value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, float value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, float value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, boolean value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, boolean value) {\n        buffer.append(value);\n    }\n\n    \n    public void append(StringBuffer buffer, String fieldName, Object[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Object[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            Object item = array[i];\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            if (item == null) {\n                appendNullText(buffer, fieldName);\n\n            } else {\n                appendInternal(buffer, fieldName, item, arrayContentDetail);\n            }\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void reflectionAppendArrayDetail(StringBuffer buffer, String fieldName, Object array) {\n        buffer.append(arrayStart);\n        int length = Array.getLength(array);\n        for (int i = 0; i < length; i++) {\n            Object item = Array.get(array, i);\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            if (item == null) {\n                appendNullText(buffer, fieldName);\n\n            } else {\n                appendInternal(buffer, fieldName, item, arrayContentDetail);\n            }\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, Object[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, long[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, long[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, long[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, int[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, int[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, int[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, short[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, short[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, short[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, byte[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, byte[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, byte[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, char[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, char[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, char[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, double[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, double[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, double[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, float[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, float[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, float[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, boolean[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, boolean[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, boolean[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    protected void appendClassName(StringBuffer buffer, Object object) {\n        if (useClassName && object != null) {\n            register(object);\n            if (useShortClassName) {\n                buffer.append(getShortClassName(object.getClass()));\n            } else {\n                buffer.append(object.getClass().getName());\n            }\n        }\n    }\n\n    \n    protected void appendIdentityHashCode(StringBuffer buffer, Object object) {\n        if (this.isUseIdentityHashCode() && object!=null) {\n            register(object);\n            buffer.append('@');\n            buffer.append(Integer.toHexString(System.identityHashCode(object)));\n        }\n    }\n\n    \n    protected void appendContentStart(StringBuffer buffer) {\n        buffer.append(contentStart);\n    }\n\n    \n    protected void appendContentEnd(StringBuffer buffer) {\n        buffer.append(contentEnd);\n    }\n\n    \n    protected void appendNullText(StringBuffer buffer, String fieldName) {\n        buffer.append(nullText);\n    }\n\n    \n    protected void appendFieldSeparator(StringBuffer buffer) {\n        buffer.append(fieldSeparator);\n    }\n\n    \n    protected void appendFieldStart(StringBuffer buffer, String fieldName) {\n        if (useFieldNames && fieldName != null) {\n            buffer.append(fieldName);\n            buffer.append(fieldNameValueSeparator);\n        }\n    }\n\n    \n    protected void appendFieldEnd(StringBuffer buffer, String fieldName) {\n        appendFieldSeparator(buffer);\n    }\n\n    \n    protected void appendSummarySize(StringBuffer buffer, String fieldName, int size) {\n        buffer.append(sizeStartText);\n        buffer.append(size);\n        buffer.append(sizeEndText);\n    }\n\n    \n    protected boolean isFullDetail(Boolean fullDetailRequest) {\n        if (fullDetailRequest == null) {\n            return defaultFullDetail;\n        }\n        return fullDetailRequest.booleanValue();\n    }\n\n    \n    protected String getShortClassName(Class<?> cls) {\n        return ClassUtils.getShortClassName(cls);\n    }\n\n    \n    \n    \n    \n\n    \n    protected boolean isUseClassName() {\n        return useClassName;\n    }\n\n    \n    protected void setUseClassName(boolean useClassName) {\n        this.useClassName = useClassName;\n    }\n\n    \n\n    \n    protected boolean isUseShortClassName() {\n        return useShortClassName;\n    }\n\n    \n    protected void setUseShortClassName(boolean useShortClassName) {\n        this.useShortClassName = useShortClassName;\n    }\n\n    \n\n    \n    protected boolean isUseIdentityHashCode() {\n        return useIdentityHashCode;\n    }\n\n    \n    protected void setUseIdentityHashCode(boolean useIdentityHashCode) {\n        this.useIdentityHashCode = useIdentityHashCode;\n    }\n\n    \n\n    \n    protected boolean isUseFieldNames() {\n        return useFieldNames;\n    }\n\n    \n    protected void setUseFieldNames(boolean useFieldNames) {\n        this.useFieldNames = useFieldNames;\n    }\n\n    \n\n    \n    protected boolean isDefaultFullDetail() {\n        return defaultFullDetail;\n    }\n\n    \n    protected void setDefaultFullDetail(boolean defaultFullDetail) {\n        this.defaultFullDetail = defaultFullDetail;\n    }\n\n    \n\n    \n    protected boolean isArrayContentDetail() {\n        return arrayContentDetail;\n    }\n\n    \n    protected void setArrayContentDetail(boolean arrayContentDetail) {\n        this.arrayContentDetail = arrayContentDetail;\n    }\n\n    \n\n    \n    protected String getArrayStart() {\n        return arrayStart;\n    }\n\n    \n    protected void setArrayStart(String arrayStart) {\n        if (arrayStart == null) {\n            arrayStart = \"\";\n        }\n        this.arrayStart = arrayStart;\n    }\n\n    \n\n    \n    protected String getArrayEnd() {\n        return arrayEnd;\n    }\n\n    \n    protected void setArrayEnd(String arrayEnd) {\n        if (arrayEnd == null) {\n            arrayEnd = \"\";\n        }\n        this.arrayEnd = arrayEnd;\n    }\n\n    \n\n    \n    protected String getArraySeparator() {\n        return arraySeparator;\n    }\n\n    \n    protected void setArraySeparator(String arraySeparator) {\n        if (arraySeparator == null) {\n            arraySeparator = \"\";\n        }\n        this.arraySeparator = arraySeparator;\n    }\n\n    \n\n    \n    protected String getContentStart() {\n        return contentStart;\n    }\n\n    \n    protected void setContentStart(String contentStart) {\n        if (contentStart == null) {\n            contentStart = \"\";\n        }\n        this.contentStart = contentStart;\n    }\n\n    \n\n    \n    protected String getContentEnd() {\n        return contentEnd;\n    }\n\n    \n    protected void setContentEnd(String contentEnd) {\n        if (contentEnd == null) {\n            contentEnd = \"\";\n        }\n        this.contentEnd = contentEnd;\n    }\n\n    \n\n    \n    protected String getFieldNameValueSeparator() {\n        return fieldNameValueSeparator;\n    }\n\n    \n    protected void setFieldNameValueSeparator(String fieldNameValueSeparator) {\n        if (fieldNameValueSeparator == null) {\n            fieldNameValueSeparator = \"\";\n        }\n        this.fieldNameValueSeparator = fieldNameValueSeparator;\n    }\n\n    \n\n    \n    protected String getFieldSeparator() {\n        return fieldSeparator;\n    }\n\n    \n    protected void setFieldSeparator(String fieldSeparator) {\n        if (fieldSeparator == null) {\n            fieldSeparator = \"\";\n        }\n        this.fieldSeparator = fieldSeparator;\n    }\n\n    \n\n    \n    protected boolean isFieldSeparatorAtStart() {\n        return fieldSeparatorAtStart;\n    }\n\n    \n    protected void setFieldSeparatorAtStart(boolean fieldSeparatorAtStart) {\n        this.fieldSeparatorAtStart = fieldSeparatorAtStart;\n    }\n\n    \n\n    \n    protected boolean isFieldSeparatorAtEnd() {\n        return fieldSeparatorAtEnd;\n    }\n\n    \n    protected void setFieldSeparatorAtEnd(boolean fieldSeparatorAtEnd) {\n        this.fieldSeparatorAtEnd = fieldSeparatorAtEnd;\n    }\n\n    \n\n    \n    protected String getNullText() {\n        return nullText;\n    }\n\n    \n    protected void setNullText(String nullText) {\n        if (nullText == null) {\n            nullText = \"\";\n        }\n        this.nullText = nullText;\n    }\n\n    \n\n    \n    protected String getSizeStartText() {\n        return sizeStartText;\n    }\n\n    \n    protected void setSizeStartText(String sizeStartText) {\n        if (sizeStartText == null) {\n            sizeStartText = \"\";\n        }\n        this.sizeStartText = sizeStartText;\n    }\n\n    \n\n    \n    protected String getSizeEndText() {\n        return sizeEndText;\n    }\n\n    \n    protected void setSizeEndText(String sizeEndText) {\n        if (sizeEndText == null) {\n            sizeEndText = \"\";\n        }\n        this.sizeEndText = sizeEndText;\n    }\n\n    \n\n    \n    protected String getSummaryObjectStartText() {\n        return summaryObjectStartText;\n    }\n\n    \n    protected void setSummaryObjectStartText(String summaryObjectStartText) {\n        if (summaryObjectStartText == null) {\n            summaryObjectStartText = \"\";\n        }\n        this.summaryObjectStartText = summaryObjectStartText;\n    }\n\n    \n\n    \n    protected String getSummaryObjectEndText() {\n        return summaryObjectEndText;\n    }\n\n    \n    protected void setSummaryObjectEndText(String summaryObjectEndText) {\n        if (summaryObjectEndText == null) {\n            summaryObjectEndText = \"\";\n        }\n        this.summaryObjectEndText = summaryObjectEndText;\n    }\n\n    \n\n    \n    private static final class DefaultToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; DefaultToStringStyle() {\n            super();\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.DEFAULT_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class NoFieldNameToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; NoFieldNameToStringStyle() {\n            super();\n            this.setUseFieldNames(false);\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.NO_FIELD_NAMES_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class ShortPrefixToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; ShortPrefixToStringStyle() {\n            super();\n            this.setUseShortClassName(true);\n            this.setUseIdentityHashCode(false);\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.SHORT_PREFIX_STYLE;\n        }\n\n    }\n\n    \n    private static final class SimpleToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; SimpleToStringStyle() {\n            super();\n            this.setUseClassName(false);\n            this.setUseIdentityHashCode(false);\n            this.setUseFieldNames(false);\n            this.setContentStart(\"\");\n            this.setContentEnd(\"\");\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.SIMPLE_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class MultiLineToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; MultiLineToStringStyle() {\n            super();\n            this.setContentStart(\"[\");\n            this.setFieldSeparator(SystemUtils.LINE_SEPARATOR + \"  \");\n            this.setFieldSeparatorAtStart(true);\n            this.setContentEnd(SystemUtils.LINE_SEPARATOR + \"]\");\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.MULTI_LINE_STYLE;\n        }\n\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang3.builder;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.WeakHashMap;\n\nimport org.apache.commons.lang3.ClassUtils;\nimport org.apache.commons.lang3.ObjectUtils;\nimport org.apache.commons.lang3.SystemUtils;\n\n\npublic abstract class ToStringStyle implements Serializable { public static final ToStringStyle DEFAULT_STYLE = new DefaultToStringStyle(); public static final ToStringStyle MULTI_LINE_STYLE = new MultiLineToStringStyle(); public static final ToStringStyle NO_FIELD_NAMES_STYLE = new NoFieldNameToStringStyle(); public static final ToStringStyle SHORT_PREFIX_STYLE = new ShortPrefixToStringStyle(); public static final ToStringStyle SIMPLE_STYLE = new SimpleToStringStyle(); private static final ThreadLocal<WeakHashMap<Object, Object>> REGISTRY = new ThreadLocal<WeakHashMap<Object,Object>>(); static Map<Object, Object> getRegistry() {\n        return REGISTRY.get();\n    }\n\n    \n    static boolean isRegistered(Object value) {\n        Map<Object, Object> m = getRegistry();\n        return m != null && m.containsKey(value);\n    }\n\n    \n    static void register(Object value) {\n        if (value != null) {\n            WeakHashMap<Object, Object> m;\n            synchronized (ToStringStyle.class) {\n                m = REGISTRY.get();\n                if (m == null) {\n                    m = new WeakHashMap<Object, Object>();\n                    REGISTRY.set(m);\n                }\n            }\n            m.put(value, null);\n        }\n    }\n\n    \n    static void unregister(Object value) {\n        if (value != null) {\n            WeakHashMap<Object, Object> m;\n            synchronized (ToStringStyle.class) {\n                m = REGISTRY.get();\n                if (m != null) {\n                    m.remove(value);\n                    if (m.isEmpty()) {\n                        REGISTRY.remove();\n                    }\n                }\n            }\n        }\n    }\n\n    \n    private boolean useFieldNames = true; private boolean useClassName = true; private boolean useShortClassName = false; private boolean useIdentityHashCode = true; private String contentStart = \"[\"; private String contentEnd = \"]\"; private String fieldNameValueSeparator = \"=\"; private boolean fieldSeparatorAtStart = false; private boolean fieldSeparatorAtEnd = false; private String fieldSeparator = \",\"; private String arrayStart = \"{\"; private String arraySeparator = \",\"; private boolean arrayContentDetail = true; private String arrayEnd = \"}\"; private boolean defaultFullDetail = true; private String nullText = \"<null>\"; private String sizeStartText = \"<size=\"; private String sizeEndText = \">\"; private String summaryObjectStartText = \"<\"; private String summaryObjectEndText = \">\"; protected ToStringStyle() {\n        super();\n    }\n\n    \n\n    \n    public void appendSuper(StringBuffer buffer, String superToString) {\n        appendToString(buffer, superToString);\n    }\n\n    \n    public void appendToString(StringBuffer buffer, String toString) {\n        if (toString != null) {\n            int pos1 = toString.indexOf(contentStart) + contentStart.length();\n            int pos2 = toString.lastIndexOf(contentEnd);\n            if (pos1 != pos2 && pos1 >= 0 && pos2 >= 0) {\n                String data = toString.substring(pos1, pos2);\n                if (fieldSeparatorAtStart) {\n                    removeLastFieldSeparator(buffer);\n                }\n                buffer.append(data);\n                appendFieldSeparator(buffer);\n            }\n        }\n    }\n\n    \n    public void appendStart(StringBuffer buffer, Object object) {\n        if (object != null) {\n            appendClassName(buffer, object);\n            appendIdentityHashCode(buffer, object);\n            appendContentStart(buffer);\n            if (fieldSeparatorAtStart) {\n                appendFieldSeparator(buffer);\n            }\n        }\n    }\n\n    \n    public void appendEnd(StringBuffer buffer, Object object) {\n        if (this.fieldSeparatorAtEnd == false) {\n            removeLastFieldSeparator(buffer);\n        }\n        appendContentEnd(buffer);\n        unregister(object);\n    }\n\n    \n    protected void removeLastFieldSeparator(StringBuffer buffer) {\n        int len = buffer.length();\n        int sepLen = fieldSeparator.length();\n        if (len > 0 && sepLen > 0 && len >= sepLen) {\n            boolean match = true;\n            for (int i = 0; i < sepLen; i++) {\n                if (buffer.charAt(len - 1 - i) != fieldSeparator.charAt(sepLen - 1 - i)) {\n                    match = false;\n                    break;\n                }\n            }\n            if (match) {\n                buffer.setLength(len - sepLen);\n            }\n        }\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (value == null) {\n            appendNullText(buffer, fieldName);\n\n        } else {\n            appendInternal(buffer, fieldName, value, isFullDetail(fullDetail));\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendInternal(StringBuffer buffer, String fieldName, Object value, boolean detail) {\n        if (isRegistered(value)\n            && !(value instanceof Number || value instanceof Boolean || value instanceof Character)) {\n           appendCyclicObject(buffer, fieldName, value);\n           return;\n        }\n\n        register(value);\n\n        try {\n            if (value instanceof Collection<?>) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Collection<?>) value);\n                } else {\n                    appendSummarySize(buffer, fieldName, ((Collection<?>) value).size());\n                }\n\n            } else if (value instanceof Map<?, ?>) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Map<?, ?>) value);\n                } else {\n                    appendSummarySize(buffer, fieldName, ((Map<?, ?>) value).size());\n                }\n\n            } else if (value instanceof long[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (long[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (long[]) value);\n                }\n\n            } else if (value instanceof int[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (int[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (int[]) value);\n                }\n\n            } else if (value instanceof short[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (short[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (short[]) value);\n                }\n\n            } else if (value instanceof byte[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (byte[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (byte[]) value);\n                }\n\n            } else if (value instanceof char[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (char[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (char[]) value);\n                }\n\n            } else if (value instanceof double[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (double[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (double[]) value);\n                }\n\n            } else if (value instanceof float[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (float[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (float[]) value);\n                }\n\n            } else if (value instanceof boolean[]) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (boolean[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (boolean[]) value);\n                }\n\n            } else if (value.getClass().isArray()) {\n                if (detail) {\n                    appendDetail(buffer, fieldName, (Object[]) value);\n                } else {\n                    appendSummary(buffer, fieldName, (Object[]) value);\n                }\n\n            } else {\n                    if (detail) {\n                        appendDetail(buffer, fieldName, value);\n                    } else {\n                        appendSummary(buffer, fieldName, value);\n                    }\n            }\n        } finally {\n            unregister(value);\n        }\n    }\n\n    \n    protected void appendCyclicObject(StringBuffer buffer, String fieldName, Object value) {\n       ObjectUtils.identityToString(buffer, value);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Object value) {\n        buffer.append(value);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Collection<?> coll) {\n        buffer.append(coll);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Map<?, ?> map) {\n        buffer.append(map);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, Object value) {\n        buffer.append(summaryObjectStartText);\n        buffer.append(getShortClassName(value.getClass()));\n        buffer.append(summaryObjectEndText);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, long value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, long value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, int value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, int value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, short value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, short value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, byte value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, byte value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, char value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, char value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, double value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, double value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, float value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, float value) {\n        buffer.append(value);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, boolean value) {\n        appendFieldStart(buffer, fieldName);\n        appendDetail(buffer, fieldName, value);\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, boolean value) {\n        buffer.append(value);\n    }\n\n    \n    public void append(StringBuffer buffer, String fieldName, Object[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, Object[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            Object item = array[i];\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            if (item == null) {\n                appendNullText(buffer, fieldName);\n\n            } else {\n                appendInternal(buffer, fieldName, item, arrayContentDetail);\n            }\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void reflectionAppendArrayDetail(StringBuffer buffer, String fieldName, Object array) {\n        buffer.append(arrayStart);\n        int length = Array.getLength(array);\n        for (int i = 0; i < length; i++) {\n            Object item = Array.get(array, i);\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            if (item == null) {\n                appendNullText(buffer, fieldName);\n\n            } else {\n                appendInternal(buffer, fieldName, item, arrayContentDetail);\n            }\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, Object[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, long[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, long[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, long[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, int[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, int[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, int[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, short[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, short[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, short[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, byte[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, byte[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, byte[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, char[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, char[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, char[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, double[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, double[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, double[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, float[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, float[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, float[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    public void append(StringBuffer buffer, String fieldName, boolean[] array, Boolean fullDetail) {\n        appendFieldStart(buffer, fieldName);\n\n        if (array == null) {\n            appendNullText(buffer, fieldName);\n\n        } else if (isFullDetail(fullDetail)) {\n            appendDetail(buffer, fieldName, array);\n\n        } else {\n            appendSummary(buffer, fieldName, array);\n        }\n\n        appendFieldEnd(buffer, fieldName);\n    }\n\n    \n    protected void appendDetail(StringBuffer buffer, String fieldName, boolean[] array) {\n        buffer.append(arrayStart);\n        for (int i = 0; i < array.length; i++) {\n            if (i > 0) {\n                buffer.append(arraySeparator);\n            }\n            appendDetail(buffer, fieldName, array[i]);\n        }\n        buffer.append(arrayEnd);\n    }\n\n    \n    protected void appendSummary(StringBuffer buffer, String fieldName, boolean[] array) {\n        appendSummarySize(buffer, fieldName, array.length);\n    }\n\n    \n\n    \n    protected void appendClassName(StringBuffer buffer, Object object) {\n        if (useClassName && object != null) {\n            register(object);\n            if (useShortClassName) {\n                buffer.append(getShortClassName(object.getClass()));\n            } else {\n                buffer.append(object.getClass().getName());\n            }\n        }\n    }\n\n    \n    protected void appendIdentityHashCode(StringBuffer buffer, Object object) {\n        if (this.isUseIdentityHashCode() && object!=null) {\n            register(object);\n            buffer.append('@');\n            buffer.append(Integer.toHexString(System.identityHashCode(object)));\n        }\n    }\n\n    \n    protected void appendContentStart(StringBuffer buffer) {\n        buffer.append(contentStart);\n    }\n\n    \n    protected void appendContentEnd(StringBuffer buffer) {\n        buffer.append(contentEnd);\n    }\n\n    \n    protected void appendNullText(StringBuffer buffer, String fieldName) {\n        buffer.append(nullText);\n    }\n\n    \n    protected void appendFieldSeparator(StringBuffer buffer) {\n        buffer.append(fieldSeparator);\n    }\n\n    \n    protected void appendFieldStart(StringBuffer buffer, String fieldName) {\n        if (useFieldNames && fieldName != null) {\n            buffer.append(fieldName);\n            buffer.append(fieldNameValueSeparator);\n        }\n    }\n\n    \n    protected void appendFieldEnd(StringBuffer buffer, String fieldName) {\n        appendFieldSeparator(buffer);\n    }\n\n    \n    protected void appendSummarySize(StringBuffer buffer, String fieldName, int size) {\n        buffer.append(sizeStartText);\n        buffer.append(size);\n        buffer.append(sizeEndText);\n    }\n\n    \n    protected boolean isFullDetail(Boolean fullDetailRequest) {\n        if (fullDetailRequest == null) {\n            return defaultFullDetail;\n        }\n        return fullDetailRequest.booleanValue();\n    }\n\n    \n    protected String getShortClassName(Class<?> cls) {\n        return ClassUtils.getShortClassName(cls);\n    }\n\n    \n    \n    \n    \n\n    \n    protected boolean isUseClassName() {\n        return useClassName;\n    }\n\n    \n    protected void setUseClassName(boolean useClassName) {\n        this.useClassName = useClassName;\n    }\n\n    \n\n    \n    protected boolean isUseShortClassName() {\n        return useShortClassName;\n    }\n\n    \n    protected void setUseShortClassName(boolean useShortClassName) {\n        this.useShortClassName = useShortClassName;\n    }\n\n    \n\n    \n    protected boolean isUseIdentityHashCode() {\n        return useIdentityHashCode;\n    }\n\n    \n    protected void setUseIdentityHashCode(boolean useIdentityHashCode) {\n        this.useIdentityHashCode = useIdentityHashCode;\n    }\n\n    \n\n    \n    protected boolean isUseFieldNames() {\n        return useFieldNames;\n    }\n\n    \n    protected void setUseFieldNames(boolean useFieldNames) {\n        this.useFieldNames = useFieldNames;\n    }\n\n    \n\n    \n    protected boolean isDefaultFullDetail() {\n        return defaultFullDetail;\n    }\n\n    \n    protected void setDefaultFullDetail(boolean defaultFullDetail) {\n        this.defaultFullDetail = defaultFullDetail;\n    }\n\n    \n\n    \n    protected boolean isArrayContentDetail() {\n        return arrayContentDetail;\n    }\n\n    \n    protected void setArrayContentDetail(boolean arrayContentDetail) {\n        this.arrayContentDetail = arrayContentDetail;\n    }\n\n    \n\n    \n    protected String getArrayStart() {\n        return arrayStart;\n    }\n\n    \n    protected void setArrayStart(String arrayStart) {\n        if (arrayStart == null) {\n            arrayStart = \"\";\n        }\n        this.arrayStart = arrayStart;\n    }\n\n    \n\n    \n    protected String getArrayEnd() {\n        return arrayEnd;\n    }\n\n    \n    protected void setArrayEnd(String arrayEnd) {\n        if (arrayEnd == null) {\n            arrayEnd = \"\";\n        }\n        this.arrayEnd = arrayEnd;\n    }\n\n    \n\n    \n    protected String getArraySeparator() {\n        return arraySeparator;\n    }\n\n    \n    protected void setArraySeparator(String arraySeparator) {\n        if (arraySeparator == null) {\n            arraySeparator = \"\";\n        }\n        this.arraySeparator = arraySeparator;\n    }\n\n    \n\n    \n    protected String getContentStart() {\n        return contentStart;\n    }\n\n    \n    protected void setContentStart(String contentStart) {\n        if (contentStart == null) {\n            contentStart = \"\";\n        }\n        this.contentStart = contentStart;\n    }\n\n    \n\n    \n    protected String getContentEnd() {\n        return contentEnd;\n    }\n\n    \n    protected void setContentEnd(String contentEnd) {\n        if (contentEnd == null) {\n            contentEnd = \"\";\n        }\n        this.contentEnd = contentEnd;\n    }\n\n    \n\n    \n    protected String getFieldNameValueSeparator() {\n        return fieldNameValueSeparator;\n    }\n\n    \n    protected void setFieldNameValueSeparator(String fieldNameValueSeparator) {\n        if (fieldNameValueSeparator == null) {\n            fieldNameValueSeparator = \"\";\n        }\n        this.fieldNameValueSeparator = fieldNameValueSeparator;\n    }\n\n    \n\n    \n    protected String getFieldSeparator() {\n        return fieldSeparator;\n    }\n\n    \n    protected void setFieldSeparator(String fieldSeparator) {\n        if (fieldSeparator == null) {\n            fieldSeparator = \"\";\n        }\n        this.fieldSeparator = fieldSeparator;\n    }\n\n    \n\n    \n    protected boolean isFieldSeparatorAtStart() {\n        return fieldSeparatorAtStart;\n    }\n\n    \n    protected void setFieldSeparatorAtStart(boolean fieldSeparatorAtStart) {\n        this.fieldSeparatorAtStart = fieldSeparatorAtStart;\n    }\n\n    \n\n    \n    protected boolean isFieldSeparatorAtEnd() {\n        return fieldSeparatorAtEnd;\n    }\n\n    \n    protected void setFieldSeparatorAtEnd(boolean fieldSeparatorAtEnd) {\n        this.fieldSeparatorAtEnd = fieldSeparatorAtEnd;\n    }\n\n    \n\n    \n    protected String getNullText() {\n        return nullText;\n    }\n\n    \n    protected void setNullText(String nullText) {\n        if (nullText == null) {\n            nullText = \"\";\n        }\n        this.nullText = nullText;\n    }\n\n    \n\n    \n    protected String getSizeStartText() {\n        return sizeStartText;\n    }\n\n    \n    protected void setSizeStartText(String sizeStartText) {\n        if (sizeStartText == null) {\n            sizeStartText = \"\";\n        }\n        this.sizeStartText = sizeStartText;\n    }\n\n    \n\n    \n    protected String getSizeEndText() {\n        return sizeEndText;\n    }\n\n    \n    protected void setSizeEndText(String sizeEndText) {\n        if (sizeEndText == null) {\n            sizeEndText = \"\";\n        }\n        this.sizeEndText = sizeEndText;\n    }\n\n    \n\n    \n    protected String getSummaryObjectStartText() {\n        return summaryObjectStartText;\n    }\n\n    \n    protected void setSummaryObjectStartText(String summaryObjectStartText) {\n        if (summaryObjectStartText == null) {\n            summaryObjectStartText = \"\";\n        }\n        this.summaryObjectStartText = summaryObjectStartText;\n    }\n\n    \n\n    \n    protected String getSummaryObjectEndText() {\n        return summaryObjectEndText;\n    }\n\n    \n    protected void setSummaryObjectEndText(String summaryObjectEndText) {\n        if (summaryObjectEndText == null) {\n            summaryObjectEndText = \"\";\n        }\n        this.summaryObjectEndText = summaryObjectEndText;\n    }\n\n    \n\n    \n    private static final class DefaultToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; DefaultToStringStyle() {\n            super();\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.DEFAULT_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class NoFieldNameToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; NoFieldNameToStringStyle() {\n            super();\n            this.setUseFieldNames(false);\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.NO_FIELD_NAMES_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class ShortPrefixToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; ShortPrefixToStringStyle() {\n            super();\n            this.setUseShortClassName(true);\n            this.setUseIdentityHashCode(false);\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.SHORT_PREFIX_STYLE;\n        }\n\n    }\n\n    \n    private static final class SimpleToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; SimpleToStringStyle() {\n            super();\n            this.setUseClassName(false);\n            this.setUseIdentityHashCode(false);\n            this.setUseFieldNames(false);\n            this.setContentStart(\"\");\n            this.setContentEnd(\"\");\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.SIMPLE_STYLE;\n        }\n\n    }\n\n    \n\n    \n    private static final class MultiLineToStringStyle extends ToStringStyle { private static final long serialVersionUID = 1L; MultiLineToStringStyle() {\n            super();\n            this.setContentStart(\"[\");\n            this.setFieldSeparator(SystemUtils.LINE_SEPARATOR + \"  \");\n            this.setFieldSeparatorAtStart(true);\n            this.setContentEnd(SystemUtils.LINE_SEPARATOR + \"]\");\n        }\n\n        \n        private Object readResolve() {\n            return ToStringStyle.MULTI_LINE_STYLE;\n        }\n\n    }\n\n}\n",
+      "buggy_signatures": [
+        "static boolean isRegistered(Object value)",
+        "static void register(Object value)",
+        "synchronized (ToStringStyle.class)",
+        "static void unregister(Object value)",
+        "synchronized (ToStringStyle.class)",
+        "public void appendSuper(StringBuffer buffer, String superToString)",
+        "public void appendToString(StringBuffer buffer, String toString)",
+        "public void appendStart(StringBuffer buffer, Object object)",
+        "public void appendEnd(StringBuffer buffer, Object object)",
+        "protected void removeLastFieldSeparator(StringBuffer buffer)",
+        "public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail)",
+        "protected void appendInternal(StringBuffer buffer, String fieldName, Object value, boolean detail)",
+        "protected void appendCyclicObject(StringBuffer buffer, String fieldName, Object value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Object value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Collection<?> coll)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Map<?, ?> map)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, Object value)",
+        "public void append(StringBuffer buffer, String fieldName, long value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, long value)",
+        "public void append(StringBuffer buffer, String fieldName, int value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, int value)",
+        "public void append(StringBuffer buffer, String fieldName, short value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, short value)",
+        "public void append(StringBuffer buffer, String fieldName, byte value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, byte value)",
+        "public void append(StringBuffer buffer, String fieldName, char value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, char value)",
+        "public void append(StringBuffer buffer, String fieldName, double value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, double value)",
+        "public void append(StringBuffer buffer, String fieldName, float value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, float value)",
+        "public void append(StringBuffer buffer, String fieldName, boolean value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, boolean value)",
+        "public void append(StringBuffer buffer, String fieldName, Object[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Object[] array)",
+        "protected void reflectionAppendArrayDetail(StringBuffer buffer, String fieldName, Object array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, Object[] array)",
+        "public void append(StringBuffer buffer, String fieldName, long[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, long[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, long[] array)",
+        "public void append(StringBuffer buffer, String fieldName, int[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, int[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, int[] array)",
+        "public void append(StringBuffer buffer, String fieldName, short[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, short[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, short[] array)",
+        "public void append(StringBuffer buffer, String fieldName, byte[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, byte[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, byte[] array)",
+        "public void append(StringBuffer buffer, String fieldName, char[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, char[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, char[] array)",
+        "public void append(StringBuffer buffer, String fieldName, double[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, double[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, double[] array)",
+        "public void append(StringBuffer buffer, String fieldName, float[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, float[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, float[] array)",
+        "public void append(StringBuffer buffer, String fieldName, boolean[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, boolean[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, boolean[] array)",
+        "protected void appendClassName(StringBuffer buffer, Object object)",
+        "protected void appendIdentityHashCode(StringBuffer buffer, Object object)",
+        "protected void appendContentStart(StringBuffer buffer)",
+        "protected void appendContentEnd(StringBuffer buffer)",
+        "protected void appendNullText(StringBuffer buffer, String fieldName)",
+        "protected void appendFieldSeparator(StringBuffer buffer)",
+        "protected void appendFieldStart(StringBuffer buffer, String fieldName)",
+        "protected void appendFieldEnd(StringBuffer buffer, String fieldName)",
+        "protected void appendSummarySize(StringBuffer buffer, String fieldName, int size)",
+        "protected boolean isFullDetail(Boolean fullDetailRequest)",
+        "protected String getShortClassName(Class<?> cls)",
+        "protected boolean isUseClassName()",
+        "protected void setUseClassName(boolean useClassName)",
+        "protected boolean isUseShortClassName()",
+        "protected void setUseShortClassName(boolean useShortClassName)",
+        "protected boolean isUseIdentityHashCode()",
+        "protected void setUseIdentityHashCode(boolean useIdentityHashCode)",
+        "protected boolean isUseFieldNames()",
+        "protected void setUseFieldNames(boolean useFieldNames)",
+        "protected boolean isDefaultFullDetail()",
+        "protected void setDefaultFullDetail(boolean defaultFullDetail)",
+        "protected boolean isArrayContentDetail()",
+        "protected void setArrayContentDetail(boolean arrayContentDetail)",
+        "protected String getArrayStart()",
+        "protected void setArrayStart(String arrayStart)",
+        "protected String getArrayEnd()",
+        "protected void setArrayEnd(String arrayEnd)",
+        "protected String getArraySeparator()",
+        "protected void setArraySeparator(String arraySeparator)",
+        "protected String getContentStart()",
+        "protected void setContentStart(String contentStart)",
+        "protected String getContentEnd()",
+        "protected void setContentEnd(String contentEnd)",
+        "protected String getFieldNameValueSeparator()",
+        "protected void setFieldNameValueSeparator(String fieldNameValueSeparator)",
+        "protected String getFieldSeparator()",
+        "protected void setFieldSeparator(String fieldSeparator)",
+        "protected boolean isFieldSeparatorAtStart()",
+        "protected void setFieldSeparatorAtStart(boolean fieldSeparatorAtStart)",
+        "protected boolean isFieldSeparatorAtEnd()",
+        "protected void setFieldSeparatorAtEnd(boolean fieldSeparatorAtEnd)",
+        "protected String getNullText()",
+        "protected void setNullText(String nullText)",
+        "protected String getSizeStartText()",
+        "protected void setSizeStartText(String sizeStartText)",
+        "protected String getSizeEndText()",
+        "protected void setSizeEndText(String sizeEndText)",
+        "protected String getSummaryObjectStartText()",
+        "protected void setSummaryObjectStartText(String summaryObjectStartText)",
+        "protected String getSummaryObjectEndText()",
+        "protected void setSummaryObjectEndText(String summaryObjectEndText)",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()"
+      ],
+      "fixed_signatures": [
+        "static boolean isRegistered(Object value)",
+        "static void register(Object value)",
+        "synchronized (ToStringStyle.class)",
+        "static void unregister(Object value)",
+        "synchronized (ToStringStyle.class)",
+        "public void appendSuper(StringBuffer buffer, String superToString)",
+        "public void appendToString(StringBuffer buffer, String toString)",
+        "public void appendStart(StringBuffer buffer, Object object)",
+        "public void appendEnd(StringBuffer buffer, Object object)",
+        "protected void removeLastFieldSeparator(StringBuffer buffer)",
+        "public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail)",
+        "protected void appendInternal(StringBuffer buffer, String fieldName, Object value, boolean detail)",
+        "protected void appendCyclicObject(StringBuffer buffer, String fieldName, Object value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Object value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Collection<?> coll)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Map<?, ?> map)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, Object value)",
+        "public void append(StringBuffer buffer, String fieldName, long value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, long value)",
+        "public void append(StringBuffer buffer, String fieldName, int value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, int value)",
+        "public void append(StringBuffer buffer, String fieldName, short value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, short value)",
+        "public void append(StringBuffer buffer, String fieldName, byte value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, byte value)",
+        "public void append(StringBuffer buffer, String fieldName, char value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, char value)",
+        "public void append(StringBuffer buffer, String fieldName, double value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, double value)",
+        "public void append(StringBuffer buffer, String fieldName, float value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, float value)",
+        "public void append(StringBuffer buffer, String fieldName, boolean value)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, boolean value)",
+        "public void append(StringBuffer buffer, String fieldName, Object[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, Object[] array)",
+        "protected void reflectionAppendArrayDetail(StringBuffer buffer, String fieldName, Object array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, Object[] array)",
+        "public void append(StringBuffer buffer, String fieldName, long[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, long[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, long[] array)",
+        "public void append(StringBuffer buffer, String fieldName, int[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, int[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, int[] array)",
+        "public void append(StringBuffer buffer, String fieldName, short[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, short[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, short[] array)",
+        "public void append(StringBuffer buffer, String fieldName, byte[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, byte[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, byte[] array)",
+        "public void append(StringBuffer buffer, String fieldName, char[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, char[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, char[] array)",
+        "public void append(StringBuffer buffer, String fieldName, double[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, double[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, double[] array)",
+        "public void append(StringBuffer buffer, String fieldName, float[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, float[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, float[] array)",
+        "public void append(StringBuffer buffer, String fieldName, boolean[] array, Boolean fullDetail)",
+        "protected void appendDetail(StringBuffer buffer, String fieldName, boolean[] array)",
+        "protected void appendSummary(StringBuffer buffer, String fieldName, boolean[] array)",
+        "protected void appendClassName(StringBuffer buffer, Object object)",
+        "protected void appendIdentityHashCode(StringBuffer buffer, Object object)",
+        "protected void appendContentStart(StringBuffer buffer)",
+        "protected void appendContentEnd(StringBuffer buffer)",
+        "protected void appendNullText(StringBuffer buffer, String fieldName)",
+        "protected void appendFieldSeparator(StringBuffer buffer)",
+        "protected void appendFieldStart(StringBuffer buffer, String fieldName)",
+        "protected void appendFieldEnd(StringBuffer buffer, String fieldName)",
+        "protected void appendSummarySize(StringBuffer buffer, String fieldName, int size)",
+        "protected boolean isFullDetail(Boolean fullDetailRequest)",
+        "protected String getShortClassName(Class<?> cls)",
+        "protected boolean isUseClassName()",
+        "protected void setUseClassName(boolean useClassName)",
+        "protected boolean isUseShortClassName()",
+        "protected void setUseShortClassName(boolean useShortClassName)",
+        "protected boolean isUseIdentityHashCode()",
+        "protected void setUseIdentityHashCode(boolean useIdentityHashCode)",
+        "protected boolean isUseFieldNames()",
+        "protected void setUseFieldNames(boolean useFieldNames)",
+        "protected boolean isDefaultFullDetail()",
+        "protected void setDefaultFullDetail(boolean defaultFullDetail)",
+        "protected boolean isArrayContentDetail()",
+        "protected void setArrayContentDetail(boolean arrayContentDetail)",
+        "protected String getArrayStart()",
+        "protected void setArrayStart(String arrayStart)",
+        "protected String getArrayEnd()",
+        "protected void setArrayEnd(String arrayEnd)",
+        "protected String getArraySeparator()",
+        "protected void setArraySeparator(String arraySeparator)",
+        "protected String getContentStart()",
+        "protected void setContentStart(String contentStart)",
+        "protected String getContentEnd()",
+        "protected void setContentEnd(String contentEnd)",
+        "protected String getFieldNameValueSeparator()",
+        "protected void setFieldNameValueSeparator(String fieldNameValueSeparator)",
+        "protected String getFieldSeparator()",
+        "protected void setFieldSeparator(String fieldSeparator)",
+        "protected boolean isFieldSeparatorAtStart()",
+        "protected void setFieldSeparatorAtStart(boolean fieldSeparatorAtStart)",
+        "protected boolean isFieldSeparatorAtEnd()",
+        "protected void setFieldSeparatorAtEnd(boolean fieldSeparatorAtEnd)",
+        "protected String getNullText()",
+        "protected void setNullText(String nullText)",
+        "protected String getSizeStartText()",
+        "protected void setSizeStartText(String sizeStartText)",
+        "protected String getSizeEndText()",
+        "protected void setSizeEndText(String sizeEndText)",
+        "protected String getSummaryObjectStartText()",
+        "protected void setSummaryObjectStartText(String summaryObjectStartText)",
+        "protected String getSummaryObjectEndText()",
+        "protected void setSummaryObjectEndText(String summaryObjectEndText)",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()",
+        "private Object readResolve()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  static Map<Object, Object> getRegistry() {\n  return REGISTRY.get() != null ? REGISTRY.get() : Collections.<Object, Object>emptyMap();\n  }",
+          "fixed_method": "  static Map<Object, Object> getRegistry() {\n  return REGISTRY.get();\n  }",
+          "diff": [
+            "@@ -145,7 +145,7 @@",
+            "      * @return Set the registry of objects being traversed\n",
+            "      */\n",
+            "     static Map<Object, Object> getRegistry() {\n",
+            "-        return REGISTRY.get() != null ? REGISTRY.get() : Collections.<Object, Object>emptyMap();\n",
+            "+        return REGISTRY.get();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  static boolean isRegistered(Object value) {\n  Map<Object, Object> m = getRegistry();\n  return m.containsKey(value);\n  }",
+          "fixed_method": "  static boolean isRegistered(Object value) {\n  Map<Object, Object> m = getRegistry();\n  return m != null && m.containsKey(value);\n  }",
+          "diff": [
+            "@@ -161,7 +161,7 @@",
+            "      */\n",
+            "     static boolean isRegistered(Object value) {\n",
+            "         Map<Object, Object> m = getRegistry();\n",
+            "-        return m.containsKey(value);\n",
+            "+        return m != null && m.containsKey(value);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

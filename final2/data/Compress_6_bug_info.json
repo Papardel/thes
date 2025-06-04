@@ -1,0 +1,137 @@
+{
+  "bug_id": "6",
+  "failed_tests": {
+    "org.apache.commons.compress.archivers.zip.ZipArchiveEntryTest": [
+      {
+        "methodName": "testNotEquals",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertFalse(entry1.equals(entry2));",
+        "test_source": "  public void testNotEquals() {\n  ZipArchiveEntry entry1 = new ZipArchiveEntry(\"foo\");\n  ZipArchiveEntry entry2 = new ZipArchiveEntry(\"bar\");\n  assertFalse(entry1.equals(entry2));\n  }",
+        "stack": [
+          "ZipArchiveEntryTest.testNotEquals line 230"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/archivers/zip/ZipArchiveEntry.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.archivers.zip;\n\nimport java.io.File;\nimport java.util.Date;\nimport java.util.LinkedHashMap;\nimport java.util.zip.ZipException;\nimport org.apache.commons.compress.archivers.ArchiveEntry;\n\n\npublic class ZipArchiveEntry extends java.util.zip.ZipEntry implements ArchiveEntry, Cloneable { public static final int PLATFORM_UNIX = 3; public static final int PLATFORM_FAT = 0; private static final int SHORT_MASK = 0xFFFF; private static final int SHORT_SHIFT = 16; private int method = -1; private int internalAttributes = 0; private int platform = PLATFORM_FAT; private long externalAttributes = 0; private LinkedHashMap extraFields = null; private String name = null; public ZipArchiveEntry(String name) {\n        super(name);\n    }\n\n    \n    public ZipArchiveEntry(java.util.zip.ZipEntry entry) throws ZipException {\n        super(entry);\n        setName(entry.getName());\n        byte[] extra = entry.getExtra();\n        if (extra != null) {\n            setExtraFields(ExtraFieldUtils.parse(extra));\n        } else {\n            \n            setExtra();\n        }\n        setMethod(entry.getMethod());\n    }\n\n    \n    public ZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {\n        this((java.util.zip.ZipEntry) entry);\n        setInternalAttributes(entry.getInternalAttributes());\n        setExternalAttributes(entry.getExternalAttributes());\n        setExtraFields(entry.getExtraFields());\n    }\n\n    \n    protected ZipArchiveEntry() {\n        this(\"\");\n    }\n\n    public ZipArchiveEntry(File inputFile, String entryName) {\n        this(inputFile.isDirectory() && !entryName.endsWith(\"/\") ? \n             entryName + \"/\" : entryName);\n        if (inputFile.isFile()){\n            setSize(inputFile.length());\n        }\n        setTime(inputFile.lastModified());\n        \n    }\n\n    \n    public Object clone() {\n        ZipArchiveEntry e = (ZipArchiveEntry) super.clone();\n\n        e.extraFields = extraFields != null ? (LinkedHashMap) extraFields.clone() : null;\n        e.setInternalAttributes(getInternalAttributes());\n        e.setExternalAttributes(getExternalAttributes());\n        e.setExtraFields(getExtraFields());\n        return e;\n    }\n\n    \n    public boolean isSupportedCompressionMethod() {\n        return method == STORED || method == DEFLATED;\n    }\n\n    \n    public int getMethod() {\n        return method;\n    }\n\n    \n    public void setMethod(int method) {\n        if (method < 0) {\n            throw new IllegalArgumentException(\n                    \"ZIP compression method can not be negative: \" + method);\n        }\n        this.method = method;\n    }\n\n    \n    public int getInternalAttributes() {\n        return internalAttributes;\n    }\n\n    \n    public void setInternalAttributes(int value) {\n        internalAttributes = value;\n    }\n\n    \n    public long getExternalAttributes() {\n        return externalAttributes;\n    }\n\n    \n    public void setExternalAttributes(long value) {\n        externalAttributes = value;\n    }\n\n    \n    public void setUnixMode(int mode) {\n        \n        setExternalAttributes((mode << SHORT_SHIFT)\n                              \n                              | ((mode & 0200) == 0 ? 1 : 0)\n                              \n                              | (isDirectory() ? 0x10 : 0));\n        \n        platform = PLATFORM_UNIX;\n    }\n\n    \n    public int getUnixMode() {\n        return platform != PLATFORM_UNIX ? 0 :\n            (int) ((getExternalAttributes() >> SHORT_SHIFT) & SHORT_MASK);\n    }\n\n    \n    public int getPlatform() {\n        return platform;\n    }\n\n    \n    protected void setPlatform(int platform) {\n        this.platform = platform;\n    }\n\n    \n    public void setExtraFields(ZipExtraField[] fields) {\n        extraFields = new LinkedHashMap();\n        for (int i = 0; i < fields.length; i++) {\n            extraFields.put(fields[i].getHeaderId(), fields[i]);\n        }\n        setExtra();\n    }\n\n    \n    public ZipExtraField[] getExtraFields() {\n        if (extraFields == null) {\n            return new ZipExtraField[0];\n        }\n        ZipExtraField[] result = new ZipExtraField[extraFields.size()];\n        return (ZipExtraField[]) extraFields.values().toArray(result);\n    }\n\n    \n    public void addExtraField(ZipExtraField ze) {\n        if (extraFields == null) {\n            extraFields = new LinkedHashMap();\n        }\n        extraFields.put(ze.getHeaderId(), ze);\n        setExtra();\n    }\n\n    \n    public void addAsFirstExtraField(ZipExtraField ze) {\n        LinkedHashMap copy = extraFields;\n        extraFields = new LinkedHashMap();\n        extraFields.put(ze.getHeaderId(), ze);\n        if (copy != null) {\n            copy.remove(ze.getHeaderId());\n            extraFields.putAll(copy);\n        }\n        setExtra();\n    }\n\n    \n    public void removeExtraField(ZipShort type) {\n        if (extraFields == null) {\n            throw new java.util.NoSuchElementException();\n        }\n        if (extraFields.remove(type) == null) {\n            throw new java.util.NoSuchElementException();\n        }\n        setExtra();\n    }\n\n    \n    public ZipExtraField getExtraField(ZipShort type) {\n        if (extraFields != null) {\n            return (ZipExtraField) extraFields.get(type);\n        }\n        return null;\n    }\n\n    \n    public void setExtra(byte[] extra) throws RuntimeException {\n        try {\n            ZipExtraField[] local = ExtraFieldUtils.parse(extra, true);\n            mergeExtraFields(local, true);\n        } catch (ZipException e) {\n            throw new RuntimeException(e.getMessage(), e);\n        }\n    }\n\n    \n    protected void setExtra() {\n        super.setExtra(ExtraFieldUtils.mergeLocalFileDataData(getExtraFields()));\n    }\n\n    \n    public void setCentralDirectoryExtra(byte[] b) {\n        try {\n            ZipExtraField[] central = ExtraFieldUtils.parse(b, false);\n            mergeExtraFields(central, false);\n        } catch (ZipException e) {\n            throw new RuntimeException(e.getMessage(), e);\n        }\n    }\n\n    \n    public byte[] getLocalFileDataExtra() {\n        byte[] extra = getExtra();\n        return extra != null ? extra : new byte[0];\n    }\n\n    \n    public byte[] getCentralDirectoryExtra() {\n        return ExtraFieldUtils.mergeCentralDirectoryData(getExtraFields());\n    }\n\n    \n    public String getName() {\n        return name == null ? super.getName() : name;\n    }\n\n    \n    public boolean isDirectory() {\n        return getName().endsWith(\"/\");\n    }\n\n    \n    protected void setName(String name) {\n        this.name = name;\n    }\n\n    \n    public int hashCode() {\n        \n        \n        \n        \n        return getName().hashCode();\n    }\n\n    \n    private void mergeExtraFields(ZipExtraField[] f, boolean local) throws ZipException {\n        if (extraFields == null) {\n            setExtraFields(f);\n        } else {\n            for (int i = 0; i < f.length; i++) {\n                ZipExtraField existing = getExtraField(f[i].getHeaderId());\n                if (existing == null) {\n                    addExtraField(f[i]);\n                } else {\n                    if (local) {\n                        byte[] b = f[i].getLocalFileDataData();\n                        existing.parseFromLocalFileData(b, 0, b.length);\n                    } else {\n                        byte[] b = f[i].getCentralDirectoryData();\n                        existing.parseFromCentralDirectoryData(b, 0, b.length);\n                    }\n                }\n            }\n            setExtra();\n        }\n    }\n\n    \n    public Date getLastModifiedDate() {\n        return new Date(getTime());\n    }\n\n    \n    public boolean equals(Object obj) {\n        if (this == obj) {\n            return true;\n        }\n        if (obj == null || getClass() != obj.getClass()) {\n            return false;\n        }\n        ZipArchiveEntry other = (ZipArchiveEntry) obj;\n        if (name == null) {\n            if (other.name != null) {\n                return false;\n            }\n        } else if (!name.equals(other.name)) {\n            return false;\n        }\n        return true;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.archivers.zip;\n\nimport java.io.File;\nimport java.util.Date;\nimport java.util.LinkedHashMap;\nimport java.util.zip.ZipException;\nimport org.apache.commons.compress.archivers.ArchiveEntry;\n\n\npublic class ZipArchiveEntry extends java.util.zip.ZipEntry implements ArchiveEntry, Cloneable { public static final int PLATFORM_UNIX = 3; public static final int PLATFORM_FAT = 0; private static final int SHORT_MASK = 0xFFFF; private static final int SHORT_SHIFT = 16; private int method = -1; private int internalAttributes = 0; private int platform = PLATFORM_FAT; private long externalAttributes = 0; private LinkedHashMap extraFields = null; private String name = null; public ZipArchiveEntry(String name) {\n        super(name);\n        setName(name);\n    }\n\n    \n    public ZipArchiveEntry(java.util.zip.ZipEntry entry) throws ZipException {\n        super(entry);\n        setName(entry.getName());\n        byte[] extra = entry.getExtra();\n        if (extra != null) {\n            setExtraFields(ExtraFieldUtils.parse(extra));\n        } else {\n            \n            setExtra();\n        }\n        setMethod(entry.getMethod());\n    }\n\n    \n    public ZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {\n        this((java.util.zip.ZipEntry) entry);\n        setInternalAttributes(entry.getInternalAttributes());\n        setExternalAttributes(entry.getExternalAttributes());\n        setExtraFields(entry.getExtraFields());\n    }\n\n    \n    protected ZipArchiveEntry() {\n        this(\"\");\n    }\n\n    public ZipArchiveEntry(File inputFile, String entryName) {\n        this(inputFile.isDirectory() && !entryName.endsWith(\"/\") ? \n             entryName + \"/\" : entryName);\n        if (inputFile.isFile()){\n            setSize(inputFile.length());\n        }\n        setTime(inputFile.lastModified());\n        \n    }\n\n    \n    public Object clone() {\n        ZipArchiveEntry e = (ZipArchiveEntry) super.clone();\n\n        e.extraFields = extraFields != null ? (LinkedHashMap) extraFields.clone() : null;\n        e.setInternalAttributes(getInternalAttributes());\n        e.setExternalAttributes(getExternalAttributes());\n        e.setExtraFields(getExtraFields());\n        return e;\n    }\n\n    \n    public boolean isSupportedCompressionMethod() {\n        return method == STORED || method == DEFLATED;\n    }\n\n    \n    public int getMethod() {\n        return method;\n    }\n\n    \n    public void setMethod(int method) {\n        if (method < 0) {\n            throw new IllegalArgumentException(\n                    \"ZIP compression method can not be negative: \" + method);\n        }\n        this.method = method;\n    }\n\n    \n    public int getInternalAttributes() {\n        return internalAttributes;\n    }\n\n    \n    public void setInternalAttributes(int value) {\n        internalAttributes = value;\n    }\n\n    \n    public long getExternalAttributes() {\n        return externalAttributes;\n    }\n\n    \n    public void setExternalAttributes(long value) {\n        externalAttributes = value;\n    }\n\n    \n    public void setUnixMode(int mode) {\n        \n        setExternalAttributes((mode << SHORT_SHIFT)\n                              \n                              | ((mode & 0200) == 0 ? 1 : 0)\n                              \n                              | (isDirectory() ? 0x10 : 0));\n        \n        platform = PLATFORM_UNIX;\n    }\n\n    \n    public int getUnixMode() {\n        return platform != PLATFORM_UNIX ? 0 :\n            (int) ((getExternalAttributes() >> SHORT_SHIFT) & SHORT_MASK);\n    }\n\n    \n    public int getPlatform() {\n        return platform;\n    }\n\n    \n    protected void setPlatform(int platform) {\n        this.platform = platform;\n    }\n\n    \n    public void setExtraFields(ZipExtraField[] fields) {\n        extraFields = new LinkedHashMap();\n        for (int i = 0; i < fields.length; i++) {\n            extraFields.put(fields[i].getHeaderId(), fields[i]);\n        }\n        setExtra();\n    }\n\n    \n    public ZipExtraField[] getExtraFields() {\n        if (extraFields == null) {\n            return new ZipExtraField[0];\n        }\n        ZipExtraField[] result = new ZipExtraField[extraFields.size()];\n        return (ZipExtraField[]) extraFields.values().toArray(result);\n    }\n\n    \n    public void addExtraField(ZipExtraField ze) {\n        if (extraFields == null) {\n            extraFields = new LinkedHashMap();\n        }\n        extraFields.put(ze.getHeaderId(), ze);\n        setExtra();\n    }\n\n    \n    public void addAsFirstExtraField(ZipExtraField ze) {\n        LinkedHashMap copy = extraFields;\n        extraFields = new LinkedHashMap();\n        extraFields.put(ze.getHeaderId(), ze);\n        if (copy != null) {\n            copy.remove(ze.getHeaderId());\n            extraFields.putAll(copy);\n        }\n        setExtra();\n    }\n\n    \n    public void removeExtraField(ZipShort type) {\n        if (extraFields == null) {\n            throw new java.util.NoSuchElementException();\n        }\n        if (extraFields.remove(type) == null) {\n            throw new java.util.NoSuchElementException();\n        }\n        setExtra();\n    }\n\n    \n    public ZipExtraField getExtraField(ZipShort type) {\n        if (extraFields != null) {\n            return (ZipExtraField) extraFields.get(type);\n        }\n        return null;\n    }\n\n    \n    public void setExtra(byte[] extra) throws RuntimeException {\n        try {\n            ZipExtraField[] local = ExtraFieldUtils.parse(extra, true);\n            mergeExtraFields(local, true);\n        } catch (ZipException e) {\n            throw new RuntimeException(e.getMessage(), e);\n        }\n    }\n\n    \n    protected void setExtra() {\n        super.setExtra(ExtraFieldUtils.mergeLocalFileDataData(getExtraFields()));\n    }\n\n    \n    public void setCentralDirectoryExtra(byte[] b) {\n        try {\n            ZipExtraField[] central = ExtraFieldUtils.parse(b, false);\n            mergeExtraFields(central, false);\n        } catch (ZipException e) {\n            throw new RuntimeException(e.getMessage(), e);\n        }\n    }\n\n    \n    public byte[] getLocalFileDataExtra() {\n        byte[] extra = getExtra();\n        return extra != null ? extra : new byte[0];\n    }\n\n    \n    public byte[] getCentralDirectoryExtra() {\n        return ExtraFieldUtils.mergeCentralDirectoryData(getExtraFields());\n    }\n\n    \n    public String getName() {\n        return name == null ? super.getName() : name;\n    }\n\n    \n    public boolean isDirectory() {\n        return getName().endsWith(\"/\");\n    }\n\n    \n    protected void setName(String name) {\n        this.name = name;\n    }\n\n    \n    public int hashCode() {\n        \n        \n        \n        \n        return getName().hashCode();\n    }\n\n    \n    private void mergeExtraFields(ZipExtraField[] f, boolean local) throws ZipException {\n        if (extraFields == null) {\n            setExtraFields(f);\n        } else {\n            for (int i = 0; i < f.length; i++) {\n                ZipExtraField existing = getExtraField(f[i].getHeaderId());\n                if (existing == null) {\n                    addExtraField(f[i]);\n                } else {\n                    if (local) {\n                        byte[] b = f[i].getLocalFileDataData();\n                        existing.parseFromLocalFileData(b, 0, b.length);\n                    } else {\n                        byte[] b = f[i].getCentralDirectoryData();\n                        existing.parseFromCentralDirectoryData(b, 0, b.length);\n                    }\n                }\n            }\n            setExtra();\n        }\n    }\n\n    \n    public Date getLastModifiedDate() {\n        return new Date(getTime());\n    }\n\n    \n    public boolean equals(Object obj) {\n        if (this == obj) {\n            return true;\n        }\n        if (obj == null || getClass() != obj.getClass()) {\n            return false;\n        }\n        ZipArchiveEntry other = (ZipArchiveEntry) obj;\n        String myName = getName();\n        String otherName = other.getName();\n        if (myName == null) {\n            if (otherName != null) {\n                return false;\n            }\n        } else if (!myName.equals(otherName)) {\n            return false;\n        }\n        return true;\n    }\n}\n",
+      "buggy_signatures": [
+        "public ZipArchiveEntry(java.util.zip.ZipEntry entry) throws ZipException",
+        "public ZipArchiveEntry(ZipArchiveEntry entry) throws ZipException",
+        "protected ZipArchiveEntry()",
+        "public ZipArchiveEntry(File inputFile, String entryName)",
+        "public Object clone()",
+        "public boolean isSupportedCompressionMethod()",
+        "public int getMethod()",
+        "public void setMethod(int method)",
+        "public int getInternalAttributes()",
+        "public void setInternalAttributes(int value)",
+        "public long getExternalAttributes()",
+        "public void setExternalAttributes(long value)",
+        "public void setUnixMode(int mode)",
+        "public int getUnixMode()",
+        "public int getPlatform()",
+        "protected void setPlatform(int platform)",
+        "public void setExtraFields(ZipExtraField[] fields)",
+        "public ZipExtraField[] getExtraFields()",
+        "public void addExtraField(ZipExtraField ze)",
+        "public void addAsFirstExtraField(ZipExtraField ze)",
+        "public void removeExtraField(ZipShort type)",
+        "public ZipExtraField getExtraField(ZipShort type)",
+        "public void setExtra(byte[] extra) throws RuntimeException",
+        "protected void setExtra()",
+        "public void setCentralDirectoryExtra(byte[] b)",
+        "public byte[] getLocalFileDataExtra()",
+        "public byte[] getCentralDirectoryExtra()",
+        "public String getName()",
+        "public boolean isDirectory()",
+        "protected void setName(String name)",
+        "public int hashCode()",
+        "private void mergeExtraFields(ZipExtraField[] f, boolean local) throws ZipException",
+        "public Date getLastModifiedDate()",
+        "public boolean equals(Object obj)"
+      ],
+      "fixed_signatures": [
+        "public ZipArchiveEntry(java.util.zip.ZipEntry entry) throws ZipException",
+        "public ZipArchiveEntry(ZipArchiveEntry entry) throws ZipException",
+        "protected ZipArchiveEntry()",
+        "public ZipArchiveEntry(File inputFile, String entryName)",
+        "public Object clone()",
+        "public boolean isSupportedCompressionMethod()",
+        "public int getMethod()",
+        "public void setMethod(int method)",
+        "public int getInternalAttributes()",
+        "public void setInternalAttributes(int value)",
+        "public long getExternalAttributes()",
+        "public void setExternalAttributes(long value)",
+        "public void setUnixMode(int mode)",
+        "public int getUnixMode()",
+        "public int getPlatform()",
+        "protected void setPlatform(int platform)",
+        "public void setExtraFields(ZipExtraField[] fields)",
+        "public ZipExtraField[] getExtraFields()",
+        "public void addExtraField(ZipExtraField ze)",
+        "public void addAsFirstExtraField(ZipExtraField ze)",
+        "public void removeExtraField(ZipShort type)",
+        "public ZipExtraField getExtraField(ZipShort type)",
+        "public void setExtra(byte[] extra) throws RuntimeException",
+        "protected void setExtra()",
+        "public void setCentralDirectoryExtra(byte[] b)",
+        "public byte[] getLocalFileDataExtra()",
+        "public byte[] getCentralDirectoryExtra()",
+        "public String getName()",
+        "public boolean isDirectory()",
+        "protected void setName(String name)",
+        "public int hashCode()",
+        "private void mergeExtraFields(ZipExtraField[] f, boolean local) throws ZipException",
+        "public Date getLastModifiedDate()",
+        "public boolean equals(Object obj)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public ZipArchiveEntry(String name) {\n  super(name);\n  }",
+          "fixed_method": "  public ZipArchiveEntry(String name) {\n  super(name);\n  setName(name);\n  }",
+          "diff": [
+            "@@ -61,6 +61,7 @@",
+            "      */\n",
+            "     public ZipArchiveEntry(String name) {\n",
+            "         super(name);\n",
+            "+        setName(name);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public boolean equals(Object obj) {\n  if (this == obj) {\n  return true;\n  }\n  if (obj == null || getClass() != obj.getClass()) {\n  return false;\n  }\n  ZipArchiveEntry other = (ZipArchiveEntry) obj;\n  if (name == null) {\n  if (other.name != null) {\n  return false;\n  }\n  } else if (!name.equals(other.name)) {\n  return false;\n  }\n  return true;\n  }",
+          "fixed_method": "  public boolean equals(Object obj) {\n  if (this == obj) {\n  return true;\n  }\n  if (obj == null || getClass() != obj.getClass()) {\n  return false;\n  }\n  ZipArchiveEntry other = (ZipArchiveEntry) obj;\n  String myName = getName();\n  String otherName = other.getName();\n  if (myName == null) {\n  if (otherName != null) {\n  return false;\n  }\n  } else if (!myName.equals(otherName)) {\n  return false;\n  }\n  return true;\n  }",
+          "diff": [
+            "@@ -459,11 +460,13 @@",
+            "             return false;\n",
+            "         }\n",
+            "         ZipArchiveEntry other = (ZipArchiveEntry) obj;\n",
+            "-        if (name == null) {\n",
+            "-            if (other.name != null) {\n",
+            "+        String myName = getName();\n",
+            "+        String otherName = other.getName();\n",
+            "+        if (myName == null) {\n",
+            "+            if (otherName != null) {\n",
+            "                 return false;\n",
+            "             }\n",
+            "-        } else if (!name.equals(other.name)) {\n",
+            "+        } else if (!myName.equals(otherName)) {\n",
+            "             return false;\n",
+            "         }\n",
+            "         return true;\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

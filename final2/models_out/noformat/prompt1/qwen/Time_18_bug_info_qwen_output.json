@@ -1,0 +1,13 @@
+{
+  "bug_id": "Time_18_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 18\nTest Class: org.joda.time.chrono.TestGJChronology\nMethod: testLeapYearRulesConstruction\nError: org.joda.time.IllegalFieldValueException\nMessage: Value 29 for dayOfMonth must be in the range [1,28]\nFailing Line:         DateMidnight dt = new DateMidnight(1500, 2, 29, GJChronology.getInstanceUTC());\nTest Source:\npublic void testLeapYearRulesConstruction() {\n  \n  DateMidnight dt = new DateMidnight(1500, 2, 29, GJChronology.getInstanceUTC());\n  assertEquals(dt.getYear(), 1500);\n  assertEquals(dt.getMonthOfYear(), 2);\n  assertEquals(dt.getDayOfMonth(), 29);\n  }\nStack Trace:\nFieldUtils.verifyValueBounds line 235, BasicChronology.getDateMidnightMillis line 605, BasicChronology.getDateTimeMillis line 177, GregorianChronology.getDateTimeMillis line 45, GJChronology.getDateTimeMillis line 365, BaseDateTime.<init> line 254, DateMidnight.<init> line 343, TestGJChronology.testLeapYearRulesConstruction line 496\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```\n\n\n\n\n```"
+    }
+  ],
+  "classes": [
+    "GJChronology"
+  ]
+}

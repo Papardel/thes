@@ -1,0 +1,13 @@
+{
+  "bug_id": "Csv_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 2\nTest Class: org.apache.commons.csv.CSVRecordTest\nMethod: testGetStringInconsistentRecord\nError: java.lang.Exception\nMessage: Unexpected exception, expected<java.lang.IllegalArgumentException> but was<java.lang.ArrayIndexOutOfBoundsException>\nFailing Line:         recordWithHeader.get(\"fourth\");\nTest Source:\npublic void testGetStringInconsistentRecord() {\n  header.put(\"fourth\", Integer.valueOf(4));\n  recordWithHeader.get(\"fourth\");\n  }\nStack Trace:\nCSVRecord.get line 85, CSVRecordTest.testGetStringInconsistentRecord line 69\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "Input:\nCucumberException: java.lang.Exception\nMessage: Unexpected exception, expected<java.lang.IllegalArgumentException> but was<java.lang.ArrayIndexOutOfBoundsException>\nStack Trace:\njava.lang.ArrayIndexOutOfBoundsException: 1\nat cucumber.runtime.java.JavaHookDefinition.execute(JavaHookDefinition.java:138)\nat cucumber.runtime.java.JavaHookDefinition.execute(JavaHookDefinition.java:31)\nat cucumber.api.PickleEventPlayer.runStep(PickleEventPlayer.java:81)\nat cucumber.api.TestCase.run(TestCase.java:46)\nat cucumber.api.junit.Cucumber.runChild(Cucumber.java:148)\nat cucumber.api.junit.Cucumber.runChild(Cucumber.java:128)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat cucumber.api.junit.Cucumber.run(Cucumber.java:102)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)\nat com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(Ide"
+    }
+  ],
+  "classes": [
+    "CSVRecord"
+  ]
+}

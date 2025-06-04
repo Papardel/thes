@@ -1,0 +1,75 @@
+{
+  "bug_id": "17",
+  "failed_tests": {
+    "com.google.gson.DefaultDateTypeAdapterTest": [
+      {
+        "methodName": "testUnexpectedToken",
+        "error": "com.google.gson.JsonParseException",
+        "message": "The date should be a string value",
+        "fail_line": "      adapter.fromJson(\"{}\");",
+        "test_source": "  public void testUnexpectedToken() throws Exception {\n  try {\n  DefaultDateTypeAdapter adapter = new DefaultDateTypeAdapter(Date.class);\n  adapter.fromJson(\"{}\");\n  fail(\"Unexpected token should fail.\");\n  } catch (IllegalStateException expected) { }\n  }",
+        "stack": [
+          "DefaultDateTypeAdapter.read line 100, DefaultDateTypeAdapter.read line 40, TypeAdapter.fromJson line 260, TypeAdapter.fromJson line 273, DefaultDateTypeAdapterTest.testUnexpectedToken line 173"
+        ]
+      },
+      {
+        "methodName": "testNullValue",
+        "error": "com.google.gson.JsonParseException",
+        "message": "The date should be a string value",
+        "fail_line": "    assertNull(adapter.fromJson(\"null\"));",
+        "test_source": "  public void testNullValue() throws Exception {\n  DefaultDateTypeAdapter adapter = new DefaultDateTypeAdapter(Date.class);\n  assertNull(adapter.fromJson(\"null\"));\n  assertEquals(\"null\", adapter.toJson(null));\n  }",
+        "stack": [
+          "DefaultDateTypeAdapter.read line 100, DefaultDateTypeAdapter.read line 40, TypeAdapter.fromJson line 260, TypeAdapter.fromJson line 273, DefaultDateTypeAdapterTest.testNullValue line 166"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/google/gson/DefaultDateTypeAdapter.java",
+      "buggy_full_code": "\n\npackage com.google.gson;\n\nimport java.io.IOException;\nimport java.sql.Timestamp;\nimport java.text.DateFormat;\nimport java.text.ParseException;\nimport java.text.ParsePosition;\nimport java.text.SimpleDateFormat;\nimport java.util.Date;\nimport java.util.Locale;\n\nimport com.google.gson.internal.bind.util.ISO8601Utils;\nimport com.google.gson.stream.JsonReader;\nimport com.google.gson.stream.JsonToken;\nimport com.google.gson.stream.JsonWriter;\n\n\nfinal class DefaultDateTypeAdapter extends TypeAdapter<Date> {\n\n  private static final String SIMPLE_NAME = \"DefaultDateTypeAdapter\"; private final Class<? extends Date> dateType; private final DateFormat enUsFormat; private final DateFormat localFormat; DefaultDateTypeAdapter(Class<? extends Date> dateType) {\n    this(dateType,\n        DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US),\n        DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT));\n  }\n\n  DefaultDateTypeAdapter(Class<? extends Date> dateType, String datePattern) {\n    this(dateType, new SimpleDateFormat(datePattern, Locale.US), new SimpleDateFormat(datePattern));\n  }\n\n  DefaultDateTypeAdapter(Class<? extends Date> dateType, int style) {\n    this(dateType, DateFormat.getDateInstance(style, Locale.US), DateFormat.getDateInstance(style));\n  }\n\n  public DefaultDateTypeAdapter(int dateStyle, int timeStyle) {\n    this(Date.class,\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle, Locale.US),\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle));\n  }\n\n  public DefaultDateTypeAdapter(Class<? extends Date> dateType, int dateStyle, int timeStyle) {\n    this(dateType,\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle, Locale.US),\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle));\n  }\n\n  DefaultDateTypeAdapter(final Class<? extends Date> dateType, DateFormat enUsFormat, DateFormat localFormat) {\n    if ( dateType != Date.class && dateType != java.sql.Date.class && dateType != Timestamp.class ) {\n      throw new IllegalArgumentException(\"Date type must be one of \" + Date.class + \", \" + Timestamp.class + \", or \" + java.sql.Date.class + \" but was \" + dateType);\n    }\n    this.dateType = dateType;\n    this.enUsFormat = enUsFormat;\n    this.localFormat = localFormat;\n  }\n\n  \n  \n  @Override\n  public void write(JsonWriter out, Date value) throws IOException {\n    if (value == null) {\n      out.nullValue();\n      return;\n    }\n    synchronized (localFormat) {\n      String dateFormatAsString = enUsFormat.format(value);\n      out.value(dateFormatAsString);\n    }\n  }\n\n  @Override\n  public Date read(JsonReader in) throws IOException {\n    if (in.peek() != JsonToken.STRING) {\n      throw new JsonParseException(\"The date should be a string value\");\n    }\n    Date date = deserializeToDate(in.nextString());\n    if (dateType == Date.class) {\n      return date;\n    } else if (dateType == Timestamp.class) {\n      return new Timestamp(date.getTime());\n    } else if (dateType == java.sql.Date.class) {\n      return new java.sql.Date(date.getTime());\n    } else {\n      \n      throw new AssertionError();\n    }\n  }\n\n  private Date deserializeToDate(String s) {\n    synchronized (localFormat) {\n      try {\n        return localFormat.parse(s);\n      } catch (ParseException ignored) {}\n      try {\n        return enUsFormat.parse(s);\n      } catch (ParseException ignored) {}\n      try {\n        return ISO8601Utils.parse(s, new ParsePosition(0));\n      } catch (ParseException e) {\n        throw new JsonSyntaxException(s, e);\n      }\n    }\n  }\n\n  @Override\n  public String toString() {\n    StringBuilder sb = new StringBuilder();\n    sb.append(SIMPLE_NAME);\n    sb.append('(').append(localFormat.getClass().getSimpleName()).append(')');\n    return sb.toString();\n  }\n}\n",
+      "fixed_full_code": "\n\npackage com.google.gson;\n\nimport java.io.IOException;\nimport java.sql.Timestamp;\nimport java.text.DateFormat;\nimport java.text.ParseException;\nimport java.text.ParsePosition;\nimport java.text.SimpleDateFormat;\nimport java.util.Date;\nimport java.util.Locale;\n\nimport com.google.gson.internal.bind.util.ISO8601Utils;\nimport com.google.gson.stream.JsonReader;\nimport com.google.gson.stream.JsonToken;\nimport com.google.gson.stream.JsonWriter;\n\n\nfinal class DefaultDateTypeAdapter extends TypeAdapter<Date> {\n\n  private static final String SIMPLE_NAME = \"DefaultDateTypeAdapter\"; private final Class<? extends Date> dateType; private final DateFormat enUsFormat; private final DateFormat localFormat; DefaultDateTypeAdapter(Class<? extends Date> dateType) {\n    this(dateType,\n        DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US),\n        DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT));\n  }\n\n  DefaultDateTypeAdapter(Class<? extends Date> dateType, String datePattern) {\n    this(dateType, new SimpleDateFormat(datePattern, Locale.US), new SimpleDateFormat(datePattern));\n  }\n\n  DefaultDateTypeAdapter(Class<? extends Date> dateType, int style) {\n    this(dateType, DateFormat.getDateInstance(style, Locale.US), DateFormat.getDateInstance(style));\n  }\n\n  public DefaultDateTypeAdapter(int dateStyle, int timeStyle) {\n    this(Date.class,\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle, Locale.US),\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle));\n  }\n\n  public DefaultDateTypeAdapter(Class<? extends Date> dateType, int dateStyle, int timeStyle) {\n    this(dateType,\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle, Locale.US),\n        DateFormat.getDateTimeInstance(dateStyle, timeStyle));\n  }\n\n  DefaultDateTypeAdapter(final Class<? extends Date> dateType, DateFormat enUsFormat, DateFormat localFormat) {\n    if ( dateType != Date.class && dateType != java.sql.Date.class && dateType != Timestamp.class ) {\n      throw new IllegalArgumentException(\"Date type must be one of \" + Date.class + \", \" + Timestamp.class + \", or \" + java.sql.Date.class + \" but was \" + dateType);\n    }\n    this.dateType = dateType;\n    this.enUsFormat = enUsFormat;\n    this.localFormat = localFormat;\n  }\n\n  \n  \n  @Override\n  public void write(JsonWriter out, Date value) throws IOException {\n    if (value == null) {\n      out.nullValue();\n      return;\n    }\n    synchronized (localFormat) {\n      String dateFormatAsString = enUsFormat.format(value);\n      out.value(dateFormatAsString);\n    }\n  }\n\n  @Override\n  public Date read(JsonReader in) throws IOException {\n    if (in.peek() == JsonToken.NULL) {\n      in.nextNull();\n      return null;\n    }\n    Date date = deserializeToDate(in.nextString());\n    if (dateType == Date.class) {\n      return date;\n    } else if (dateType == Timestamp.class) {\n      return new Timestamp(date.getTime());\n    } else if (dateType == java.sql.Date.class) {\n      return new java.sql.Date(date.getTime());\n    } else {\n      \n      throw new AssertionError();\n    }\n  }\n\n  private Date deserializeToDate(String s) {\n    synchronized (localFormat) {\n      try {\n        return localFormat.parse(s);\n      } catch (ParseException ignored) {}\n      try {\n        return enUsFormat.parse(s);\n      } catch (ParseException ignored) {}\n      try {\n        return ISO8601Utils.parse(s, new ParsePosition(0));\n      } catch (ParseException e) {\n        throw new JsonSyntaxException(s, e);\n      }\n    }\n  }\n\n  @Override\n  public String toString() {\n    StringBuilder sb = new StringBuilder();\n    sb.append(SIMPLE_NAME);\n    sb.append('(').append(localFormat.getClass().getSimpleName()).append(')');\n    return sb.toString();\n  }\n}\n",
+      "buggy_signatures": [
+        "public DefaultDateTypeAdapter(int dateStyle, int timeStyle)",
+        "public DefaultDateTypeAdapter(Class<? extends Date> dateType, int dateStyle, int timeStyle)",
+        "public void write(JsonWriter out, Date value) throws IOException",
+        "synchronized (localFormat)",
+        "public Date read(JsonReader in) throws IOException",
+        "private Date deserializeToDate(String s)",
+        "synchronized (localFormat)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public DefaultDateTypeAdapter(int dateStyle, int timeStyle)",
+        "public DefaultDateTypeAdapter(Class<? extends Date> dateType, int dateStyle, int timeStyle)",
+        "public void write(JsonWriter out, Date value) throws IOException",
+        "synchronized (localFormat)",
+        "public Date read(JsonReader in) throws IOException",
+        "private Date deserializeToDate(String s)",
+        "synchronized (localFormat)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Date read(JsonReader in) throws IOException {\n  if (in.peek() != JsonToken.STRING) {\n  throw new JsonParseException(\"The date should be a string value\");\n  }\n  Date date = deserializeToDate(in.nextString());\n  if (dateType == Date.class) {\n  return date;\n  } else if (dateType == Timestamp.class) {\n  return new Timestamp(date.getTime());\n  } else if (dateType == java.sql.Date.class) {\n  return new java.sql.Date(date.getTime());\n  } else {\n  \n  throw new AssertionError();\n  }\n  }",
+          "fixed_method": "  public Date read(JsonReader in) throws IOException {\n  if (in.peek() == JsonToken.NULL) {\n  in.nextNull();\n  return null;\n  }\n  Date date = deserializeToDate(in.nextString());\n  if (dateType == Date.class) {\n  return date;\n  } else if (dateType == Timestamp.class) {\n  return new Timestamp(date.getTime());\n  } else if (dateType == java.sql.Date.class) {\n  return new java.sql.Date(date.getTime());\n  } else {\n  \n  throw new AssertionError();\n  }\n  }",
+          "diff": [
+            "@@ -96,8 +96,9 @@",
+            " \n",
+            "   @Override\n",
+            "   public Date read(JsonReader in) throws IOException {\n",
+            "-    if (in.peek() != JsonToken.STRING) {\n",
+            "-      throw new JsonParseException(\"The date should be a string value\");\n",
+            "+    if (in.peek() == JsonToken.NULL) {\n",
+            "+      in.nextNull();\n",
+            "+      return null;\n",
+            "     }\n",
+            "     Date date = deserializeToDate(in.nextString());\n",
+            "     if (dateType == Date.class) {\n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

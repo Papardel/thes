@@ -1,0 +1,13 @@
+{
+  "bug_id": "JacksonCore_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 5\nTest Class: com.fasterxml.jackson.core.TestJsonPointer\nMethod: testWonkyNumber173\nError: java.lang.NumberFormatException\nMessage: For input string: \"1e0\"\nFailing Line:         JsonPointer ptr = JsonPointer.compile(\"/1e0\");\nTest Source:\npublic void testWonkyNumber173() throws Exception\n  {\n  JsonPointer ptr = JsonPointer.compile(\"/1e0\");\n  assertFalse(ptr.matches());\n  }\nStack Trace:\nNumberInput.parseInt line 91, JsonPointer._parseIndex line 204, JsonPointer.<init> line 70, JsonPointer._parseTail line 225, JsonPointer.compile line 98, TestJsonPointer.testWonkyNumber173 line 41\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```"
+    }
+  ],
+  "classes": [
+    "JsonPointer"
+  ]
+}

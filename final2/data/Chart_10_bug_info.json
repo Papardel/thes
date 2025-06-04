@@ -1,0 +1,50 @@
+{
+  "bug_id": "10",
+  "failed_tests": {
+    "org.jfree.chart.imagemap.junit.StandardToolTipTagFragmentGeneratorTests": [
+      {
+        "methodName": "testGenerateURLFragment",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:< title=\"Series [&quot;A&quot;], 100.0\" alt=\"\"> but was:< title=\"Series [\"A\"], 100.0\" alt=\"\">",
+        "fail_line": "        assertEquals(\" title=\\\"Series &quot;A&quot;, 100.0\\\" alt=\\\"\\\"\",",
+        "test_source": "  public void testGenerateURLFragment() {\n  StandardToolTipTagFragmentGenerator g\n  = new StandardToolTipTagFragmentGenerator();\n  assertEquals(\" title=\\\"abc\\\" alt=\\\"\\\"\",\n  g.generateToolTipFragment(\"abc\"));\n  assertEquals(\" title=\\\"Series &quot;A&quot;, 100.0\\\" alt=\\\"\\\"\",\n  g.generateToolTipFragment(\"Series \\\"A\\\", 100.0\"));\n  }",
+        "stack": [
+          "StandardToolTipTagFragmentGeneratorTests.testGenerateURLFragment line 80"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jfree/chart/imagemap/StandardToolTipTagFragmentGenerator.java",
+      "buggy_full_code": "\n \npackage org.jfree.chart.imagemap;\n\n\npublic class StandardToolTipTagFragmentGenerator implements ToolTipTagFragmentGenerator { public StandardToolTipTagFragmentGenerator() {\n        super();\n    }\n\t\n    \n    public String generateToolTipFragment(String toolTipText) {\n        return \" title=\\\"\" + toolTipText\n            + \"\\\" alt=\\\"\\\"\";\n    }\n\n}\n",
+      "fixed_full_code": "\n \npackage org.jfree.chart.imagemap;\n\n\npublic class StandardToolTipTagFragmentGenerator implements ToolTipTagFragmentGenerator { public StandardToolTipTagFragmentGenerator() {\n        super();\n    }\n\t\n    \n    public String generateToolTipFragment(String toolTipText) {\n        return \" title=\\\"\" + ImageMapUtilities.htmlEscape(toolTipText) \n            + \"\\\" alt=\\\"\\\"\";\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class StandardToolTipTagFragmentGenerator implements ToolTipTagFragmentGenerator { public StandardToolTipTagFragmentGenerator()",
+        "public String generateToolTipFragment(String toolTipText)"
+      ],
+      "fixed_signatures": [
+        "public class StandardToolTipTagFragmentGenerator implements ToolTipTagFragmentGenerator { public StandardToolTipTagFragmentGenerator()",
+        "public String generateToolTipFragment(String toolTipText)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public String generateToolTipFragment(String toolTipText) {\n  return \" title=\\\"\" + toolTipText\n  + \"\\\" alt=\\\"\\\"\";\n  }",
+          "fixed_method": "  public String generateToolTipFragment(String toolTipText) {\n  return \" title=\\\"\" + ImageMapUtilities.htmlEscape(toolTipText) \n  + \"\\\" alt=\\\"\\\"\";\n  }",
+          "diff": [
+            "@@ -62,7 +62,7 @@",
+            "      * @return The formatted HTML area tag attribute(s).\n",
+            "      */\n",
+            "     public String generateToolTipFragment(String toolTipText) {\n",
+            "-        return \" title=\\\"\" + toolTipText\n",
+            "+        return \" title=\\\"\" + ImageMapUtilities.htmlEscape(toolTipText) \n",
+            "             + \"\\\" alt=\\\"\\\"\";\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

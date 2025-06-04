@@ -1,0 +1,10 @@
+{
+  "bug_id": "JacksonDatabind_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: com.fasterxml.jackson.databind.struct.TestPOJOAsArray\nMethod: testNullColumn\nError: junit.framework.ComparisonFailure\nMessage: expected:<[null,[]\"bar\"]> but was:<[null,[null,]\"bar\"]>\nFailing Line:         assertEquals(\"[null,\\\"bar\\\"]\", MAPPER.writeValueAsString(new TwoStringsBean()));\nTest Source:\npublic void testNullColumn() throws Exception {\n  assertEquals(\"[null,\\\"bar\\\"]\", MAPPER.writeValueAsString(new TwoStringsBean()));\n  }\nStack Trace:\nTestPOJOAsArray.testNullColumn line 151\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any other class not part of the production codebase.\n\nRESPONSE: com.fasterxml.jackson.databind.util.StdDateFormat\n```"
+    }
+  ]
+}

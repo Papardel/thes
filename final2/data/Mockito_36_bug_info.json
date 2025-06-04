@@ -1,0 +1,126 @@
+{
+  "bug_id": "36",
+  "failed_tests": {
+    "org.mockito.internal.invocation.InvocationTest": [
+      {
+        "methodName": "shouldScreamWhenCallingRealMethodOnInterface",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "            invocationOnInterface.callRealMethod();",
+        "test_source": "  public void shouldScreamWhenCallingRealMethodOnInterface() throws Throwable {\n  //given\n  Invocation invocationOnInterface = new InvocationBuilder().toInvocation();\n\n  try {\n  //when\n  invocationOnInterface.callRealMethod();\n  //then\n  fail();\n  } catch(MockitoException e) {}\n  }",
+        "stack": [
+          "Invocation.callRealMethod line 202, InvocationTest.shouldScreamWhenCallingRealMethodOnInterface line 175"
+        ]
+      }
+    ],
+    "org.mockitousage.spies.SpyingOnInterfacesTest": [
+      {
+        "methodName": "shouldFailInRuntimeWhenCallingRealMethodOnInterface",
+        "error": "java.lang.NoSuchMethodError",
+        "message": "'java.lang.Object java.lang.Object.get(int)'",
+        "fail_line": "            list.get(0);            ",
+        "test_source": "  public void shouldFailInRuntimeWhenCallingRealMethodOnInterface() throws Exception {\n  //given\n  List list = mock(List.class);\n  when(list.get(0)).thenAnswer(\n  new Answer() {\n  public Object answer(InvocationOnMock invocation) throws Throwable {\n  return invocation.callRealMethod();\n  }\n  }\n  );\n  try {\n  //when\n  list.get(0);  \n  //then\n  fail();\n  } catch (MockitoException e) {}\n  }",
+        "stack": [
+          "MethodProxy.invokeSuper line 216, AbstractMockitoMethodProxy.invokeSuper line 11, CGLIBProxyRealMethod.invoke line 20, FilteredCGLIBProxyRealMethod.invoke line 26, Invocation.callRealMethod line 202, SpyingOnInterfacesTest$1.answer line 38, StubbedInvocationMatcher.answer line 28, MockHandler.handle line 95, MethodInterceptorFilter.intercept line 47, SpyingOnInterfacesTest.shouldFailInRuntimeWhenCallingRealMethodOnInterface line 44"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/invocation/Invocation.java",
+      "buggy_full_code": "\npackage org.mockito.internal.invocation;\n\nimport java.util.*;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.exceptions.PrintableInvocation;\nimport org.mockito.internal.debugging.Location;\nimport org.mockito.internal.invocation.realmethod.RealMethod;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.internal.reporting.PrintingFriendlyInvocation;\nimport org.mockito.internal.util.*;\nimport org.mockito.invocation.InvocationOnMock;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Invocation implements PrintableInvocation, InvocationOnMock, PrintingFriendlyInvocation { private static final long serialVersionUID = 8240069639250980199L; private static final int MAX_LINE_LENGTH = 45; private final int sequenceNumber; private final Object mock; private final MockitoMethod method; private final Object[] arguments; private final Object[] rawArguments; private final Location location; private boolean verified; private boolean verifiedInOrder; final RealMethod realMethod; public Invocation(Object mock, MockitoMethod mockitoMethod, Object[] args, int sequenceNumber, RealMethod realMethod) {\n        this.method = mockitoMethod;\n        this.mock = mock;\n        this.realMethod = realMethod;\n        this.arguments = expandVarArgs(mockitoMethod.isVarArgs(), args);\n        this.rawArguments = args;\n        this.sequenceNumber = sequenceNumber;\n        this.location = new Location();\n    }\n\n    \n    \n    private static Object[] expandVarArgs(final boolean isVarArgs, final Object[] args) {\n        if (!isVarArgs || args[args.length - 1] != null && !args[args.length - 1].getClass().isArray()) {\n            return args == null ? new Object[0] : args;\n        }\n\n        final int nonVarArgsCount = args.length - 1;\n        Object[] varArgs;\n        if (args[nonVarArgsCount] == null) {\n            \n            varArgs = new Object[] { null };\n        } else {\n            varArgs = ArrayEquals.createObjectArray(args[nonVarArgsCount]);\n        }\n        final int varArgsCount = varArgs.length;\n        Object[] newArgs = new Object[nonVarArgsCount + varArgsCount];\n        System.arraycopy(args, 0, newArgs, 0, nonVarArgsCount);\n        System.arraycopy(varArgs, 0, newArgs, nonVarArgsCount, varArgsCount);\n        return newArgs;\n    }\n\n    public Object getMock() {\n        return mock;\n    }\n\n    public MockitoMethod getMethod() {\n        return method;\n    }\n\n    public Object[] getArguments() {\n        return arguments;\n    }\n\n    public boolean isVerified() {\n        return verified;\n    }\n\n    public Integer getSequenceNumber() {\n        return sequenceNumber;\n    }\n\n    public boolean isVerifiedInOrder() {\n        return verifiedInOrder;\n    }\n\n    public boolean equals(Object o) {\n        if (o == null || !o.getClass().equals(this.getClass())) {\n            return false;\n        }\n\n        Invocation other = (Invocation) o;\n\n        return this.mock.equals(other.mock) && this.method.equals(other.method) && this.equalArguments(other.arguments);\n    }\n\n    private boolean equalArguments(Object[] arguments) {\n        return Arrays.equals(arguments, this.arguments);\n    }\n\n    public int hashCode() {\n        throw new RuntimeException(\"hashCode() is not implemented\");\n    }\n\n    public String toString() {\n        return toString(argumentsToMatchers(), new PrintSettings());\n    }\n\n    protected String toString(List<Matcher> matchers, PrintSettings printSettings) {\n        MatchersPrinter matchersPrinter = new MatchersPrinter();\n        String method = qualifiedMethodName();\n        String invocation = method + matchersPrinter.getArgumentsLine(matchers, printSettings);\n        if (printSettings.isMultiline() || (!matchers.isEmpty() && invocation.length() > MAX_LINE_LENGTH)) {\n            return method + matchersPrinter.getArgumentsBlock(matchers, printSettings);\n        } else {\n            return invocation;\n        }\n    }\n\n    private String qualifiedMethodName() {\n        return new MockUtil().getMockName(mock) + \".\" + method.getName();\n    }\n\n    protected List<Matcher> argumentsToMatchers() {\n        List<Matcher> matchers = new ArrayList<Matcher>(arguments.length);\n        for (Object arg : arguments) {\n            if (arg != null && arg.getClass().isArray()) {\n                matchers.add(new ArrayEquals(arg));\n            } else {\n                matchers.add(new Equals(arg));\n            }\n        }\n        return matchers;\n    }\n\n    public static boolean isToString(InvocationOnMock invocation) {\n        return new ObjectMethodsGuru().isToString(invocation.getMethod());\n    }\n\n    public boolean isValidException(Throwable throwable) {\n        Class<?>[] exceptions = this.getMethod().getExceptionTypes();\n        Class<?> throwableClass = throwable.getClass();\n        for (Class<?> exception : exceptions) {\n            if (exception.isAssignableFrom(throwableClass)) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    public boolean isValidReturnType(Class clazz) {\n        if (method.getReturnType().isPrimitive()) {\n            return Primitives.primitiveTypeOf(clazz) == method.getReturnType();\n        } else {\n            return method.getReturnType().isAssignableFrom(clazz);\n        }\n    }\n\n    public boolean isVoid() {\n        return this.method.getReturnType() == Void.TYPE;\n    }\n\n    public String printMethodReturnType() {\n        return method.getReturnType().getSimpleName();\n    }\n\n    public String getMethodName() {\n        return method.getName();\n    }\n\n    public boolean returnsPrimitive() {\n        return method.getReturnType().isPrimitive();\n    }\n\n    public Location getLocation() {\n        return location;\n    }\n\n    public int getArgumentsCount() {\n        return arguments.length;\n    }\n\n    public Object[] getRawArguments() {\n        return this.rawArguments;\n    }\n\n    public Object callRealMethod() throws Throwable {\n        return realMethod.invoke(mock, rawArguments);\n    }\n\n    public String toString(PrintSettings printSettings) {\n        return toString(argumentsToMatchers(), printSettings);\n    }\n\n    void markVerified() {\n        this.verified = true;\n    }\n\n    void markVerifiedInOrder() {\n        markVerified();\n        this.verifiedInOrder = true;\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal.invocation;\n\nimport java.util.*;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.exceptions.PrintableInvocation;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.internal.debugging.Location;\nimport org.mockito.internal.invocation.realmethod.RealMethod;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.internal.reporting.PrintingFriendlyInvocation;\nimport org.mockito.internal.util.*;\nimport org.mockito.invocation.InvocationOnMock;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Invocation implements PrintableInvocation, InvocationOnMock, PrintingFriendlyInvocation { private static final long serialVersionUID = 8240069639250980199L; private static final int MAX_LINE_LENGTH = 45; private final int sequenceNumber; private final Object mock; private final MockitoMethod method; private final Object[] arguments; private final Object[] rawArguments; private final Location location; private boolean verified; private boolean verifiedInOrder; final RealMethod realMethod; public Invocation(Object mock, MockitoMethod mockitoMethod, Object[] args, int sequenceNumber, RealMethod realMethod) {\n        this.method = mockitoMethod;\n        this.mock = mock;\n        this.realMethod = realMethod;\n        this.arguments = expandVarArgs(mockitoMethod.isVarArgs(), args);\n        this.rawArguments = args;\n        this.sequenceNumber = sequenceNumber;\n        this.location = new Location();\n    }\n\n    \n    \n    private static Object[] expandVarArgs(final boolean isVarArgs, final Object[] args) {\n        if (!isVarArgs || args[args.length - 1] != null && !args[args.length - 1].getClass().isArray()) {\n            return args == null ? new Object[0] : args;\n        }\n\n        final int nonVarArgsCount = args.length - 1;\n        Object[] varArgs;\n        if (args[nonVarArgsCount] == null) {\n            \n            varArgs = new Object[] { null };\n        } else {\n            varArgs = ArrayEquals.createObjectArray(args[nonVarArgsCount]);\n        }\n        final int varArgsCount = varArgs.length;\n        Object[] newArgs = new Object[nonVarArgsCount + varArgsCount];\n        System.arraycopy(args, 0, newArgs, 0, nonVarArgsCount);\n        System.arraycopy(varArgs, 0, newArgs, nonVarArgsCount, varArgsCount);\n        return newArgs;\n    }\n\n    public Object getMock() {\n        return mock;\n    }\n\n    public MockitoMethod getMethod() {\n        return method;\n    }\n\n    public Object[] getArguments() {\n        return arguments;\n    }\n\n    public boolean isVerified() {\n        return verified;\n    }\n\n    public Integer getSequenceNumber() {\n        return sequenceNumber;\n    }\n\n    public boolean isVerifiedInOrder() {\n        return verifiedInOrder;\n    }\n\n    public boolean equals(Object o) {\n        if (o == null || !o.getClass().equals(this.getClass())) {\n            return false;\n        }\n\n        Invocation other = (Invocation) o;\n\n        return this.mock.equals(other.mock) && this.method.equals(other.method) && this.equalArguments(other.arguments);\n    }\n\n    private boolean equalArguments(Object[] arguments) {\n        return Arrays.equals(arguments, this.arguments);\n    }\n\n    public int hashCode() {\n        throw new RuntimeException(\"hashCode() is not implemented\");\n    }\n\n    public String toString() {\n        return toString(argumentsToMatchers(), new PrintSettings());\n    }\n\n    protected String toString(List<Matcher> matchers, PrintSettings printSettings) {\n        MatchersPrinter matchersPrinter = new MatchersPrinter();\n        String method = qualifiedMethodName();\n        String invocation = method + matchersPrinter.getArgumentsLine(matchers, printSettings);\n        if (printSettings.isMultiline() || (!matchers.isEmpty() && invocation.length() > MAX_LINE_LENGTH)) {\n            return method + matchersPrinter.getArgumentsBlock(matchers, printSettings);\n        } else {\n            return invocation;\n        }\n    }\n\n    private String qualifiedMethodName() {\n        return new MockUtil().getMockName(mock) + \".\" + method.getName();\n    }\n\n    protected List<Matcher> argumentsToMatchers() {\n        List<Matcher> matchers = new ArrayList<Matcher>(arguments.length);\n        for (Object arg : arguments) {\n            if (arg != null && arg.getClass().isArray()) {\n                matchers.add(new ArrayEquals(arg));\n            } else {\n                matchers.add(new Equals(arg));\n            }\n        }\n        return matchers;\n    }\n\n    public static boolean isToString(InvocationOnMock invocation) {\n        return new ObjectMethodsGuru().isToString(invocation.getMethod());\n    }\n\n    public boolean isValidException(Throwable throwable) {\n        Class<?>[] exceptions = this.getMethod().getExceptionTypes();\n        Class<?> throwableClass = throwable.getClass();\n        for (Class<?> exception : exceptions) {\n            if (exception.isAssignableFrom(throwableClass)) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    public boolean isValidReturnType(Class clazz) {\n        if (method.getReturnType().isPrimitive()) {\n            return Primitives.primitiveTypeOf(clazz) == method.getReturnType();\n        } else {\n            return method.getReturnType().isAssignableFrom(clazz);\n        }\n    }\n\n    public boolean isVoid() {\n        return this.method.getReturnType() == Void.TYPE;\n    }\n\n    public String printMethodReturnType() {\n        return method.getReturnType().getSimpleName();\n    }\n\n    public String getMethodName() {\n        return method.getName();\n    }\n\n    public boolean returnsPrimitive() {\n        return method.getReturnType().isPrimitive();\n    }\n\n    public Location getLocation() {\n        return location;\n    }\n\n    public int getArgumentsCount() {\n        return arguments.length;\n    }\n\n    public Object[] getRawArguments() {\n        return this.rawArguments;\n    }\n\n    public Object callRealMethod() throws Throwable {\n        if (this.getMethod().getDeclaringClass().isInterface()) {\n            new Reporter().cannotCallRealMethodOnInterface();\n        }\n        return realMethod.invoke(mock, rawArguments);\n    }\n\n    public String toString(PrintSettings printSettings) {\n        return toString(argumentsToMatchers(), printSettings);\n    }\n\n    void markVerified() {\n        this.verified = true;\n    }\n\n    void markVerifiedInOrder() {\n        markVerified();\n        this.verifiedInOrder = true;\n    }\n}",
+      "buggy_signatures": [
+        "private static Object[] expandVarArgs(final boolean isVarArgs, final Object[] args)",
+        "public Object getMock()",
+        "public MockitoMethod getMethod()",
+        "public Object[] getArguments()",
+        "public boolean isVerified()",
+        "public Integer getSequenceNumber()",
+        "public boolean isVerifiedInOrder()",
+        "public boolean equals(Object o)",
+        "private boolean equalArguments(Object[] arguments)",
+        "public int hashCode()",
+        "public String toString()",
+        "protected String toString(List<Matcher> matchers, PrintSettings printSettings)",
+        "private String qualifiedMethodName()",
+        "protected List<Matcher> argumentsToMatchers()",
+        "public static boolean isToString(InvocationOnMock invocation)",
+        "public boolean isValidException(Throwable throwable)",
+        "public boolean isValidReturnType(Class clazz)",
+        "public boolean isVoid()",
+        "public String printMethodReturnType()",
+        "public String getMethodName()",
+        "public boolean returnsPrimitive()",
+        "public Location getLocation()",
+        "public int getArgumentsCount()",
+        "public Object[] getRawArguments()",
+        "public Object callRealMethod() throws Throwable",
+        "public String toString(PrintSettings printSettings)"
+      ],
+      "fixed_signatures": [
+        "private static Object[] expandVarArgs(final boolean isVarArgs, final Object[] args)",
+        "public Object getMock()",
+        "public MockitoMethod getMethod()",
+        "public Object[] getArguments()",
+        "public boolean isVerified()",
+        "public Integer getSequenceNumber()",
+        "public boolean isVerifiedInOrder()",
+        "public boolean equals(Object o)",
+        "private boolean equalArguments(Object[] arguments)",
+        "public int hashCode()",
+        "public String toString()",
+        "protected String toString(List<Matcher> matchers, PrintSettings printSettings)",
+        "private String qualifiedMethodName()",
+        "protected List<Matcher> argumentsToMatchers()",
+        "public static boolean isToString(InvocationOnMock invocation)",
+        "public boolean isValidException(Throwable throwable)",
+        "public boolean isValidReturnType(Class clazz)",
+        "public boolean isVoid()",
+        "public String printMethodReturnType()",
+        "public String getMethodName()",
+        "public boolean returnsPrimitive()",
+        "public Location getLocation()",
+        "public int getArgumentsCount()",
+        "public Object[] getRawArguments()",
+        "public Object callRealMethod() throws Throwable",
+        "public String toString(PrintSettings printSettings)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -8,6 +8,7 @@",
+            " \n",
+            " import org.hamcrest.Matcher;\n",
+            " import org.mockito.exceptions.PrintableInvocation;\n",
+            "+import org.mockito.exceptions.Reporter;\n",
+            " import org.mockito.internal.debugging.Location;\n",
+            " import org.mockito.internal.invocation.realmethod.RealMethod;\n",
+            " import org.mockito.internal.matchers.*;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public String toString(PrintSettings printSettings) {\n  return toString(argumentsToMatchers(), printSettings);\n  }",
+          "fixed_method": "  public Object callRealMethod() throws Throwable {\n  if (this.getMethod().getDeclaringClass().isInterface()) {\n  new Reporter().cannotCallRealMethodOnInterface();\n  }\n  return realMethod.invoke(mock, rawArguments);\n  }",
+          "diff": [
+            "@@ -199,6 +200,9 @@",
+            "     }\n",
+            " \n",
+            "     public Object callRealMethod() throws Throwable {\n",
+            "+        if (this.getMethod().getDeclaringClass().isInterface()) {\n",
+            "+            new Reporter().cannotCallRealMethodOnInterface();\n",
+            "+        }\n",
+            "         return realMethod.invoke(mock, rawArguments);\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

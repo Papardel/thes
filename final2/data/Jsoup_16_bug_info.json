@@ -1,0 +1,95 @@
+{
+  "bug_id": "16",
+  "failed_tests": {
+    "org.jsoup.nodes.DocumentTypeTest": [
+      {
+        "methodName": "outerHtmlGeneration",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<<!DOCTYPE html [\"]http://www.ibm.com/d...> but was:<<!DOCTYPE html []http://www.ibm.com/d...>",
+        "fail_line": "        assertEquals(\"<!DOCTYPE html \\\"http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd\\\">\", systemDocType.outerHtml());",
+        "test_source": "",
+        "stack": [
+          "DocumentTypeTest.outerHtmlGeneration line 36"
+        ]
+      },
+      {
+        "methodName": "constructorValidationThrowsExceptionOnBlankName",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: java.lang.IllegalArgumentException",
+        "fail_line": "",
+        "test_source": "  public void constructorValidationThrowsExceptionOnBlankName() {\n  DocumentType fail = new DocumentType(\"\",\"\", \"\", \"\");\n  }",
+        "stack": [
+          ""
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/DocumentType.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.StringUtil;\n\n\npublic class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri) {\n        super(baseUri);\n\n        attr(\"name\", name);\n        attr(\"publicId\", publicId);\n        attr(\"systemId\", systemId);\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#doctype\";\n    }\n\n    @Override\n    void outerHtmlHead(StringBuilder accum, int depth, Document.OutputSettings out) {\n        accum.append(\"<!DOCTYPE html\");\n        if (!StringUtil.isBlank(attr(\"publicId\")))\n            accum.append(\" PUBLIC \\\"\").append(attr(\"publicId\")).append(\"\\\"\");\n        if (!StringUtil.isBlank(attr(\"systemId\")))\n            accum.append(' ').append(attr(\"systemId\")).append(\"\\\"\");\n        accum.append('>');\n    }\n\n    @Override\n    void outerHtmlTail(StringBuilder accum, int depth, Document.OutputSettings out) {\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\n\n\npublic class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri) {\n        super(baseUri);\n\n        Validate.notEmpty(name);\n        attr(\"name\", name);\n        attr(\"publicId\", publicId);\n        attr(\"systemId\", systemId);\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#doctype\";\n    }\n\n    @Override\n    void outerHtmlHead(StringBuilder accum, int depth, Document.OutputSettings out) {\n        accum.append(\"<!DOCTYPE \").append(attr(\"name\"));\n        if (!StringUtil.isBlank(attr(\"publicId\")))\n            accum.append(\" PUBLIC \\\"\").append(attr(\"publicId\")).append(\"\\\"\");\n        if (!StringUtil.isBlank(attr(\"systemId\")))\n            accum.append(\" \\\"\").append(attr(\"systemId\")).append(\"\\\"\");\n        accum.append('>');\n    }\n\n    @Override\n    void outerHtmlTail(StringBuilder accum, int depth, Document.OutputSettings out) {\n    }\n}\n",
+      "buggy_signatures": [
+        "public class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri)",
+        "public String nodeName()"
+      ],
+      "fixed_signatures": [
+        "public class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri)",
+        "public String nodeName()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -1,6 +1,7 @@",
+            " package org.jsoup.nodes;\n",
+            " \n",
+            " import org.jsoup.helper.StringUtil;\n",
+            "+import org.jsoup.helper.Validate;\n",
+            " \n",
+            " /**\n",
+            "  * A {@code <!DOCTPYE>} node.\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public DocumentType(String name, String publicId, String systemId, String baseUri) {\n  super(baseUri);\n\n  attr(\"name\", name);\n  attr(\"publicId\", publicId);\n  attr(\"systemId\", systemId);\n  }",
+          "fixed_method": "  public DocumentType(String name, String publicId, String systemId, String baseUri) {\n  super(baseUri);\n\n  Validate.notEmpty(name);\n  attr(\"name\", name);\n  attr(\"publicId\", publicId);\n  attr(\"systemId\", systemId);\n  }",
+          "diff": [
+            "@@ -18,6 +19,7 @@",
+            "     public DocumentType(String name, String publicId, String systemId, String baseUri) {\n",
+            "         super(baseUri);\n",
+            " \n",
+            "+        Validate.notEmpty(name);\n",
+            "         attr(\"name\", name);\n",
+            "         attr(\"publicId\", publicId);\n",
+            "         attr(\"systemId\", systemId);\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public String nodeName() {\n  return \"#doctype\";\n  }",
+          "fixed_method": "  public String nodeName() {\n  return \"#doctype\";\n  }",
+          "diff": [
+            "@@ -30,11 +32,11 @@",
+            " \n",
+            "     @Override\n",
+            "     void outerHtmlHead(StringBuilder accum, int depth, Document.OutputSettings out) {\n",
+            "-        accum.append(\"<!DOCTYPE html\");\n",
+            "+        accum.append(\"<!DOCTYPE \").append(attr(\"name\"));\n",
+            "         if (!StringUtil.isBlank(attr(\"publicId\")))\n",
+            "             accum.append(\" PUBLIC \\\"\").append(attr(\"publicId\")).append(\"\\\"\");\n",
+            "         if (!StringUtil.isBlank(attr(\"systemId\")))\n",
+            "-            accum.append(' ').append(attr(\"systemId\")).append(\"\\\"\");\n",
+            "+            accum.append(\" \\\"\").append(attr(\"systemId\")).append(\"\\\"\");\n",
+            "         accum.append('>');\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

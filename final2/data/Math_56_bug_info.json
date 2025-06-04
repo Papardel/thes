@@ -1,0 +1,80 @@
+{
+  "bug_id": "56",
+  "failed_tests": {
+    "org.apache.commons.math.util.MultidimensionalCounterTest": [
+      {
+        "methodName": "testIterationConsistency",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Wrong multidimensional index for [3][2] expected:<3> but was:<2>",
+        "fail_line": "                Assert.assertEquals(\"Wrong multidimensional index for [\" + i + \"][\" + dimIndex + \"]\",",
+        "test_source": "  public void testIterationConsistency() {\n  final MultidimensionalCounter c = new MultidimensionalCounter(2, 3, 4);\n  final int[][] expected = new int[][] {\n  { 0, 0, 0 },\n  { 0, 0, 1 },\n  { 0, 0, 2 },\n  { 0, 0, 3 },\n  { 0, 1, 0 },\n  { 0, 1, 1 },\n  { 0, 1, 2 },\n  { 0, 1, 3 },\n  { 0, 2, 0 },\n  { 0, 2, 1 },\n  { 0, 2, 2 },\n  { 0, 2, 3 },\n  { 1, 0, 0 },\n  { 1, 0, 1 },\n  { 1, 0, 2 },\n  { 1, 0, 3 },\n  { 1, 1, 0 },\n  { 1, 1, 1 },\n  { 1, 1, 2 },\n  { 1, 1, 3 },\n  { 1, 2, 0 },\n  { 1, 2, 1 },\n  { 1, 2, 2 },\n  { 1, 2, 3 }\n  };\n\n  final int totalSize = c.getSize();\n  final int nDim = c.getDimension();\n  final MultidimensionalCounter.Iterator iter = c.iterator();\n  for (int i = 0; i < totalSize; i++) {\n  if (!iter.hasNext()) {\n  Assert.fail(\"Too short\");\n  }\n  final int uniDimIndex = iter.next();\n  Assert.assertEquals(\"Wrong iteration at \" + i, i, uniDimIndex);\n\n  for (int dimIndex = 0; dimIndex < nDim; dimIndex++) {\n  Assert.assertEquals(\"Wrong multidimensional index for [\" + i + \"][\" + dimIndex + \"]\",\n  expected[i][dimIndex], iter.getCount(dimIndex));\n  }\n\n  Assert.assertEquals(\"Wrong unidimensional index for [\" + i + \"]\",\n  c.getCount(expected[i]), uniDimIndex);\n\n  final int[] indices = c.getCounts(uniDimIndex);\n  for (int dimIndex = 0; dimIndex < nDim; dimIndex++) {\n  Assert.assertEquals(\"Wrong multidimensional index for [\" + i + \"][\" + dimIndex + \"]\",\n  expected[i][dimIndex], indices[dimIndex]);\n  }\n  }\n\n  if (iter.hasNext()) {\n  Assert.fail(\"Too long\");\n  }\n  }",
+        "stack": [
+          "MultidimensionalCounterTest.testIterationConsistency line 172"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/util/MultidimensionalCounter.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math.util;\n\nimport org.apache.commons.math.exception.DimensionMismatchException;\nimport org.apache.commons.math.exception.OutOfRangeException;\nimport org.apache.commons.math.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math.util.MathUtils;\n\n\npublic class MultidimensionalCounter implements Iterable<Integer> { private final int dimension; private final int[] uniCounterOffset; private final int[] size; private final int totalSize; private final int last; public class Iterator implements java.util.Iterator<Integer> { private final int[] counter = new int[dimension]; private int count = -1; Iterator() {\n            counter[last] = -1;\n        }\n\n        \n        public boolean hasNext() {\n            for (int i = 0; i < dimension; i++) {\n                if (counter[i] != size[i] - 1) {\n                    return true;\n                }\n            }\n            return false;\n        }\n\n        \n        public Integer next() {\n            for (int i = last; i >= 0; i--) {\n                if (counter[i] == size[i] - 1) {\n                    counter[i] = 0;\n                } else {\n                    ++counter[i];\n                    break;\n                }\n            }\n\n            return ++count;\n        }\n\n        \n        public int getCount() {\n            return count;\n        }\n        \n        public int[] getCounts() {\n            return MathUtils.copyOf(counter);\n        }\n\n        \n        public int getCount(int dim) {\n            return counter[dim];\n        }\n\n        \n        public void remove() {\n            throw new UnsupportedOperationException();\n        }\n    }\n\n    \n    public MultidimensionalCounter(int ... size) {\n        dimension = size.length;\n        this.size = MathUtils.copyOf(size);\n\n        uniCounterOffset = new int[dimension];\n\n        last = dimension - 1;\n        int tS = size[last];\n        for (int i = 0; i < last; i++) {\n            int count = 1;\n            for (int j = i + 1; j < dimension; j++) {\n                count *= size[j];\n            }\n            uniCounterOffset[i] = count;\n            tS *= size[i];\n        }\n        uniCounterOffset[last] = 0;\n\n        if (tS <= 0) {\n            throw new NotStrictlyPositiveException(tS);\n        }\n\n        totalSize = tS;\n    }\n\n    \n    public Iterator iterator() {\n        return new Iterator();\n    }\n\n    \n    public int getDimension() {\n        return dimension;\n    }\n\n    \n    public int[] getCounts(int index) {\n        if (index < 0 ||\n            index >= totalSize) {\n            throw new OutOfRangeException(index, 0, totalSize);\n        }\n\n        final int[] indices = new int[dimension];\n\n        int count = 0;\n        for (int i = 0; i < last; i++) {\n            int idx = 0;\n            final int offset = uniCounterOffset[i];\n            while (count <= index) {\n                count += offset;\n                ++idx;\n            }\n            --idx;\n            count -= offset;\n            indices[i] = idx;\n        }\n\n        int idx = 1;\n        while (count < index) {\n            count += idx;\n            ++idx;\n        }\n        --idx;\n        indices[last] = idx;\n\n        return indices;\n    }\n\n    \n    public int getCount(int ... c) throws OutOfRangeException {\n        if (c.length != dimension) {\n            throw new DimensionMismatchException(c.length, dimension);\n        }\n        int count = 0;\n        for (int i = 0; i < dimension; i++) {\n            final int index = c[i];\n            if (index < 0 ||\n                index >= size[i]) {\n                throw new OutOfRangeException(index, 0, size[i] - 1);\n            }\n            count += uniCounterOffset[i] * c[i];\n        }\n        return count + c[last];\n    }\n\n    \n    public int getSize() {\n        return totalSize;\n    }\n    \n    public int[] getSizes() {\n        return MathUtils.copyOf(size);\n    }\n\n    \n    @Override\n    public String toString() {\n        final StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < dimension; i++) {\n            sb.append(\"[\").append(getCount(i)).append(\"]\");\n        }\n        return sb.toString();\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math.util;\n\nimport org.apache.commons.math.exception.DimensionMismatchException;\nimport org.apache.commons.math.exception.OutOfRangeException;\nimport org.apache.commons.math.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math.util.MathUtils;\n\n\npublic class MultidimensionalCounter implements Iterable<Integer> { private final int dimension; private final int[] uniCounterOffset; private final int[] size; private final int totalSize; private final int last; public class Iterator implements java.util.Iterator<Integer> { private final int[] counter = new int[dimension]; private int count = -1; Iterator() {\n            counter[last] = -1;\n        }\n\n        \n        public boolean hasNext() {\n            for (int i = 0; i < dimension; i++) {\n                if (counter[i] != size[i] - 1) {\n                    return true;\n                }\n            }\n            return false;\n        }\n\n        \n        public Integer next() {\n            for (int i = last; i >= 0; i--) {\n                if (counter[i] == size[i] - 1) {\n                    counter[i] = 0;\n                } else {\n                    ++counter[i];\n                    break;\n                }\n            }\n\n            return ++count;\n        }\n\n        \n        public int getCount() {\n            return count;\n        }\n        \n        public int[] getCounts() {\n            return MathUtils.copyOf(counter);\n        }\n\n        \n        public int getCount(int dim) {\n            return counter[dim];\n        }\n\n        \n        public void remove() {\n            throw new UnsupportedOperationException();\n        }\n    }\n\n    \n    public MultidimensionalCounter(int ... size) {\n        dimension = size.length;\n        this.size = MathUtils.copyOf(size);\n\n        uniCounterOffset = new int[dimension];\n\n        last = dimension - 1;\n        int tS = size[last];\n        for (int i = 0; i < last; i++) {\n            int count = 1;\n            for (int j = i + 1; j < dimension; j++) {\n                count *= size[j];\n            }\n            uniCounterOffset[i] = count;\n            tS *= size[i];\n        }\n        uniCounterOffset[last] = 0;\n\n        if (tS <= 0) {\n            throw new NotStrictlyPositiveException(tS);\n        }\n\n        totalSize = tS;\n    }\n\n    \n    public Iterator iterator() {\n        return new Iterator();\n    }\n\n    \n    public int getDimension() {\n        return dimension;\n    }\n\n    \n    public int[] getCounts(int index) {\n        if (index < 0 ||\n            index >= totalSize) {\n            throw new OutOfRangeException(index, 0, totalSize);\n        }\n\n        final int[] indices = new int[dimension];\n\n        int count = 0;\n        for (int i = 0; i < last; i++) {\n            int idx = 0;\n            final int offset = uniCounterOffset[i];\n            while (count <= index) {\n                count += offset;\n                ++idx;\n            }\n            --idx;\n            count -= offset;\n            indices[i] = idx;\n        }\n\n        indices[last] = index - count;\n\n        return indices;\n    }\n\n    \n    public int getCount(int ... c) throws OutOfRangeException {\n        if (c.length != dimension) {\n            throw new DimensionMismatchException(c.length, dimension);\n        }\n        int count = 0;\n        for (int i = 0; i < dimension; i++) {\n            final int index = c[i];\n            if (index < 0 ||\n                index >= size[i]) {\n                throw new OutOfRangeException(index, 0, size[i] - 1);\n            }\n            count += uniCounterOffset[i] * c[i];\n        }\n        return count + c[last];\n    }\n\n    \n    public int getSize() {\n        return totalSize;\n    }\n    \n    public int[] getSizes() {\n        return MathUtils.copyOf(size);\n    }\n\n    \n    @Override\n    public String toString() {\n        final StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < dimension; i++) {\n            sb.append(\"[\").append(getCount(i)).append(\"]\");\n        }\n        return sb.toString();\n    }\n}\n",
+      "buggy_signatures": [
+        "public boolean hasNext()",
+        "public Integer next()",
+        "public int getCount()",
+        "public int[] getCounts()",
+        "public int getCount(int dim)",
+        "public void remove()",
+        "public MultidimensionalCounter(int ... size)",
+        "public Iterator iterator()",
+        "public int getDimension()",
+        "public int[] getCounts(int index)",
+        "public int getCount(int ... c) throws OutOfRangeException",
+        "public int getSize()",
+        "public int[] getSizes()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public boolean hasNext()",
+        "public Integer next()",
+        "public int getCount()",
+        "public int[] getCounts()",
+        "public int getCount(int dim)",
+        "public void remove()",
+        "public MultidimensionalCounter(int ... size)",
+        "public Iterator iterator()",
+        "public int getDimension()",
+        "public int[] getCounts(int index)",
+        "public int getCount(int ... c) throws OutOfRangeException",
+        "public int getSize()",
+        "public int[] getSizes()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int[] getCounts(int index) {\n  if (index < 0 ||\n  index >= totalSize) {\n  throw new OutOfRangeException(index, 0, totalSize);\n  }\n\n  final int[] indices = new int[dimension];\n\n  int count = 0;\n  for (int i = 0; i < last; i++) {\n  int idx = 0;\n  final int offset = uniCounterOffset[i];\n  while (count <= index) {\n  count += offset;\n  ++idx;\n  }\n  --idx;\n  count -= offset;\n  indices[i] = idx;\n  }\n\n  int idx = 1;\n  while (count < index) {\n  count += idx;\n  ++idx;\n  }\n  --idx;\n  indices[last] = idx;\n\n  return indices;\n  }",
+          "fixed_method": "  public int[] getCounts(int index) {\n  if (index < 0 ||\n  index >= totalSize) {\n  throw new OutOfRangeException(index, 0, totalSize);\n  }\n\n  final int[] indices = new int[dimension];\n\n  int count = 0;\n  for (int i = 0; i < last; i++) {\n  int idx = 0;\n  final int offset = uniCounterOffset[i];\n  while (count <= index) {\n  count += offset;\n  ++idx;\n  }\n  --idx;\n  count -= offset;\n  indices[i] = idx;\n  }\n\n  indices[last] = index - count;\n\n  return indices;\n  }",
+          "diff": [
+            "@@ -234,13 +234,7 @@",
+            "             indices[i] = idx;\n",
+            "         }\n",
+            " \n",
+            "-        int idx = 1;\n",
+            "-        while (count < index) {\n",
+            "-            count += idx;\n",
+            "-            ++idx;\n",
+            "-        }\n",
+            "-        --idx;\n",
+            "-        indices[last] = idx;\n",
+            "+        indices[last] = index - count;\n",
+            " \n",
+            "         return indices;\n",
+            "     }\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

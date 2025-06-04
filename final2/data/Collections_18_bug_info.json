@@ -1,0 +1,123 @@
+{
+  "bug_id": "18",
+  "failed_tests": {
+    "org.apache.commons.collections.set.ListOrderedSetTest": [
+      {
+        "methodName": "testRetainAllCollections426",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue((stop - start) < 5000);",
+        "test_source": "  public void testRetainAllCollections426() {\n  int size = 100000;\n  ListOrderedSet<Integer> set = new ListOrderedSet<Integer>();\n  for (int i = 0; i < size; i++) {\n  set.add(i);\n  }\n  ArrayList<Integer> list = new ArrayList<Integer>();\n  for (int i = size; i < 2 * size; i++) {\n  list.add(i);\n  }\n\n  long start = System.currentTimeMillis();\n  set.retainAll(list);\n  long stop = System.currentTimeMillis();\n\n  // make sure retainAll completes under 5 seconds\n  // TODO if test is migrated to JUnit 4, add a Timeout rule.\n  // http://kentbeck.github.com/junit/javadoc/latest/org/junit/rules/Timeout.html\n  assertTrue((stop - start) < 5000);\n  }",
+        "stack": [
+          "ListOrderedSetTest.testRetainAllCollections426 line 226"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/set/ListOrderedSet.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.set;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.ListIterator;\nimport java.util.Set;\n\nimport org.apache.commons.collections.OrderedIterator;\nimport org.apache.commons.collections.iterators.AbstractIteratorDecorator;\nimport org.apache.commons.collections.list.UnmodifiableList;\n\n\npublic class ListOrderedSet<E> extends AbstractSerializableSetDecorator<E> implements Set<E> { private static final long serialVersionUID = -228664372470420141L; protected final List<E> setOrder; public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set, List<E> list) {\n        if (set == null) {\n            throw new IllegalArgumentException(\"Set must not be null\");\n        }\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        if (set.size() > 0 || list.size() > 0) {\n            throw new IllegalArgumentException(\"Set and List must be empty\");\n        }\n        return new ListOrderedSet<E>(set, list);\n    }\n\n    \n    public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set) {\n        return new ListOrderedSet<E>(set);\n    }\n\n    \n    public static <E> ListOrderedSet<E> listOrderedSet(List<E> list) {\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        Set<E> set = new HashSet<E>(list);\n        list.retainAll(set);\n\n        return new ListOrderedSet<E>(set, list);\n    }\n\n    \n    \n    public ListOrderedSet() {\n        super(new HashSet<E>());\n        setOrder = new ArrayList<E>();\n    }\n\n    \n    protected ListOrderedSet(Set<E> set) {\n        super(set);\n        setOrder = new ArrayList<E>(set);\n    }\n\n    \n    protected ListOrderedSet(Set<E> set, List<E> list) {\n        super(set);\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        setOrder = list;\n    }\n\n    \n    \n    public List<E> asList() {\n        return UnmodifiableList.unmodifiableList(setOrder);\n    }\n\n    \n    @Override\n    public void clear() {\n        collection.clear();\n        setOrder.clear();\n    }\n\n    @Override\n    public OrderedIterator<E> iterator() {\n        return new OrderedSetIterator<E>(setOrder.listIterator(), collection);\n    }\n\n    @Override\n    public boolean add(E object) {\n        if (collection.add(object)) {\n            setOrder.add(object);\n            return true;\n        }\n        return false;\n    }\n\n    @Override\n    public boolean addAll(Collection<? extends E> coll) {\n        boolean result = false;\n        for (E e : coll) {\n            result |= add(e);\n        }\n        return result;\n    }\n\n    @Override\n    public boolean remove(Object object) {\n        boolean result = collection.remove(object);\n        if (result) {\n            setOrder.remove(object);\n        }\n        return result;\n    }\n\n    @Override\n    public boolean removeAll(Collection<?> coll) {\n        boolean result = false;\n        for (Iterator<?> it = coll.iterator(); it.hasNext();) {\n            result |= remove(it.next());\n        }\n        return result;\n    }\n\n    @Override\n    public boolean retainAll(Collection<?> coll) {\n        boolean result = collection.retainAll(coll);\n        if (result == false) {\n            return false;\n        }\n        if (collection.size() == 0) {\n            setOrder.clear();\n        } else {\n            for (Iterator<E> it = setOrder.iterator(); it.hasNext();) {\n                if (!collection.contains(it.next())) {\n                    it.remove();\n                }\n            }\n        }\n        return result;\n    }\n\n    @Override\n    public Object[] toArray() {\n        return setOrder.toArray();\n    }\n\n    @Override\n    public <T> T[] toArray(T a[]) {\n        return setOrder.toArray(a);\n    }\n\n    \n    \n    \n\n    \n    public E get(int index) {\n        return setOrder.get(index);\n    }\n\n    \n    public int indexOf(Object object) {\n        return setOrder.indexOf(object);\n    }\n\n    \n    public void add(int index, E object) {\n        if (!contains(object)) {\n            collection.add(object);\n            setOrder.add(index, object);\n        }\n    }\n\n    \n    public boolean addAll(int index, Collection<? extends E> coll) {\n        boolean changed = false;\n        \n        final List<E> toAdd = new ArrayList<E>();\n        for (E e : coll) {\n            if (contains(e)) {\n                continue;\n            }\n            collection.add(e);\n            toAdd.add(e);\n            changed = true;\n        }\n\n        if (changed) {\n            setOrder.addAll(index, toAdd);\n        }\n\n        return changed;\n    }\n\n    \n    public Object remove(int index) {\n        Object obj = setOrder.remove(index);\n        remove(obj);\n        return obj;\n    }\n\n    \n    \n    @Override\n    public String toString() {\n        return setOrder.toString();\n    }\n\n    \n    \n    static class OrderedSetIterator<E> extends AbstractIteratorDecorator<E> implements OrderedIterator<E> { protected final Collection<E> set; protected E last; private OrderedSetIterator(ListIterator<E> iterator, Collection<E> set) {\n            super(iterator);\n            this.set = set;\n        }\n\n        @Override\n        public E next() {\n            last = iterator.next();\n            return last;\n        }\n\n        @Override\n        public void remove() {\n            set.remove(last);\n            iterator.remove();\n            last = null;\n        }\n\n        public boolean hasPrevious() {\n            return ((ListIterator<E>) iterator).hasPrevious();\n        }\n\n        public E previous() {\n            last = ((ListIterator<E>) iterator).previous();\n            return last;\n        }\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.set;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.ListIterator;\nimport java.util.Set;\n\nimport org.apache.commons.collections.OrderedIterator;\nimport org.apache.commons.collections.iterators.AbstractIteratorDecorator;\nimport org.apache.commons.collections.list.UnmodifiableList;\n\n\npublic class ListOrderedSet<E> extends AbstractSerializableSetDecorator<E> implements Set<E> { private static final long serialVersionUID = -228664372470420141L; protected final List<E> setOrder; public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set, List<E> list) {\n        if (set == null) {\n            throw new IllegalArgumentException(\"Set must not be null\");\n        }\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        if (set.size() > 0 || list.size() > 0) {\n            throw new IllegalArgumentException(\"Set and List must be empty\");\n        }\n        return new ListOrderedSet<E>(set, list);\n    }\n\n    \n    public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set) {\n        return new ListOrderedSet<E>(set);\n    }\n\n    \n    public static <E> ListOrderedSet<E> listOrderedSet(List<E> list) {\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        Set<E> set = new HashSet<E>(list);\n        list.retainAll(set);\n\n        return new ListOrderedSet<E>(set, list);\n    }\n\n    \n    \n    public ListOrderedSet() {\n        super(new HashSet<E>());\n        setOrder = new ArrayList<E>();\n    }\n\n    \n    protected ListOrderedSet(Set<E> set) {\n        super(set);\n        setOrder = new ArrayList<E>(set);\n    }\n\n    \n    protected ListOrderedSet(Set<E> set, List<E> list) {\n        super(set);\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        setOrder = list;\n    }\n\n    \n    \n    public List<E> asList() {\n        return UnmodifiableList.unmodifiableList(setOrder);\n    }\n\n    \n    @Override\n    public void clear() {\n        collection.clear();\n        setOrder.clear();\n    }\n\n    @Override\n    public OrderedIterator<E> iterator() {\n        return new OrderedSetIterator<E>(setOrder.listIterator(), collection);\n    }\n\n    @Override\n    public boolean add(E object) {\n        if (collection.add(object)) {\n            setOrder.add(object);\n            return true;\n        }\n        return false;\n    }\n\n    @Override\n    public boolean addAll(Collection<? extends E> coll) {\n        boolean result = false;\n        for (E e : coll) {\n            result |= add(e);\n        }\n        return result;\n    }\n\n    @Override\n    public boolean remove(Object object) {\n        boolean result = collection.remove(object);\n        if (result) {\n            setOrder.remove(object);\n        }\n        return result;\n    }\n\n    @Override\n    public boolean removeAll(Collection<?> coll) {\n        boolean result = false;\n        for (Iterator<?> it = coll.iterator(); it.hasNext();) {\n            result |= remove(it.next());\n        }\n        return result;\n    }\n\n    @Override\n    public boolean retainAll(Collection<?> coll) {\n        Set<Object> collectionRetainAll = new HashSet<Object>();\n        for (Iterator<?> it = coll.iterator(); it.hasNext();) {\n            Object next = it.next();\n            if (collection.contains(next)) {\n                collectionRetainAll.add(next);\n            }\n        }\n        if (collectionRetainAll.size() == collection.size()) {\n            return false;\n        }\n        if (collectionRetainAll.size() == 0) {\n            clear();\n        } else {\n            for (Iterator<E> it = iterator(); it.hasNext();) {\n                if (!collectionRetainAll.contains(it.next())) {\n                    it.remove();\n                }\n            }\n        }\n        return true;\n    }\n\n    @Override\n    public Object[] toArray() {\n        return setOrder.toArray();\n    }\n\n    @Override\n    public <T> T[] toArray(T a[]) {\n        return setOrder.toArray(a);\n    }\n\n    \n    \n    \n\n    \n    public E get(int index) {\n        return setOrder.get(index);\n    }\n\n    \n    public int indexOf(Object object) {\n        return setOrder.indexOf(object);\n    }\n\n    \n    public void add(int index, E object) {\n        if (!contains(object)) {\n            collection.add(object);\n            setOrder.add(index, object);\n        }\n    }\n\n    \n    public boolean addAll(int index, Collection<? extends E> coll) {\n        boolean changed = false;\n        \n        final List<E> toAdd = new ArrayList<E>();\n        for (E e : coll) {\n            if (contains(e)) {\n                continue;\n            }\n            collection.add(e);\n            toAdd.add(e);\n            changed = true;\n        }\n\n        if (changed) {\n            setOrder.addAll(index, toAdd);\n        }\n\n        return changed;\n    }\n\n    \n    public Object remove(int index) {\n        Object obj = setOrder.remove(index);\n        remove(obj);\n        return obj;\n    }\n\n    \n    \n    @Override\n    public String toString() {\n        return setOrder.toString();\n    }\n\n    \n    \n    static class OrderedSetIterator<E> extends AbstractIteratorDecorator<E> implements OrderedIterator<E> { protected final Collection<E> set; protected E last; private OrderedSetIterator(ListIterator<E> iterator, Collection<E> set) {\n            super(iterator);\n            this.set = set;\n        }\n\n        @Override\n        public E next() {\n            last = iterator.next();\n            return last;\n        }\n\n        @Override\n        public void remove() {\n            set.remove(last);\n            iterator.remove();\n            last = null;\n        }\n\n        public boolean hasPrevious() {\n            return ((ListIterator<E>) iterator).hasPrevious();\n        }\n\n        public E previous() {\n            last = ((ListIterator<E>) iterator).previous();\n            return last;\n        }\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set)",
+        "public static <E> ListOrderedSet<E> listOrderedSet(List<E> list)",
+        "public ListOrderedSet()",
+        "protected ListOrderedSet(Set<E> set)",
+        "protected ListOrderedSet(Set<E> set, List<E> list)",
+        "public List<E> asList()",
+        "public void clear()",
+        "public OrderedIterator<E> iterator()",
+        "public boolean add(E object)",
+        "public boolean addAll(Collection<? extends E> coll)",
+        "public boolean remove(Object object)",
+        "public boolean removeAll(Collection<?> coll)",
+        "public boolean retainAll(Collection<?> coll)",
+        "public Object[] toArray()",
+        "public <T> T[] toArray(T a[])",
+        "public E get(int index)",
+        "public int indexOf(Object object)",
+        "public void add(int index, E object)",
+        "public boolean addAll(int index, Collection<? extends E> coll)",
+        "public Object remove(int index)",
+        "public String toString()",
+        "static class OrderedSetIterator<E> extends AbstractIteratorDecorator<E> implements OrderedIterator<E> { protected final Collection<E> set; protected E last; private OrderedSetIterator(ListIterator<E> iterator, Collection<E> set)",
+        "public E next()",
+        "public void remove()",
+        "public boolean hasPrevious()",
+        "public E previous()"
+      ],
+      "fixed_signatures": [
+        "public static <E> ListOrderedSet<E> listOrderedSet(Set<E> set)",
+        "public static <E> ListOrderedSet<E> listOrderedSet(List<E> list)",
+        "public ListOrderedSet()",
+        "protected ListOrderedSet(Set<E> set)",
+        "protected ListOrderedSet(Set<E> set, List<E> list)",
+        "public List<E> asList()",
+        "public void clear()",
+        "public OrderedIterator<E> iterator()",
+        "public boolean add(E object)",
+        "public boolean addAll(Collection<? extends E> coll)",
+        "public boolean remove(Object object)",
+        "public boolean removeAll(Collection<?> coll)",
+        "public boolean retainAll(Collection<?> coll)",
+        "public Object[] toArray()",
+        "public <T> T[] toArray(T a[])",
+        "public E get(int index)",
+        "public int indexOf(Object object)",
+        "public void add(int index, E object)",
+        "public boolean addAll(int index, Collection<? extends E> coll)",
+        "public Object remove(int index)",
+        "public String toString()",
+        "static class OrderedSetIterator<E> extends AbstractIteratorDecorator<E> implements OrderedIterator<E> { protected final Collection<E> set; protected E last; private OrderedSetIterator(ListIterator<E> iterator, Collection<E> set)",
+        "public E next()",
+        "public void remove()",
+        "public boolean hasPrevious()",
+        "public E previous()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public boolean retainAll(Collection<?> coll) {\n  boolean result = collection.retainAll(coll);\n  if (result == false) {\n  return false;\n  }\n  if (collection.size() == 0) {\n  setOrder.clear();\n  } else {\n  for (Iterator<E> it = setOrder.iterator(); it.hasNext();) {\n  if (!collection.contains(it.next())) {\n  it.remove();\n  }\n  }\n  }\n  return result;\n  }",
+          "fixed_method": "  public boolean retainAll(Collection<?> coll) {\n  Set<Object> collectionRetainAll = new HashSet<Object>();\n  for (Iterator<?> it = coll.iterator(); it.hasNext();) {\n  Object next = it.next();\n  if (collection.contains(next)) {\n  collectionRetainAll.add(next);\n  }\n  }\n  if (collectionRetainAll.size() == collection.size()) {\n  return false;\n  }\n  if (collectionRetainAll.size() == 0) {\n  clear();\n  } else {\n  for (Iterator<E> it = iterator(); it.hasNext();) {\n  if (!collectionRetainAll.contains(it.next())) {\n  it.remove();\n  }\n  }\n  }\n  return true;\n  }",
+          "diff": [
+            "@@ -226,20 +226,26 @@",
+            " \n",
+            "     @Override\n",
+            "     public boolean retainAll(Collection<?> coll) {\n",
+            "-        boolean result = collection.retainAll(coll);\n",
+            "-        if (result == false) {\n",
+            "+        Set<Object> collectionRetainAll = new HashSet<Object>();\n",
+            "+        for (Iterator<?> it = coll.iterator(); it.hasNext();) {\n",
+            "+            Object next = it.next();\n",
+            "+            if (collection.contains(next)) {\n",
+            "+                collectionRetainAll.add(next);\n",
+            "+            }\n",
+            "+        }\n",
+            "+        if (collectionRetainAll.size() == collection.size()) {\n",
+            "             return false;\n",
+            "         }\n",
+            "-        if (collection.size() == 0) {\n",
+            "-            setOrder.clear();\n",
+            "+        if (collectionRetainAll.size() == 0) {\n",
+            "+            clear();\n",
+            "         } else {\n",
+            "-            for (Iterator<E> it = setOrder.iterator(); it.hasNext();) {\n",
+            "-                if (!collection.contains(it.next())) {\n",
+            "+            for (Iterator<E> it = iterator(); it.hasNext();) {\n",
+            "+                if (!collectionRetainAll.contains(it.next())) {\n",
+            "                     it.remove();\n",
+            "                 }\n",
+            "             }\n",
+            "         }\n",
+            "-        return result;\n",
+            "+        return true;\n",
+            "     }\n",
+            " \n",
+            "     @Override\n"
+          ],
+          "changed_lines": 20
+        }
+      ]
+    }
+  ]
+}

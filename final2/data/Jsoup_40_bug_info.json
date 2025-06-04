@@ -1,0 +1,61 @@
+{
+  "bug_id": "40",
+  "failed_tests": {
+    "org.jsoup.nodes.DocumentTypeTest": [
+      {
+        "methodName": "constructorValidationOkWithBlankName",
+        "error": "java.lang.IllegalArgumentException",
+        "message": "String must not be empty",
+        "fail_line": "        DocumentType fail = new DocumentType(\"\",\"\", \"\", \"\");",
+        "test_source": "  public void constructorValidationOkWithBlankName() {\n  DocumentType fail = new DocumentType(\"\",\"\", \"\", \"\");\n  }",
+        "stack": [
+          "Validate.notEmpty line 92, DocumentType.<init> line 22, DocumentTypeTest.constructorValidationOkWithBlankName line 15"
+        ]
+      }
+    ],
+    "org.jsoup.parser.HtmlParserTest": [
+      {
+        "methodName": "handlesInvalidDoctypes",
+        "error": "java.lang.IllegalArgumentException",
+        "message": "String must not be empty",
+        "fail_line": "        Document doc = Jsoup.parse(\"<!DOCTYPE>\");",
+        "test_source": "",
+        "stack": [
+          "Validate.notEmpty line 92, DocumentType.<init> line 22, HtmlTreeBuilderState$1.process line 24, HtmlTreeBuilder.process line 111, TreeBuilder.runParser line 48, TreeBuilder.parse line 41, HtmlTreeBuilder.parse line 54, Parser.parse line 90, Jsoup.parse line 58, HtmlParserTest.handlesInvalidDoctypes line 812"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/DocumentType.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\n\n\npublic class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri) {\n        super(baseUri);\n\n        Validate.notEmpty(name);\n        attr(\"name\", name);\n        attr(\"publicId\", publicId);\n        attr(\"systemId\", systemId);\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#doctype\";\n    }\n\n    @Override\n    void outerHtmlHead(StringBuilder accum, int depth, Document.OutputSettings out) {\n        accum.append(\"<!DOCTYPE\");\n        if (!StringUtil.isBlank(attr(\"name\")))\n            accum.append(\" \").append(attr(\"name\"));\n        if (!StringUtil.isBlank(attr(\"publicId\")))\n            accum.append(\" PUBLIC \\\"\").append(attr(\"publicId\")).append('\"');\n        if (!StringUtil.isBlank(attr(\"systemId\")))\n            accum.append(\" \\\"\").append(attr(\"systemId\")).append('\"');\n        accum.append('>');\n    }\n\n    @Override\n    void outerHtmlTail(StringBuilder accum, int depth, Document.OutputSettings out) {\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\n\n\npublic class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri) {\n        super(baseUri);\n\n        attr(\"name\", name);\n        attr(\"publicId\", publicId);\n        attr(\"systemId\", systemId);\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#doctype\";\n    }\n\n    @Override\n    void outerHtmlHead(StringBuilder accum, int depth, Document.OutputSettings out) {\n        accum.append(\"<!DOCTYPE\");\n        if (!StringUtil.isBlank(attr(\"name\")))\n            accum.append(\" \").append(attr(\"name\"));\n        if (!StringUtil.isBlank(attr(\"publicId\")))\n            accum.append(\" PUBLIC \\\"\").append(attr(\"publicId\")).append('\"');\n        if (!StringUtil.isBlank(attr(\"systemId\")))\n            accum.append(\" \\\"\").append(attr(\"systemId\")).append('\"');\n        accum.append('>');\n    }\n\n    @Override\n    void outerHtmlTail(StringBuilder accum, int depth, Document.OutputSettings out) {\n    }\n}\n",
+      "buggy_signatures": [
+        "public class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri)",
+        "public String nodeName()"
+      ],
+      "fixed_signatures": [
+        "public class DocumentType extends Node { public DocumentType(String name, String publicId, String systemId, String baseUri)",
+        "public String nodeName()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public DocumentType(String name, String publicId, String systemId, String baseUri) {\n  super(baseUri);\n\n  Validate.notEmpty(name);\n  attr(\"name\", name);\n  attr(\"publicId\", publicId);\n  attr(\"systemId\", systemId);\n  }",
+          "fixed_method": "  public DocumentType(String name, String publicId, String systemId, String baseUri) {\n  super(baseUri);\n\n  attr(\"name\", name);\n  attr(\"publicId\", publicId);\n  attr(\"systemId\", systemId);\n  }",
+          "diff": [
+            "@@ -19,7 +19,6 @@",
+            "     public DocumentType(String name, String publicId, String systemId, String baseUri) {\n",
+            "         super(baseUri);\n",
+            " \n",
+            "-        Validate.notEmpty(name);\n",
+            "         attr(\"name\", name);\n",
+            "         attr(\"publicId\", publicId);\n",
+            "         attr(\"systemId\", systemId);\n"
+          ],
+          "changed_lines": 1
+        }
+      ]
+    }
+  ]
+}

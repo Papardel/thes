@@ -1,0 +1,88 @@
+{
+  "bug_id": "8",
+  "failed_tests": {
+    "org.apache.commons.collections.buffer.TestUnboundedFifoBuffer": [
+      {
+        "methodName": "testCollections220",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1> but was:<0>",
+        "fail_line": "         assertEquals(1, buffer.size());",
+        "test_source": "  public void testCollections220() throws Exception {\n  UnboundedFifoBuffer buffer = new UnboundedFifoBuffer();\n  \n  buffer = (UnboundedFifoBuffer) serializeDeserialize(buffer);\n\n  // test size() gets incremented\n  buffer.add(\"Foo\");\n  assertEquals(1, buffer.size());\n  }",
+        "stack": [
+          "TestUnboundedFifoBuffer.testCollections220 line 423"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/buffer/UnboundedFifoBuffer.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.buffer;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\nimport java.util.AbstractCollection;\nimport java.util.Iterator;\nimport java.util.NoSuchElementException;\n\nimport org.apache.commons.collections.Buffer;\nimport org.apache.commons.collections.BufferUnderflowException;\n\n\npublic class UnboundedFifoBuffer extends AbstractCollection implements Buffer, Serializable { private static final long serialVersionUID = -3482960336579541419L; protected transient Object[] buffer; protected transient int head; protected transient int tail; public UnboundedFifoBuffer() {\n        this(32);\n    }\n\n    \n    public UnboundedFifoBuffer(int initialSize) {\n        if (initialSize <= 0) {\n            throw new IllegalArgumentException(\"The size must be greater than 0\");\n        }\n        buffer = new Object[initialSize + 1];\n        head = 0;\n        tail = 0;\n    }\n\n    \n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        out.writeInt(size());\n        for (Iterator it = iterator(); it.hasNext();) {\n            out.writeObject(it.next());\n        }\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        int size = in.readInt();\n        buffer = new Object[size + 1];\n        for (int i = 0; i < size; i++) {\n            buffer[i] = in.readObject();\n        }\n        head = 0;\n        tail = size;\n    }\n\n    \n    \n    public int size() {\n        int size = 0;\n\n        if (tail < head) {\n            size = buffer.length - head + tail;\n        } else {\n            size = tail - head;\n        }\n\n        return size;\n    }\n\n    \n    public boolean isEmpty() {\n        return (size() == 0);\n    }\n\n    \n    public boolean add(final Object obj) {\n        if (obj == null) {\n            throw new NullPointerException(\"Attempted to add null object to buffer\");\n        }\n\n        if (size() + 1 >= buffer.length) {\n            \n            Object[] tmp = new Object[((buffer.length - 1) * 2) + 1];\n            int j = 0;\n            \n            for (int i = head; i != tail;) {\n                tmp[j] = buffer[i];\n                buffer[i] = null;\n\n                j++;\n                i = increment(i);\n            }\n            buffer = tmp;\n            head = 0;\n            tail = j;\n        }\n\n        buffer[tail] = obj;\n        tail = increment(tail);\n        return true;\n    }\n\n    \n    public Object get() {\n        if (isEmpty()) {\n            throw new BufferUnderflowException(\"The buffer is already empty\");\n        }\n\n        return buffer[head];\n    }\n\n    \n    public Object remove() {\n        if (isEmpty()) {\n            throw new BufferUnderflowException(\"The buffer is already empty\");\n        }\n\n        Object element = buffer[head];\n        if (element != null) {\n            buffer[head] = null;\n            head = increment(head);\n        }\n        return element;\n    }\n\n    \n    private int increment(int index) {\n        index++;\n        if (index >= buffer.length) {\n            index = 0;\n        }\n        return index;\n    }\n\n    \n    private int decrement(int index) {\n        index--;\n        if (index < 0) {\n            index = buffer.length - 1;\n        }\n        return index;\n    }\n\n    \n    public Iterator iterator() {\n        return new Iterator() {\n\n            private int index = head; private int lastReturnedIndex = -1; public boolean hasNext() {\n                return index != tail;\n\n            }\n\n            public Object next() {\n                if (!hasNext()) {\n                    throw new NoSuchElementException();\n                }\n                lastReturnedIndex = index;\n                index = increment(index);\n                return buffer[lastReturnedIndex];\n            }\n\n            public void remove() {\n                if (lastReturnedIndex == -1) {\n                    throw new IllegalStateException();\n                }\n\n                \n                if (lastReturnedIndex == head) {\n                    UnboundedFifoBuffer.this.remove();\n                    lastReturnedIndex = -1;\n                    return;\n                }\n\n                \n                int i = increment(lastReturnedIndex);\n                while (i != tail) {\n                    buffer[decrement(i)] = buffer[i];\n                    i = increment(i);\n                }\n\n                lastReturnedIndex = -1;\n                tail = decrement(tail);\n                buffer[tail] = null;\n                index = decrement(index);\n            }\n\n        };\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.buffer;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\nimport java.util.AbstractCollection;\nimport java.util.Iterator;\nimport java.util.NoSuchElementException;\n\nimport org.apache.commons.collections.Buffer;\nimport org.apache.commons.collections.BufferUnderflowException;\n\n\npublic class UnboundedFifoBuffer extends AbstractCollection implements Buffer, Serializable { private static final long serialVersionUID = -3482960336579541419L; protected transient Object[] buffer; protected transient int head; protected transient int tail; public UnboundedFifoBuffer() {\n        this(32);\n    }\n\n    \n    public UnboundedFifoBuffer(int initialSize) {\n        if (initialSize <= 0) {\n            throw new IllegalArgumentException(\"The size must be greater than 0\");\n        }\n        buffer = new Object[initialSize + 1];\n        head = 0;\n        tail = 0;\n    }\n\n    \n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        out.writeInt(size());\n        out.writeInt(buffer.length);\n        for (Iterator it = iterator(); it.hasNext();) {\n            out.writeObject(it.next());\n        }\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        int size = in.readInt();\n        int length = in.readInt();\n        buffer = new Object[length];\n        for (int i = 0; i < size; i++) {\n            buffer[i] = in.readObject();\n        }\n        head = 0;\n        tail = size;\n    }\n\n    \n    \n    public int size() {\n        int size = 0;\n\n        if (tail < head) {\n            size = buffer.length - head + tail;\n        } else {\n            size = tail - head;\n        }\n\n        return size;\n    }\n\n    \n    public boolean isEmpty() {\n        return (size() == 0);\n    }\n\n    \n    public boolean add(final Object obj) {\n        if (obj == null) {\n            throw new NullPointerException(\"Attempted to add null object to buffer\");\n        }\n\n        if (size() + 1 >= buffer.length) {\n            \n            Object[] tmp = new Object[((buffer.length - 1) * 2) + 1];\n            int j = 0;\n            \n            for (int i = head; i != tail;) {\n                tmp[j] = buffer[i];\n                buffer[i] = null;\n\n                j++;\n                i = increment(i);\n            }\n            buffer = tmp;\n            head = 0;\n            tail = j;\n        }\n\n        buffer[tail] = obj;\n        tail = increment(tail);\n        return true;\n    }\n\n    \n    public Object get() {\n        if (isEmpty()) {\n            throw new BufferUnderflowException(\"The buffer is already empty\");\n        }\n\n        return buffer[head];\n    }\n\n    \n    public Object remove() {\n        if (isEmpty()) {\n            throw new BufferUnderflowException(\"The buffer is already empty\");\n        }\n\n        Object element = buffer[head];\n        if (element != null) {\n            buffer[head] = null;\n            head = increment(head);\n        }\n        return element;\n    }\n\n    \n    private int increment(int index) {\n        index++;\n        if (index >= buffer.length) {\n            index = 0;\n        }\n        return index;\n    }\n\n    \n    private int decrement(int index) {\n        index--;\n        if (index < 0) {\n            index = buffer.length - 1;\n        }\n        return index;\n    }\n\n    \n    public Iterator iterator() {\n        return new Iterator() {\n\n            private int index = head; private int lastReturnedIndex = -1; public boolean hasNext() {\n                return index != tail;\n\n            }\n\n            public Object next() {\n                if (!hasNext()) {\n                    throw new NoSuchElementException();\n                }\n                lastReturnedIndex = index;\n                index = increment(index);\n                return buffer[lastReturnedIndex];\n            }\n\n            public void remove() {\n                if (lastReturnedIndex == -1) {\n                    throw new IllegalStateException();\n                }\n\n                \n                if (lastReturnedIndex == head) {\n                    UnboundedFifoBuffer.this.remove();\n                    lastReturnedIndex = -1;\n                    return;\n                }\n\n                \n                int i = increment(lastReturnedIndex);\n                while (i != tail) {\n                    buffer[decrement(i)] = buffer[i];\n                    i = increment(i);\n                }\n\n                lastReturnedIndex = -1;\n                tail = decrement(tail);\n                buffer[tail] = null;\n                index = decrement(index);\n            }\n\n        };\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public UnboundedFifoBuffer(int initialSize)",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException",
+        "public int size()",
+        "public boolean isEmpty()",
+        "public boolean add(final Object obj)",
+        "public Object get()",
+        "public Object remove()",
+        "private int increment(int index)",
+        "private int decrement(int index)",
+        "public Iterator iterator()",
+        "public Object next()",
+        "public void remove()"
+      ],
+      "fixed_signatures": [
+        "public UnboundedFifoBuffer(int initialSize)",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException",
+        "public int size()",
+        "public boolean isEmpty()",
+        "public boolean add(final Object obj)",
+        "public Object get()",
+        "public Object remove()",
+        "private int increment(int index)",
+        "private int decrement(int index)",
+        "public Iterator iterator()",
+        "public Object next()",
+        "public void remove()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private void writeObject(ObjectOutputStream out) throws IOException {\n  out.defaultWriteObject();\n  out.writeInt(size());\n  for (Iterator it = iterator(); it.hasNext();) {\n  out.writeObject(it.next());\n  }\n  }",
+          "fixed_method": "  private void writeObject(ObjectOutputStream out) throws IOException {\n  out.defaultWriteObject();\n  out.writeInt(size());\n  out.writeInt(buffer.length);\n  for (Iterator it = iterator(); it.hasNext();) {\n  out.writeObject(it.next());\n  }\n  }",
+          "diff": [
+            "@@ -115,6 +115,7 @@",
+            "     private void writeObject(ObjectOutputStream out) throws IOException {\n",
+            "         out.defaultWriteObject();\n",
+            "         out.writeInt(size());\n",
+            "+        out.writeInt(buffer.length);\n",
+            "         for (Iterator it = iterator(); it.hasNext();) {\n",
+            "             out.writeObject(it.next());\n",
+            "         }\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n  in.defaultReadObject();\n  int size = in.readInt();\n  buffer = new Object[size + 1];\n  for (int i = 0; i < size; i++) {\n  buffer[i] = in.readObject();\n  }\n  head = 0;\n  tail = size;\n  }",
+          "fixed_method": "  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n  in.defaultReadObject();\n  int size = in.readInt();\n  int length = in.readInt();\n  buffer = new Object[length];\n  for (int i = 0; i < size; i++) {\n  buffer[i] = in.readObject();\n  }\n  head = 0;\n  tail = size;\n  }",
+          "diff": [
+            "@@ -130,7 +131,8 @@",
+            "     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n",
+            "         in.defaultReadObject();\n",
+            "         int size = in.readInt();\n",
+            "-        buffer = new Object[size + 1];\n",
+            "+        int length = in.readInt();\n",
+            "+        buffer = new Object[length];\n",
+            "         for (int i = 0; i < size; i++) {\n",
+            "             buffer[i] = in.readObject();\n",
+            "         }\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

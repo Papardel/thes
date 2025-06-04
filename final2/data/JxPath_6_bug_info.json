@@ -1,0 +1,69 @@
+{
+  "bug_id": "6",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.compiler.VariableTest": [
+      {
+        "methodName": "testIterateVariable",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating <$d = 'a'> expected:<true> but was:<false>",
+        "fail_line": "        assertXPathValue(context, \"$d = 'a'\", Boolean.TRUE);",
+        "test_source": "  public void testIterateVariable() throws Exception {\n  assertXPathValueIterator(context, \"$d\", list(\"a\", \"b\"));\n  assertXPathValue(context, \"$d = 'a'\", Boolean.TRUE);\n  assertXPathValue(context, \"$d = 'b'\", Boolean.TRUE);\n  }",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 55, VariableTest.testIterateVariable line 278"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.Pointer;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2) {\n        super(new Expression[] { arg1, arg2 });\n    }\n\n    \n    protected boolean equal( EvalContext context, Expression left, Expression right) {\n        Object l = left.compute(context);\n        Object r = right.compute(context);\n\n\n\n\n\n        if (l instanceof InitialContext || l instanceof SelfContext) {\n            l = ((EvalContext) l).getSingleNodePointer();\n        }\n\n        if (r instanceof InitialContext || r instanceof SelfContext) {\n            r = ((EvalContext) r).getSingleNodePointer();\n        }\n\n        if (l instanceof Collection) {\n            l = ((Collection) l).iterator();\n        }\n\n        if (r instanceof Collection) {\n            r = ((Collection) r).iterator();\n        }\n\n        if ((l instanceof Iterator) && !(r instanceof Iterator)) {\n            return contains((Iterator) l, r);\n        }\n        if (!(l instanceof Iterator) && (r instanceof Iterator)) {\n            return contains((Iterator) r, l);\n        }\n        if (l instanceof Iterator && r instanceof Iterator) {\n            return findMatch((Iterator) l, (Iterator) r);\n        }\n        return equal(l, r);\n    }\n\n    protected boolean contains(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (equal(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (contains(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean equal(Object l, Object r) {\n        if (l instanceof Pointer && r instanceof Pointer) {\n            if (l.equals(r)) {\n                return true;\n            }\n        }\n\n        if (l instanceof Pointer) {\n            l = ((Pointer) l).getValue();\n        }\n\n        if (r instanceof Pointer) {\n            r = ((Pointer) r).getValue();\n        }\n\n        if (l == r) {\n            return true;\n        }\n\n\n        if (l instanceof Boolean || r instanceof Boolean) {\n            return (InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r));\n        }\n        if (l instanceof Number || r instanceof Number) {\n            return (InfoSetUtil.doubleValue(l) == InfoSetUtil.doubleValue(r));\n        }\n        if (l instanceof String || r instanceof String) {\n            return (\n                InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n        }\n        return l != null && l.equals(r);\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.Pointer;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2) {\n        super(new Expression[] { arg1, arg2 });\n    }\n\n    \n    protected boolean equal( EvalContext context, Expression left, Expression right) {\n        Object l = left.compute(context);\n        Object r = right.compute(context);\n\n\n\n\n\n        if (l instanceof InitialContext) {\n            ((EvalContext) l).reset();\n        }\n\n        if (l instanceof SelfContext) {\n            l = ((EvalContext) l).getSingleNodePointer();\n        }\n\n        if (r instanceof InitialContext) {\n            ((EvalContext) r).reset();\n        }\n\n        if (r instanceof SelfContext) {\n            r = ((EvalContext) r).getSingleNodePointer();\n        }\n\n        if (l instanceof Collection) {\n            l = ((Collection) l).iterator();\n        }\n\n        if (r instanceof Collection) {\n            r = ((Collection) r).iterator();\n        }\n\n        if ((l instanceof Iterator) && !(r instanceof Iterator)) {\n            return contains((Iterator) l, r);\n        }\n        if (!(l instanceof Iterator) && (r instanceof Iterator)) {\n            return contains((Iterator) r, l);\n        }\n        if (l instanceof Iterator && r instanceof Iterator) {\n            return findMatch((Iterator) l, (Iterator) r);\n        }\n        return equal(l, r);\n    }\n\n    protected boolean contains(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (equal(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (contains(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean equal(Object l, Object r) {\n        if (l instanceof Pointer && r instanceof Pointer) {\n            if (l.equals(r)) {\n                return true;\n            }\n        }\n\n        if (l instanceof Pointer) {\n            l = ((Pointer) l).getValue();\n        }\n\n        if (r instanceof Pointer) {\n            r = ((Pointer) r).getValue();\n        }\n\n        if (l == r) {\n            return true;\n        }\n\n\n        if (l instanceof Boolean || r instanceof Boolean) {\n            return (InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r));\n        }\n        if (l instanceof Number || r instanceof Number) {\n            return (InfoSetUtil.doubleValue(l) == InfoSetUtil.doubleValue(r));\n        }\n        if (l instanceof String || r instanceof String) {\n            return (\n                InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n        }\n        return l != null && l.equals(r);\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2)",
+        "protected boolean equal( EvalContext context, Expression left, Expression right)",
+        "protected boolean contains(Iterator it, Object value)",
+        "protected boolean findMatch(Iterator lit, Iterator rit)",
+        "protected boolean equal(Object l, Object r)"
+      ],
+      "fixed_signatures": [
+        "public abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2)",
+        "protected boolean equal( EvalContext context, Expression left, Expression right)",
+        "protected boolean contains(Iterator it, Object value)",
+        "protected boolean findMatch(Iterator lit, Iterator rit)",
+        "protected boolean equal(Object l, Object r)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected boolean equal( EvalContext context, Expression left, Expression right) {\n  Object l = left.compute(context);\n  Object r = right.compute(context);\n\n\n\n\n\n  if (l instanceof InitialContext || l instanceof SelfContext) {\n  l = ((EvalContext) l).getSingleNodePointer();\n  }\n\n  if (r instanceof InitialContext || r instanceof SelfContext) {\n  r = ((EvalContext) r).getSingleNodePointer();\n  }\n\n  if (l instanceof Collection) {\n  l = ((Collection) l).iterator();\n  }\n\n  if (r instanceof Collection) {\n  r = ((Collection) r).iterator();\n  }\n\n  if ((l instanceof Iterator) && !(r instanceof Iterator)) {\n  return contains((Iterator) l, r);\n  }\n  if (!(l instanceof Iterator) && (r instanceof Iterator)) {\n  return contains((Iterator) r, l);\n  }\n  if (l instanceof Iterator && r instanceof Iterator) {\n  return findMatch((Iterator) l, (Iterator) r);\n  }\n  return equal(l, r);\n  }",
+          "fixed_method": "  protected boolean equal( EvalContext context, Expression left, Expression right) {\n  Object l = left.compute(context);\n  Object r = right.compute(context);\n\n\n\n\n\n  if (l instanceof InitialContext) {\n  ((EvalContext) l).reset();\n  }\n\n  if (l instanceof SelfContext) {\n  l = ((EvalContext) l).getSingleNodePointer();\n  }\n\n  if (r instanceof InitialContext) {\n  ((EvalContext) r).reset();\n  }\n\n  if (r instanceof SelfContext) {\n  r = ((EvalContext) r).getSingleNodePointer();\n  }\n\n  if (l instanceof Collection) {\n  l = ((Collection) l).iterator();\n  }\n\n  if (r instanceof Collection) {\n  r = ((Collection) r).iterator();\n  }\n\n  if ((l instanceof Iterator) && !(r instanceof Iterator)) {\n  return contains((Iterator) l, r);\n  }\n  if (!(l instanceof Iterator) && (r instanceof Iterator)) {\n  return contains((Iterator) r, l);\n  }\n  if (l instanceof Iterator && r instanceof Iterator) {\n  return findMatch((Iterator) l, (Iterator) r);\n  }\n  return equal(l, r);\n  }",
+          "diff": [
+            "@@ -54,11 +54,19 @@",
+            " //            (l == null ? \"null\" : l.getClass().getName()) + \" \" +\n",
+            " //            (r == null ? \"null\" : r.getClass().getName()));\n",
+            " \n",
+            "-        if (l instanceof InitialContext || l instanceof SelfContext) {\n",
+            "+        if (l instanceof InitialContext) {\n",
+            "+            ((EvalContext) l).reset();\n",
+            "+        }\n",
+            "+\n",
+            "+        if (l instanceof SelfContext) {\n",
+            "             l = ((EvalContext) l).getSingleNodePointer();\n",
+            "         }\n",
+            " \n",
+            "-        if (r instanceof InitialContext || r instanceof SelfContext) {\n",
+            "+        if (r instanceof InitialContext) {\n",
+            "+            ((EvalContext) r).reset();\n",
+            "+        }\n",
+            "+\n",
+            "+        if (r instanceof SelfContext) {\n",
+            "             r = ((EvalContext) r).getSingleNodePointer();\n",
+            "         }\n",
+            " \n"
+          ],
+          "changed_lines": 12
+        }
+      ]
+    }
+  ]
+}

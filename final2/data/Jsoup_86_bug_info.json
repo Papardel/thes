@@ -1,0 +1,58 @@
+{
+  "bug_id": "86",
+  "failed_tests": {
+    "org.jsoup.parser.XmlTreeBuilderTest": [
+      {
+        "methodName": "handlesLTinScript",
+        "error": "java.lang.IndexOutOfBoundsException",
+        "message": "Index 0 out of bounds for length 0",
+        "fail_line": "        Document doc = Jsoup.parse(html, \"\", Parser.xmlParser());",
+        "test_source": "  public void handlesLTinScript() {\n  // https://github.com/jhy/jsoup/issues/1139\n  String html = \"<script> var a=\\\"<?\\\"; var b=\\\"?>\\\"; </script>\";\n  Document doc = Jsoup.parse(html, \"\", Parser.xmlParser());\n  assertEquals(\"<script> var a=\\\"\\n <!--?\\\"; var b=\\\"?-->\\\"; </script>\", doc.html()); // converted from pseudo xmldecl to comment\n  }",
+        "stack": [
+          "Element.child line 253, Comment.asXmlDeclaration line 79, XmlTreeBuilder.insert line 95, XmlTreeBuilder.process line 55, TreeBuilder.runParser line 56, TreeBuilder.parse line 47, Parser.parseInput line 31, Jsoup.parse line 45, XmlTreeBuilderTest.handlesLTinScript line 245"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/Comment.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.Jsoup;\nimport org.jsoup.parser.Parser;\n\nimport java.io.IOException;\n\n\npublic class Comment extends LeafNode { private static final String COMMENT_KEY = \"comment\"; public Comment(String data) {\n        value = data;\n    }\n\n    \n    public Comment(String data, String baseUri) {\n        this(data);\n    }\n\n    public String nodeName() {\n        return \"#comment\";\n    }\n\n    \n    public String getData() {\n        return coreValue();\n    }\n\n\tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n        if (out.prettyPrint())\n            indent(accum, depth, out);\n        accum\n                .append(\"<!--\")\n                .append(getData())\n                .append(\"-->\");\n    }\n\n\tvoid outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}\n\n    @Override\n    public String toString() {\n        return outerHtml();\n    }\n\n    \n    public boolean isXmlDeclaration() {\n        String data = getData();\n        return (data.length() > 1 && (data.startsWith(\"!\") || data.startsWith(\"?\")));\n    }\n\n    \n    public XmlDeclaration asXmlDeclaration() {\n        String data = getData();\n        Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri(), Parser.xmlParser());\n        XmlDeclaration decl = null;\n        if (doc.childNodeSize() > 0) {\n            Element el = doc.child(0);\n            decl = new XmlDeclaration(NodeUtils.parser(doc).settings().normalizeTag(el.tagName()), data.startsWith(\"!\"));\n            decl.attributes().addAll(el.attributes());\n        }\n        return decl;\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.Jsoup;\nimport org.jsoup.parser.Parser;\n\nimport java.io.IOException;\n\n\npublic class Comment extends LeafNode { private static final String COMMENT_KEY = \"comment\"; public Comment(String data) {\n        value = data;\n    }\n\n    \n    public Comment(String data, String baseUri) {\n        this(data);\n    }\n\n    public String nodeName() {\n        return \"#comment\";\n    }\n\n    \n    public String getData() {\n        return coreValue();\n    }\n\n\tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n        if (out.prettyPrint())\n            indent(accum, depth, out);\n        accum\n                .append(\"<!--\")\n                .append(getData())\n                .append(\"-->\");\n    }\n\n\tvoid outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}\n\n    @Override\n    public String toString() {\n        return outerHtml();\n    }\n\n    \n    public boolean isXmlDeclaration() {\n        String data = getData();\n        return (data.length() > 1 && (data.startsWith(\"!\") || data.startsWith(\"?\")));\n    }\n\n    \n    public XmlDeclaration asXmlDeclaration() {\n        String data = getData();\n        Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri(), Parser.xmlParser());\n        XmlDeclaration decl = null;\n        if (doc.children().size() > 0) {\n            Element el = doc.child(0);\n            decl = new XmlDeclaration(NodeUtils.parser(doc).settings().normalizeTag(el.tagName()), data.startsWith(\"!\"));\n            decl.attributes().addAll(el.attributes());\n        }\n        return decl;\n    }\n}\n",
+      "buggy_signatures": [
+        "public Comment(String data, String baseUri)",
+        "public String nodeName()",
+        "public String getData()",
+        "public String toString()",
+        "public boolean isXmlDeclaration()",
+        "public XmlDeclaration asXmlDeclaration()"
+      ],
+      "fixed_signatures": [
+        "public Comment(String data, String baseUri)",
+        "public String nodeName()",
+        "public String getData()",
+        "public String toString()",
+        "public boolean isXmlDeclaration()",
+        "public XmlDeclaration asXmlDeclaration()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public XmlDeclaration asXmlDeclaration() {\n  String data = getData();\n  Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri(), Parser.xmlParser());\n  XmlDeclaration decl = null;\n  if (doc.childNodeSize() > 0) {\n  Element el = doc.child(0);\n  decl = new XmlDeclaration(NodeUtils.parser(doc).settings().normalizeTag(el.tagName()), data.startsWith(\"!\"));\n  decl.attributes().addAll(el.attributes());\n  }\n  return decl;\n  }",
+          "fixed_method": "  public XmlDeclaration asXmlDeclaration() {\n  String data = getData();\n  Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri(), Parser.xmlParser());\n  XmlDeclaration decl = null;\n  if (doc.children().size() > 0) {\n  Element el = doc.child(0);\n  decl = new XmlDeclaration(NodeUtils.parser(doc).settings().normalizeTag(el.tagName()), data.startsWith(\"!\"));\n  decl.attributes().addAll(el.attributes());\n  }\n  return decl;\n  }",
+          "diff": [
+            "@@ -75,7 +75,7 @@",
+            "         String data = getData();\n",
+            "         Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri(), Parser.xmlParser());\n",
+            "         XmlDeclaration decl = null;\n",
+            "-        if (doc.childNodeSize() > 0) {\n",
+            "+        if (doc.children().size() > 0) {\n",
+            "             Element el = doc.child(0);\n",
+            "             decl = new XmlDeclaration(NodeUtils.parser(doc).settings().normalizeTag(el.tagName()), data.startsWith(\"!\"));\n",
+            "             decl.attributes().addAll(el.attributes());\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

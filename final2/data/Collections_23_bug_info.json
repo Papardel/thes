@@ -1,0 +1,115 @@
+{
+  "bug_id": "23",
+  "failed_tests": {
+    "org.apache.commons.collections4.TrieUtilsTest": [
+      {
+        "methodName": "testUnmodifiableTrie",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "UnmodifiableTrie shall not be decorated expected same:<Trie[0]={",
+        "fail_line": "        assertSame(\"UnmodifiableTrie shall not be decorated\", trie, TrieUtils.unmodifiableTrie(trie));",
+        "test_source": "  public void testUnmodifiableTrie() {\n  Trie<String, Object> trie = TrieUtils.unmodifiableTrie(new PatriciaTrie<Object>());\n  assertTrue(\"Returned object should be an UnmodifiableTrie.\",\n  trie instanceof UnmodifiableTrie);\n  try {\n  TrieUtils.unmodifiableTrie(null);\n  fail(\"Expecting IllegalArgumentException for null trie.\");\n  } catch (final IllegalArgumentException ex) {\n  // expected\n  }\n  \n  assertSame(\"UnmodifiableTrie shall not be decorated\", trie, TrieUtils.unmodifiableTrie(trie));\n  }",
+        "stack": [
+          "TrieUtilsTest.testUnmodifiableTrie line 53"
+        ]
+      }
+    ],
+    "org.apache.commons.collections4.trie.UnmodifiableTrieTest": [
+      {
+        "methodName": "testDecorateFactory",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected same:<Trie[18]={",
+        "fail_line": "        assertSame(trie, UnmodifiableTrie.unmodifiableTrie(trie));",
+        "test_source": "  public void testDecorateFactory() {\n  final Trie<String, V> trie = makeFullMap();\n  assertSame(trie, UnmodifiableTrie.unmodifiableTrie(trie));\n\n  try {\n  UnmodifiableTrie.unmodifiableTrie(null);\n  fail();\n  } catch (final IllegalArgumentException ex) {}\n  }",
+        "stack": [
+          "UnmodifiableTrieTest.testDecorateFactory line 81"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections4/trie/UnmodifiableTrie.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections4.trie;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Comparator;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.SortedMap;\n\nimport org.apache.commons.collections4.OrderedMapIterator;\nimport org.apache.commons.collections4.Trie;\nimport org.apache.commons.collections4.Unmodifiable;\nimport org.apache.commons.collections4.iterators.UnmodifiableOrderedMapIterator;\n\n\npublic class UnmodifiableTrie<K, V> implements Trie<K, V>, Serializable, Unmodifiable { private static final long serialVersionUID = -7156426030315945159L; private final Trie<K, V> delegate; public static <K, V> UnmodifiableTrie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n        return new UnmodifiableTrie<K, V>(trie);\n    }\n\n    \n    \n    public UnmodifiableTrie(final Trie<K, ? extends V> trie) {\n        if (trie == null) {\n            throw new IllegalArgumentException(\"Trie must not be null\");\n        }\n        @SuppressWarnings(\"unchecked\") \n        final Trie<K, V> tmpTrie = (Trie<K, V>) trie;\n        this.delegate = tmpTrie;\n    }\n\n    \n\n    public Set<Entry<K, V>> entrySet() {\n        return Collections.unmodifiableSet(delegate.entrySet());\n    }\n\n    public Set<K> keySet() {\n        return Collections.unmodifiableSet(delegate.keySet());\n    }\n\n    public Collection<V> values() {\n        return Collections.unmodifiableCollection(delegate.values());\n    }\n\n    public void clear() {\n        throw new UnsupportedOperationException();\n    }\n\n    public boolean containsKey(final Object key) {\n        return delegate.containsKey(key);\n    }\n\n    public boolean containsValue(final Object value) {\n        return delegate.containsValue(value);\n    }\n\n    public V get(final Object key) {\n        return delegate.get(key);\n    }\n\n    public boolean isEmpty() {\n        return delegate.isEmpty();\n    }\n\n    public V put(final K key, final V value) {\n        throw new UnsupportedOperationException();\n    }\n\n    public void putAll(final Map<? extends K, ? extends V> m) {\n        throw new UnsupportedOperationException();\n    }\n\n    public V remove(final Object key) {\n        throw new UnsupportedOperationException();\n    }\n\n    public int size() {\n        return delegate.size();\n    }\n\n    public K firstKey() {\n        return delegate.firstKey();\n    }\n\n    public SortedMap<K, V> headMap(final K toKey) {\n        return Collections.unmodifiableSortedMap(delegate.headMap(toKey));\n    }\n\n    public K lastKey() {\n        return delegate.lastKey();\n    }\n\n    public SortedMap<K, V> subMap(final K fromKey, final K toKey) {\n        return Collections.unmodifiableSortedMap(delegate.subMap(fromKey, toKey));\n    }\n\n    public SortedMap<K, V> tailMap(final K fromKey) {\n        return Collections.unmodifiableSortedMap(delegate.tailMap(fromKey));\n    }\n\n    public SortedMap<K, V> prefixMap(final K key) {\n        return Collections.unmodifiableSortedMap(delegate.prefixMap(key));\n    }\n\n    public Comparator<? super K> comparator() {\n        return delegate.comparator();\n    }\n\n    \n    public OrderedMapIterator<K, V> mapIterator() {\n        final OrderedMapIterator<K, V> it = delegate.mapIterator();\n        return UnmodifiableOrderedMapIterator.unmodifiableOrderedMapIterator(it);\n    }\n\n    public K nextKey(K key) {\n        return delegate.nextKey(key);\n    }\n\n    public K previousKey(K key) {\n        return delegate.previousKey(key);\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return delegate.hashCode();\n    }\n\n    @Override\n    public boolean equals(final Object obj) {\n        return delegate.equals(obj);\n    }\n\n    @Override\n    public String toString() {\n        return delegate.toString();\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections4.trie;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.Comparator;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.SortedMap;\n\nimport org.apache.commons.collections4.OrderedMapIterator;\nimport org.apache.commons.collections4.Trie;\nimport org.apache.commons.collections4.Unmodifiable;\nimport org.apache.commons.collections4.iterators.UnmodifiableOrderedMapIterator;\n\n\npublic class UnmodifiableTrie<K, V> implements Trie<K, V>, Serializable, Unmodifiable { private static final long serialVersionUID = -7156426030315945159L; private final Trie<K, V> delegate; public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n        if (trie instanceof Unmodifiable) {\n            @SuppressWarnings(\"unchecked\") \n            final Trie<K, V> tmpTrie = (Trie<K, V>) trie;\n            return tmpTrie;\n        }\n        return new UnmodifiableTrie<K, V>(trie);\n    }\n\n    \n    \n    public UnmodifiableTrie(final Trie<K, ? extends V> trie) {\n        if (trie == null) {\n            throw new IllegalArgumentException(\"Trie must not be null\");\n        }\n        @SuppressWarnings(\"unchecked\") \n        final Trie<K, V> tmpTrie = (Trie<K, V>) trie;\n        this.delegate = tmpTrie;\n    }\n\n    \n\n    public Set<Entry<K, V>> entrySet() {\n        return Collections.unmodifiableSet(delegate.entrySet());\n    }\n\n    public Set<K> keySet() {\n        return Collections.unmodifiableSet(delegate.keySet());\n    }\n\n    public Collection<V> values() {\n        return Collections.unmodifiableCollection(delegate.values());\n    }\n\n    public void clear() {\n        throw new UnsupportedOperationException();\n    }\n\n    public boolean containsKey(final Object key) {\n        return delegate.containsKey(key);\n    }\n\n    public boolean containsValue(final Object value) {\n        return delegate.containsValue(value);\n    }\n\n    public V get(final Object key) {\n        return delegate.get(key);\n    }\n\n    public boolean isEmpty() {\n        return delegate.isEmpty();\n    }\n\n    public V put(final K key, final V value) {\n        throw new UnsupportedOperationException();\n    }\n\n    public void putAll(final Map<? extends K, ? extends V> m) {\n        throw new UnsupportedOperationException();\n    }\n\n    public V remove(final Object key) {\n        throw new UnsupportedOperationException();\n    }\n\n    public int size() {\n        return delegate.size();\n    }\n\n    public K firstKey() {\n        return delegate.firstKey();\n    }\n\n    public SortedMap<K, V> headMap(final K toKey) {\n        return Collections.unmodifiableSortedMap(delegate.headMap(toKey));\n    }\n\n    public K lastKey() {\n        return delegate.lastKey();\n    }\n\n    public SortedMap<K, V> subMap(final K fromKey, final K toKey) {\n        return Collections.unmodifiableSortedMap(delegate.subMap(fromKey, toKey));\n    }\n\n    public SortedMap<K, V> tailMap(final K fromKey) {\n        return Collections.unmodifiableSortedMap(delegate.tailMap(fromKey));\n    }\n\n    public SortedMap<K, V> prefixMap(final K key) {\n        return Collections.unmodifiableSortedMap(delegate.prefixMap(key));\n    }\n\n    public Comparator<? super K> comparator() {\n        return delegate.comparator();\n    }\n\n    \n    public OrderedMapIterator<K, V> mapIterator() {\n        final OrderedMapIterator<K, V> it = delegate.mapIterator();\n        return UnmodifiableOrderedMapIterator.unmodifiableOrderedMapIterator(it);\n    }\n\n    public K nextKey(K key) {\n        return delegate.nextKey(key);\n    }\n\n    public K previousKey(K key) {\n        return delegate.previousKey(key);\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return delegate.hashCode();\n    }\n\n    @Override\n    public boolean equals(final Object obj) {\n        return delegate.equals(obj);\n    }\n\n    @Override\n    public String toString() {\n        return delegate.toString();\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public UnmodifiableTrie(final Trie<K, ? extends V> trie)",
+        "public Set<Entry<K, V>> entrySet()",
+        "public Set<K> keySet()",
+        "public Collection<V> values()",
+        "public void clear()",
+        "public boolean containsKey(final Object key)",
+        "public boolean containsValue(final Object value)",
+        "public V get(final Object key)",
+        "public boolean isEmpty()",
+        "public V put(final K key, final V value)",
+        "public void putAll(final Map<? extends K, ? extends V> m)",
+        "public V remove(final Object key)",
+        "public int size()",
+        "public K firstKey()",
+        "public SortedMap<K, V> headMap(final K toKey)",
+        "public K lastKey()",
+        "public SortedMap<K, V> subMap(final K fromKey, final K toKey)",
+        "public SortedMap<K, V> tailMap(final K fromKey)",
+        "public SortedMap<K, V> prefixMap(final K key)",
+        "public Comparator<? super K> comparator()",
+        "public OrderedMapIterator<K, V> mapIterator()",
+        "public K nextKey(K key)",
+        "public K previousKey(K key)",
+        "public int hashCode()",
+        "public boolean equals(final Object obj)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public UnmodifiableTrie(final Trie<K, ? extends V> trie)",
+        "public Set<Entry<K, V>> entrySet()",
+        "public Set<K> keySet()",
+        "public Collection<V> values()",
+        "public void clear()",
+        "public boolean containsKey(final Object key)",
+        "public boolean containsValue(final Object value)",
+        "public V get(final Object key)",
+        "public boolean isEmpty()",
+        "public V put(final K key, final V value)",
+        "public void putAll(final Map<? extends K, ? extends V> m)",
+        "public V remove(final Object key)",
+        "public int size()",
+        "public K firstKey()",
+        "public SortedMap<K, V> headMap(final K toKey)",
+        "public K lastKey()",
+        "public SortedMap<K, V> subMap(final K fromKey, final K toKey)",
+        "public SortedMap<K, V> tailMap(final K fromKey)",
+        "public SortedMap<K, V> prefixMap(final K key)",
+        "public Comparator<? super K> comparator()",
+        "public OrderedMapIterator<K, V> mapIterator()",
+        "public K nextKey(K key)",
+        "public K previousKey(K key)",
+        "public int hashCode()",
+        "public boolean equals(final Object obj)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static <K, V> UnmodifiableTrie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n  return new UnmodifiableTrie<K, V>(trie);\n  }",
+          "fixed_method": "  public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n  if (trie instanceof Unmodifiable) {\n  @SuppressWarnings(\"unchecked\") \n  final Trie<K, V> tmpTrie = (Trie<K, V>) trie;\n  return tmpTrie;\n  }\n  return new UnmodifiableTrie<K, V>(trie);\n  }",
+          "diff": [
+            "@@ -51,7 +51,12 @@",
+            "      * @return a new unmodifiable trie\n",
+            "      * @throws IllegalArgumentException if trie is null\n",
+            "      */\n",
+            "-    public static <K, V> UnmodifiableTrie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n",
+            "+    public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {\n",
+            "+        if (trie instanceof Unmodifiable) {\n",
+            "+            @SuppressWarnings(\"unchecked\") // safe to upcast\n",
+            "+            final Trie<K, V> tmpTrie = (Trie<K, V>) trie;\n",
+            "+            return tmpTrie;\n",
+            "+        }\n",
+            "         return new UnmodifiableTrie<K, V>(trie);\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

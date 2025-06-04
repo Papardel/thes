@@ -1,0 +1,67 @@
+{
+  "bug_id": "27",
+  "failed_tests": {
+    "org.mockitousage.bugs.ListenersLostOnResetMockTest": [
+      {
+        "methodName": "listener",
+        "error": "junit.framework.AssertionFailedError:",
+        "message": "",
+        "fail_line": "        verify(invocationListener).reportInvocation(any(MethodInvocationReport.class));",
+        "test_source": "  public void listener() throws Exception {\n  InvocationListener invocationListener = mock(InvocationListener.class);\n\n  List mockedList = mock(List.class, withSettings().invocationListeners(invocationListener));\n  reset(mockedList);\n\n  mockedList.clear();\n\n  verify(invocationListener).reportInvocation(any(MethodInvocationReport.class));\n  }",
+        "stack": [
+          "Reporter.wantedButNotInvoked line 269, MissingInvocationChecker.check line 42, Times.verify line 36, MockAwareVerificationMode.verify line 22, MockHandler.handle line 81, InvocationNotifierHandler.handle line 37, MethodInterceptorFilter.intercept line 48, ListenersLostOnResetMockTest.listener line 23"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/util/MockUtil.java",
+      "buggy_full_code": "\n\npackage org.mockito.internal.util;\n\nimport org.mockito.cglib.proxy.Callback;\nimport org.mockito.cglib.proxy.Factory;\nimport org.mockito.exceptions.misusing.NotAMockException;\nimport org.mockito.internal.InvocationNotifierHandler;\nimport org.mockito.internal.MockHandler;\nimport org.mockito.internal.MockHandlerInterface;\nimport org.mockito.internal.creation.MethodInterceptorFilter;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.creation.jmock.ClassImposterizer;\nimport org.mockito.internal.util.reflection.LenientCopyTool;\n\nimport java.io.Serializable;\n\n@SuppressWarnings(\"unchecked\")\npublic class MockUtil { private final MockCreationValidator creationValidator; public MockUtil(MockCreationValidator creationValidator) {\n        this.creationValidator = creationValidator;\n    }\n    \n    public MockUtil() {\n        this(new MockCreationValidator());\n    }\n\n    public <T> T createMock(Class<T> classToMock, MockSettingsImpl settings) {\n        creationValidator.validateType(classToMock);\n        creationValidator.validateExtraInterfaces(classToMock, settings.getExtraInterfaces());\n        creationValidator.validateMockedType(classToMock, settings.getSpiedInstance());\n\n        settings.initiateMockName(classToMock);\n\n        MethodInterceptorFilter filter = newMethodInterceptorFilter(settings);\n        Class<?>[] interfaces = settings.getExtraInterfaces();\n\n        Class<?>[] ancillaryTypes;\n        if (settings.isSerializable()) {\n            ancillaryTypes = interfaces == null ? new Class<?>[] {Serializable.class} : new ArrayUtils().concat(interfaces, Serializable.class);\n        } else {\n            ancillaryTypes = interfaces == null ? new Class<?>[0] : interfaces;\n        }\n\n        Object spiedInstance = settings.getSpiedInstance();\n        \n        T mock = ClassImposterizer.INSTANCE.imposterise(filter, classToMock, ancillaryTypes);\n        \n        if (spiedInstance != null) {\n            new LenientCopyTool().copyToMock(spiedInstance, mock);\n        }\n        \n        return mock;\n    }\n\n    public <T> void resetMock(T mock) {\n        MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);\n        MockHandler<T> newMockHandler = new MockHandler<T>(oldMockHandler);\n        MethodInterceptorFilter newFilter = new MethodInterceptorFilter(newMockHandler, (MockSettingsImpl) org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEFAULTS));\n        ((Factory) mock).setCallback(0, newFilter);\n    }\n\n    private <T> MethodInterceptorFilter newMethodInterceptorFilter(MockSettingsImpl settings) {\n        MockHandler<T> mockHandler = new MockHandler<T>(settings);\n        InvocationNotifierHandler<T> invocationNotifierHandler = new InvocationNotifierHandler<T>(mockHandler, settings);\n        return new MethodInterceptorFilter(invocationNotifierHandler, settings);\n    }\n\n    public <T> MockHandlerInterface<T> getMockHandler(T mock) {\n        if (mock == null) {\n            throw new NotAMockException(\"Argument should be a mock, but is null!\");\n        }\n\n        if (isMockitoMock(mock)) {\n            return (MockHandlerInterface) getInterceptor(mock).getHandler();\n        } else {\n            throw new NotAMockException(\"Argument should be a mock, but is: \" + mock.getClass());\n        }\n    }\n\n    private <T> boolean isMockitoMock(T mock) {\n        return getInterceptor(mock) != null;\n    }\n\n    public boolean isMock(Object mock) {\n        return mock != null && isMockitoMock(mock);\n    }\n\n    private <T> MethodInterceptorFilter getInterceptor(T mock) {\n        if (!(mock instanceof Factory)) {\n            return null;\n        }\n        Factory factory = (Factory) mock;\n        Callback callback = factory.getCallback(0);\n        if (callback instanceof MethodInterceptorFilter) {\n            return (MethodInterceptorFilter) callback;\n        }\n        return null;\n    }\n\n    public MockName getMockName(Object mock) {\n        return getMockHandler(mock).getMockSettings().getMockName();\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.mockito.internal.util;\n\nimport org.mockito.cglib.proxy.Callback;\nimport org.mockito.cglib.proxy.Factory;\nimport org.mockito.exceptions.misusing.NotAMockException;\nimport org.mockito.internal.InvocationNotifierHandler;\nimport org.mockito.internal.MockHandler;\nimport org.mockito.internal.MockHandlerInterface;\nimport org.mockito.internal.creation.MethodInterceptorFilter;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.creation.jmock.ClassImposterizer;\nimport org.mockito.internal.util.reflection.LenientCopyTool;\n\nimport java.io.Serializable;\n\n@SuppressWarnings(\"unchecked\")\npublic class MockUtil { private final MockCreationValidator creationValidator; public MockUtil(MockCreationValidator creationValidator) {\n        this.creationValidator = creationValidator;\n    }\n    \n    public MockUtil() {\n        this(new MockCreationValidator());\n    }\n\n    public <T> T createMock(Class<T> classToMock, MockSettingsImpl settings) {\n        creationValidator.validateType(classToMock);\n        creationValidator.validateExtraInterfaces(classToMock, settings.getExtraInterfaces());\n        creationValidator.validateMockedType(classToMock, settings.getSpiedInstance());\n\n        settings.initiateMockName(classToMock);\n\n        MethodInterceptorFilter filter = newMethodInterceptorFilter(settings);\n        Class<?>[] interfaces = settings.getExtraInterfaces();\n\n        Class<?>[] ancillaryTypes;\n        if (settings.isSerializable()) {\n            ancillaryTypes = interfaces == null ? new Class<?>[] {Serializable.class} : new ArrayUtils().concat(interfaces, Serializable.class);\n        } else {\n            ancillaryTypes = interfaces == null ? new Class<?>[0] : interfaces;\n        }\n\n        Object spiedInstance = settings.getSpiedInstance();\n        \n        T mock = ClassImposterizer.INSTANCE.imposterise(filter, classToMock, ancillaryTypes);\n        \n        if (spiedInstance != null) {\n            new LenientCopyTool().copyToMock(spiedInstance, mock);\n        }\n        \n        return mock;\n    }\n\n    public <T> void resetMock(T mock) {\n        MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);\n        MethodInterceptorFilter newFilter = newMethodInterceptorFilter(oldMockHandler.getMockSettings());\n        ((Factory) mock).setCallback(0, newFilter);\n    }\n\n    private <T> MethodInterceptorFilter newMethodInterceptorFilter(MockSettingsImpl settings) {\n        MockHandler<T> mockHandler = new MockHandler<T>(settings);\n        InvocationNotifierHandler<T> invocationNotifierHandler = new InvocationNotifierHandler<T>(mockHandler, settings);\n        return new MethodInterceptorFilter(invocationNotifierHandler, settings);\n    }\n\n    public <T> MockHandlerInterface<T> getMockHandler(T mock) {\n        if (mock == null) {\n            throw new NotAMockException(\"Argument should be a mock, but is null!\");\n        }\n\n        if (isMockitoMock(mock)) {\n            return (MockHandlerInterface) getInterceptor(mock).getHandler();\n        } else {\n            throw new NotAMockException(\"Argument should be a mock, but is: \" + mock.getClass());\n        }\n    }\n\n    private <T> boolean isMockitoMock(T mock) {\n        return getInterceptor(mock) != null;\n    }\n\n    public boolean isMock(Object mock) {\n        return mock != null && isMockitoMock(mock);\n    }\n\n    private <T> MethodInterceptorFilter getInterceptor(T mock) {\n        if (!(mock instanceof Factory)) {\n            return null;\n        }\n        Factory factory = (Factory) mock;\n        Callback callback = factory.getCallback(0);\n        if (callback instanceof MethodInterceptorFilter) {\n            return (MethodInterceptorFilter) callback;\n        }\n        return null;\n    }\n\n    public MockName getMockName(Object mock) {\n        return getMockHandler(mock).getMockSettings().getMockName();\n    }\n}\n",
+      "buggy_signatures": [
+        "public class MockUtil { private final MockCreationValidator creationValidator; public MockUtil(MockCreationValidator creationValidator)",
+        "public MockUtil()",
+        "public <T> T createMock(Class<T> classToMock, MockSettingsImpl settings)",
+        "public <T> void resetMock(T mock)",
+        "private <T> MethodInterceptorFilter newMethodInterceptorFilter(MockSettingsImpl settings)",
+        "public <T> MockHandlerInterface<T> getMockHandler(T mock)",
+        "private <T> boolean isMockitoMock(T mock)",
+        "public boolean isMock(Object mock)",
+        "private <T> MethodInterceptorFilter getInterceptor(T mock)",
+        "public MockName getMockName(Object mock)"
+      ],
+      "fixed_signatures": [
+        "public class MockUtil { private final MockCreationValidator creationValidator; public MockUtil(MockCreationValidator creationValidator)",
+        "public MockUtil()",
+        "public <T> T createMock(Class<T> classToMock, MockSettingsImpl settings)",
+        "public <T> void resetMock(T mock)",
+        "private <T> MethodInterceptorFilter newMethodInterceptorFilter(MockSettingsImpl settings)",
+        "public <T> MockHandlerInterface<T> getMockHandler(T mock)",
+        "private <T> boolean isMockitoMock(T mock)",
+        "public boolean isMock(Object mock)",
+        "private <T> MethodInterceptorFilter getInterceptor(T mock)",
+        "public MockName getMockName(Object mock)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public <T> void resetMock(T mock) {\n  MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);\n  MockHandler<T> newMockHandler = new MockHandler<T>(oldMockHandler);\n  MethodInterceptorFilter newFilter = new MethodInterceptorFilter(newMockHandler, (MockSettingsImpl) org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEFAULTS));\n  ((Factory) mock).setCallback(0, newFilter);\n  }",
+          "fixed_method": "  public <T> void resetMock(T mock) {\n  MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);\n  MethodInterceptorFilter newFilter = newMethodInterceptorFilter(oldMockHandler.getMockSettings());\n  ((Factory) mock).setCallback(0, newFilter);\n  }",
+          "diff": [
+            "@@ -61,8 +61,7 @@",
+            " \n",
+            "     public <T> void resetMock(T mock) {\n",
+            "         MockHandlerInterface<T> oldMockHandler = getMockHandler(mock);\n",
+            "-        MockHandler<T> newMockHandler = new MockHandler<T>(oldMockHandler);\n",
+            "-        MethodInterceptorFilter newFilter = new MethodInterceptorFilter(newMockHandler, (MockSettingsImpl) org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEFAULTS));\n",
+            "+        MethodInterceptorFilter newFilter = newMethodInterceptorFilter(oldMockHandler.getMockSettings());\n",
+            "         ((Factory) mock).setCallback(0, newFilter);\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

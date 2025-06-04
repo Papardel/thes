@@ -1,0 +1,10 @@
+{
+  "bug_id": "JacksonXml_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\nTest Class: com.fasterxml.jackson.dataformat.xml.misc.XmlTextTest\nMethod: testMixedContent\nError: junit.framework.AssertionFailedError\nMessage: expected:<27> but was:<0>\nFailing Line:         assertEquals(27, result.value);\nTest Source:\npublic void testMixedContent() throws Exception {\n  WindSpeed result = MAPPER.readValue(\"<windSpeed units='kt'> 27 <radius>20</radius></windSpeed>\",\n  WindSpeed.class);\n  assertEquals(27, result.value);\n  assertNotNull(result.radius);\n  assertEquals(20, result.radius.value);\n  }\nStack Trace:\nXmlTextTest.testMixedContent line 70\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "```java\npublic class WindSpeed {\n    public String units;\n    public int value;\n    public Radius radius;\n\n    public static class Radius {\n        public int value;\n    }\n}\n```"
+    }
+  ]
+}

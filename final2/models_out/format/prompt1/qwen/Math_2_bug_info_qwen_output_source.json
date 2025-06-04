@@ -1,0 +1,10 @@
+{
+  "bug_id": "Math_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\nTest Class: org.apache.commons.math3.distribution.HypergeometricDistributionTest\nMethod: testMath1021\nError: junit.framework.AssertionFailedError\nMessage: sample=-50\nFailing Line:             Assert.assertTrue(\"sample=\" + sample, 0 <= sample);\nTest Source:\npublic void testMath1021() {\n  final int N = 43130568;\n  final int m = 42976365;\n  final int n = 50;\n  final HypergeometricDistribution dist = new HypergeometricDistribution(N, m, n);\n\n  for (int i = 0; i < 100; i++) {\n  final int sample = dist.sample();\n  Assert.assertTrue(\"sample=\" + sample, 0 <= sample);\n  Assert.assertTrue(\"sample=\" + sample, sample <= n);\n  }\n  }\nStack Trace:\nHypergeometricDistributionTest.testMath1021 line 297\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "```java\norg.apache.commons.math3.distribution.HypergeometricDistribution\n```\n\nRESPONSE: org.apache.commons.math3.distribution.HypergeometricDistribution"
+    }
+  ]
+}

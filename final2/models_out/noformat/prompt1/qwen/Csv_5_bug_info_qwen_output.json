@@ -1,0 +1,13 @@
+{
+  "bug_id": "Csv_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 5\nTest Class: org.apache.commons.csv.CSVFormatTest\nMethod: testNullRecordSeparatorCsv106\nError: junit.framework.AssertionFailedError\nMessage: \nFailing Line:         assertFalse(formatStr.endsWith(\"null\"));\nTest Source:\npublic void testNullRecordSeparatorCsv106() {\n  final CSVFormat format = CSVFormat.newFormat(';').withSkipHeaderRecord(true).withHeader(\"H1\", \"H2\");\n  final String formatStr = format.format(\"A\", \"B\");\n  assertNotNull(formatStr);\n  assertFalse(formatStr.endsWith(\"null\"));\n  }\nStack Trace:\nCSVFormatTest.testNullRecordSeparatorCsv106 line 237\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```"
+    }
+  ],
+  "classes": [
+    "CSVPrinter"
+  ]
+}

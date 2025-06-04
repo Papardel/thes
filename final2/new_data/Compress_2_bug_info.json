@@ -1,0 +1,172 @@
+{
+  "bug_id": "2",
+  "failed_tests": {
+    "org.apache.commons.compress.archivers.ArTestCase": [
+      {
+        "methodName": "testArDelete",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1> but was:<0>",
+        "fail_line": "        assertEquals(1, deleted);",
+        "test_source": "  public void testArDelete() throws Exception {\n  final File output = new File(dir, \"bla.ar\");\n\n  final File file1 = getFile(\"test1.xml\");\n  final File file2 = getFile(\"test2.xml\");\n  {\n  // create\n\n  final OutputStream out = new FileOutputStream(output);\n  final ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream(\"ar\", out);\n  os.putArchiveEntry(new ArArchiveEntry(\"test1.xml\", file1.length()));\n  IOUtils.copy(new FileInputStream(file1), os);\n  os.closeArchiveEntry();\n\n  os.putArchiveEntry(new ArArchiveEntry(\"test2.xml\", file2.length()));\n  IOUtils.copy(new FileInputStream(file2), os);\n  os.closeArchiveEntry();\n  os.close();\n  out.close();\n  }\n\n  assertEquals(8\n  + 60 + file1.length() + (file1.length() % 2)\n  + 60 + file2.length() + (file2.length() % 2),\n  output.length());\n\n  final File output2 = new File(dir, \"bla2.ar\");\n\n  int copied = 0;\n  int deleted = 0;\n\n  {\n  // remove all but one file\n\n  final InputStream is = new FileInputStream(output);\n  final OutputStream os = new FileOutputStream(output2);\n  final ArchiveOutputStream aos = new ArchiveStreamFactory().createArchiveOutputStream(\"ar\", os);\n  final ArchiveInputStream ais = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(is));\n  while(true) {\n  final ArArchiveEntry entry = (ArArchiveEntry)ais.getNextEntry();\n  if (entry == null) {\n  break;\n  }\n\n  if (\"test1.xml\".equals(entry.getName())) {\n  aos.putArchiveEntry(entry);\n  IOUtils.copy(ais, aos);\n  aos.closeArchiveEntry();\n  copied++;\n  } else {\n  IOUtils.copy(ais, new ByteArrayOutputStream());\n  deleted++;\n  }\n\n  }\n  ais.close();\n  aos.close();\n  is.close();\n  os.close();\n  }\n\n  assertEquals(1, copied);\n  assertEquals(1, deleted);\n  assertEquals(144, output2.length());\n\n  long files = 0;\n  long sum = 0;\n\n  {\n  final InputStream is = new FileInputStream(output2);\n  final ArchiveInputStream ais = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(is));\n  while(true) {\n  final ArArchiveEntry entry = (ArArchiveEntry)ais.getNextEntry();\n  if (entry == null) {\n  break;\n  }\n\n  IOUtils.copy(ais, new ByteArrayOutputStream());\n\n  sum +=  entry.getLength();\n  files++;\n  }\n  ais.close();\n  is.close();\n  }\n\n  assertEquals(1, files);\n  assertEquals(76, sum);\n\n  }",
+        "stack": [
+          "ArTestCase.testArDelete line 151"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.archivers.ar;\n\nimport java.io.IOException;\nimport java.io.InputStream;\n\nimport org.apache.commons.compress.archivers.ArchiveEntry;\nimport org.apache.commons.compress.archivers.ArchiveInputStream;\n\n\npublic class ArArchiveInputStream extends ArchiveInputStream {\n\n    private final InputStream input;\n    private long offset = 0;\n    private boolean closed;\n    \n    \n\n    public ArArchiveInputStream( final InputStream pInput ) {\n        input = pInput;\n        closed = false;\n    }\n\n    \n    public ArArchiveEntry getNextArEntry() throws IOException {\n                    \n                    \n\n        if (offset == 0) {\n            final byte[] expected = ArArchiveEntry.HEADER.getBytes();\n            final byte[] realized = new byte[expected.length]; \n            final int read = read(realized);\n            if (read != expected.length) {\n                throw new IOException(\"failed to read header\");\n            }\n            for (int i = 0; i < expected.length; i++) {\n                if (expected[i] != realized[i]) {\n                    throw new IOException(\"invalid header \" + new String(realized));\n                }\n            }\n        }\n\n                \n\n        if (input.available() == 0) {\n            return null;\n        }\n\n        if (offset % 2 != 0) {\n            read();\n        }\n        final byte[] name = new byte[16];\n        final byte[] lastmodified = new byte[12];\n        final byte[] userid = new byte[6];\n        final byte[] groupid = new byte[6];\n        final byte[] filemode = new byte[8];\n        final byte[] length = new byte[10];\n\n        read(name);\n        read(lastmodified);\n        read(userid);\n        read(groupid);\n        read(filemode);\n        read(length);\n\n        {\n            final byte[] expected = ArArchiveEntry.TRAILER.getBytes();\n            final byte[] realized = new byte[expected.length]; \n            final int read = read(realized);\n            if (read != expected.length) {\n                throw new IOException(\"failed to read entry header\");\n            }\n            for (int i = 0; i < expected.length; i++) {\n                if (expected[i] != realized[i]) {\n                    throw new IOException(\"invalid entry header. not read the content?\");\n                }\n            }\n        }\n\n        return new ArArchiveEntry(new String(name).trim(),\n                                          Long.parseLong(new String(length)\n                                                         .trim()));\n    }\n\n\n    public ArchiveEntry getNextEntry() throws IOException {\n        return getNextArEntry();\n    }\n\n    public void close() throws IOException {\n        if (!closed) {\n            closed = true;\n            input.close();\n        }\n    }\n\n    public int read() throws IOException {\n        final int ret = input.read();\n        offset += (ret > 0 ? 1 : 0);\n        return ret;\n    }\n\n    public int read(byte[] b) throws IOException {\n        return read(b, 0, b.length);\n    }\n\n    public int read(byte[] b, final int off, final int len) throws IOException {\n        int toRead = len;\n        final int ret = this.input.read(b, off, toRead);\n        offset += (ret > 0 ? ret : 0);\n        return ret;\n    }\n\n    public static boolean matches(byte[] signature, int length) {\n        \n\n        if (length < 8) {\n            return false;\n        }\n        if (signature[0] != 0x21) {\n            return false;\n        }\n        if (signature[1] != 0x3c) {\n            return false;\n        }\n        if (signature[2] != 0x61) {\n            return false;\n        }\n        if (signature[3] != 0x72) {\n            return false;\n        }\n        if (signature[4] != 0x63) {\n            return false;\n        }\n        if (signature[5] != 0x68) {\n            return false;\n        }\n        if (signature[6] != 0x3e) {\n            return false;\n        }\n        if (signature[7] != 0x0a) {\n            return false;\n        }\n\n        return true;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.archivers.ar;\n\nimport java.io.IOException;\nimport java.io.InputStream;\n\nimport org.apache.commons.compress.archivers.ArchiveEntry;\nimport org.apache.commons.compress.archivers.ArchiveInputStream;\n\n\npublic class ArArchiveInputStream extends ArchiveInputStream {\n\n    private final InputStream input;\n    private long offset = 0;\n    private boolean closed;\n    \n    private ArArchiveEntry currentEntry = null;\n    \n    private long entryOffset = -1;\n\n    public ArArchiveInputStream( final InputStream pInput ) {\n        input = pInput;\n        closed = false;\n    }\n\n    \n    public ArArchiveEntry getNextArEntry() throws IOException {\n        if (currentEntry != null) {\n            final long entryEnd = entryOffset + currentEntry.getLength();\n            while (offset < entryEnd) {\n                int x = read();\n                if (x == -1) {\n                    \n                    \n                    return null;\n                }\n            }\n            currentEntry = null;\n        }\n\n        if (offset == 0) {\n            final byte[] expected = ArArchiveEntry.HEADER.getBytes();\n            final byte[] realized = new byte[expected.length]; \n            final int read = read(realized);\n            if (read != expected.length) {\n                throw new IOException(\"failed to read header\");\n            }\n            for (int i = 0; i < expected.length; i++) {\n                if (expected[i] != realized[i]) {\n                    throw new IOException(\"invalid header \" + new String(realized));\n                }\n            }\n        }\n\n        if (offset % 2 != 0) {\n            if (read() < 0) {\n                \n                return null;\n            }\n        }\n\n        if (input.available() == 0) {\n            return null;\n        }\n\n        final byte[] name = new byte[16];\n        final byte[] lastmodified = new byte[12];\n        final byte[] userid = new byte[6];\n        final byte[] groupid = new byte[6];\n        final byte[] filemode = new byte[8];\n        final byte[] length = new byte[10];\n\n        read(name);\n        read(lastmodified);\n        read(userid);\n        read(groupid);\n        read(filemode);\n        read(length);\n\n        {\n            final byte[] expected = ArArchiveEntry.TRAILER.getBytes();\n            final byte[] realized = new byte[expected.length]; \n            final int read = read(realized);\n            if (read != expected.length) {\n                throw new IOException(\"failed to read entry header\");\n            }\n            for (int i = 0; i < expected.length; i++) {\n                if (expected[i] != realized[i]) {\n                    throw new IOException(\"invalid entry header. not read the content?\");\n                }\n            }\n        }\n\n        entryOffset = offset;\n        currentEntry = new ArArchiveEntry(new String(name).trim(),\n                                          Long.parseLong(new String(length)\n                                                         .trim()));\n        return currentEntry;\n    }\n\n\n    public ArchiveEntry getNextEntry() throws IOException {\n        return getNextArEntry();\n    }\n\n    public void close() throws IOException {\n        if (!closed) {\n            closed = true;\n            input.close();\n        }\n        currentEntry = null;\n    }\n\n    public int read() throws IOException {\n        byte[] single = new byte[1];\n        int num = read(single, 0, 1);\n        return num == -1 ? -1 : single[0] & 0xff;\n    }\n\n    public int read(byte[] b) throws IOException {\n        return read(b, 0, b.length);\n    }\n\n    public int read(byte[] b, final int off, final int len) throws IOException {\n        int toRead = len;\n        if (currentEntry != null) {\n            final long entryEnd = entryOffset + currentEntry.getLength();\n            if (len > 0 && entryEnd > offset) {\n                toRead = (int) Math.min(len, entryEnd - offset);\n            } else {\n                return -1;\n            }\n        }\n        final int ret = this.input.read(b, off, toRead);\n        offset += (ret > 0 ? ret : 0);\n        return ret;\n    }\n\n    public static boolean matches(byte[] signature, int length) {\n        \n\n        if (length < 8) {\n            return false;\n        }\n        if (signature[0] != 0x21) {\n            return false;\n        }\n        if (signature[1] != 0x3c) {\n            return false;\n        }\n        if (signature[2] != 0x61) {\n            return false;\n        }\n        if (signature[3] != 0x72) {\n            return false;\n        }\n        if (signature[4] != 0x63) {\n            return false;\n        }\n        if (signature[5] != 0x68) {\n            return false;\n        }\n        if (signature[6] != 0x3e) {\n            return false;\n        }\n        if (signature[7] != 0x0a) {\n            return false;\n        }\n\n        return true;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public ArArchiveInputStream( final InputStream pInput )",
+        "public ArArchiveEntry getNextArEntry() throws IOException",
+        "public ArchiveEntry getNextEntry() throws IOException",
+        "public void close() throws IOException",
+        "public int read() throws IOException",
+        "public int read(byte[] b) throws IOException",
+        "public int read(byte[] b, final int off, final int len) throws IOException",
+        "public static boolean matches(byte[] signature, int length)"
+      ],
+      "fixed_signatures": [
+        "public ArArchiveInputStream( final InputStream pInput )",
+        "public ArArchiveEntry getNextArEntry() throws IOException",
+        "public ArchiveEntry getNextEntry() throws IOException",
+        "public void close() throws IOException",
+        "public int read() throws IOException",
+        "public int read(byte[] b) throws IOException",
+        "public int read(byte[] b, final int off, final int len) throws IOException",
+        "public static boolean matches(byte[] signature, int length)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public ArArchiveInputStream( final InputStream pInput ) {\n  input = pInput;\n  closed = false;\n  }",
+          "fixed_method": "  public ArArchiveInputStream( final InputStream pInput ) {\n  input = pInput;\n  closed = false;\n  }",
+          "diff": [
+            "@@ -39,10 +39,12 @@",
+            "      * If getNextEnxtry has been called, the entry metadata is stored in\n",
+            "      * currentEntry.\n",
+            "      */\n",
+            "+    private ArArchiveEntry currentEntry = null;\n",
+            "     /*\n",
+            "      * The offset where the current entry started. -1 if no entry has been\n",
+            "      * called\n",
+            "      */\n",
+            "+    private long entryOffset = -1;\n",
+            " \n",
+            "     public ArArchiveInputStream( final InputStream pInput ) {\n",
+            "         input = pInput;\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public ArArchiveEntry getNextArEntry() throws IOException {\n  \n  \n\n  if (offset == 0) {\n  final byte[] expected = ArArchiveEntry.HEADER.getBytes();\n  final byte[] realized = new byte[expected.length]; \n  final int read = read(realized);\n  if (read != expected.length) {\n  throw new IOException(\"failed to read header\");\n  }\n  for (int i = 0; i < expected.length; i++) {\n  if (expected[i] != realized[i]) {\n  throw new IOException(\"invalid header \" + new String(realized));\n  }\n  }\n  }\n\n  \n\n  if (input.available() == 0) {\n  return null;\n  }\n\n  if (offset % 2 != 0) {\n  read();\n  }\n  final byte[] name = new byte[16];\n  final byte[] lastmodified = new byte[12];\n  final byte[] userid = new byte[6];\n  final byte[] groupid = new byte[6];\n  final byte[] filemode = new byte[8];\n  final byte[] length = new byte[10];\n\n  read(name);\n  read(lastmodified);\n  read(userid);\n  read(groupid);\n  read(filemode);\n  read(length);\n\n  {\n  final byte[] expected = ArArchiveEntry.TRAILER.getBytes();\n  final byte[] realized = new byte[expected.length]; \n  final int read = read(realized);\n  if (read != expected.length) {\n  throw new IOException(\"failed to read entry header\");\n  }\n  for (int i = 0; i < expected.length; i++) {\n  if (expected[i] != realized[i]) {\n  throw new IOException(\"invalid entry header. not read the content?\");\n  }\n  }\n  }\n\n  return new ArArchiveEntry(new String(name).trim(),\n  Long.parseLong(new String(length)\n  .trim()));\n  }",
+          "fixed_method": "  public ArArchiveEntry getNextArEntry() throws IOException {\n  if (currentEntry != null) {\n  final long entryEnd = entryOffset + currentEntry.getLength();\n  while (offset < entryEnd) {\n  int x = read();\n  if (x == -1) {\n  \n  \n  return null;\n  }\n  }\n  currentEntry = null;\n  }\n\n  if (offset == 0) {\n  final byte[] expected = ArArchiveEntry.HEADER.getBytes();\n  final byte[] realized = new byte[expected.length]; \n  final int read = read(realized);\n  if (read != expected.length) {\n  throw new IOException(\"failed to read header\");\n  }\n  for (int i = 0; i < expected.length; i++) {\n  if (expected[i] != realized[i]) {\n  throw new IOException(\"invalid header \" + new String(realized));\n  }\n  }\n  }\n\n  if (offset % 2 != 0) {\n  if (read() < 0) {\n  \n  return null;\n  }\n  }\n\n  if (input.available() == 0) {\n  return null;\n  }\n\n  final byte[] name = new byte[16];\n  final byte[] lastmodified = new byte[12];\n  final byte[] userid = new byte[6];\n  final byte[] groupid = new byte[6];\n  final byte[] filemode = new byte[8];\n  final byte[] length = new byte[10];\n\n  read(name);\n  read(lastmodified);\n  read(userid);\n  read(groupid);\n  read(filemode);\n  read(length);\n\n  {\n  final byte[] expected = ArArchiveEntry.TRAILER.getBytes();\n  final byte[] realized = new byte[expected.length]; \n  final int read = read(realized);\n  if (read != expected.length) {\n  throw new IOException(\"failed to read entry header\");\n  }\n  for (int i = 0; i < expected.length; i++) {\n  if (expected[i] != realized[i]) {\n  throw new IOException(\"invalid entry header. not read the content?\");\n  }\n  }\n  }\n\n  entryOffset = offset;\n  currentEntry = new ArArchiveEntry(new String(name).trim(),\n  Long.parseLong(new String(length)\n  .trim()));\n  return currentEntry;\n  }",
+          "diff": [
+            "@@ -57,8 +59,18 @@",
+            "      *             if the entry could not be read\n",
+            "      */\n",
+            "     public ArArchiveEntry getNextArEntry() throws IOException {\n",
+            "+        if (currentEntry != null) {\n",
+            "+            final long entryEnd = entryOffset + currentEntry.getLength();\n",
+            "+            while (offset < entryEnd) {\n",
+            "+                int x = read();\n",
+            "+                if (x == -1) {\n",
+            "                     // hit EOF before previous entry was complete\n",
+            "                     // TODO: throw an exception instead?\n",
+            "+                    return null;\n",
+            "+                }\n",
+            "+            }\n",
+            "+            currentEntry = null;\n",
+            "+        }\n",
+            " \n",
+            "         if (offset == 0) {\n",
+            "             final byte[] expected = ArArchiveEntry.HEADER.getBytes();\n",
+            "@@ -74,15 +86,17 @@",
+            "             }\n",
+            "         }\n",
+            " \n",
+            "+        if (offset % 2 != 0) {\n",
+            "+            if (read() < 0) {\n",
+            "                 // hit eof\n",
+            "+                return null;\n",
+            "+            }\n",
+            "+        }\n",
+            " \n",
+            "         if (input.available() == 0) {\n",
+            "             return null;\n",
+            "         }\n",
+            " \n",
+            "-        if (offset % 2 != 0) {\n",
+            "-            read();\n",
+            "-        }\n",
+            "         final byte[] name = new byte[16];\n",
+            "         final byte[] lastmodified = new byte[12];\n",
+            "         final byte[] userid = new byte[6];\n",
+            "@@ -111,9 +125,11 @@",
+            "             }\n",
+            "         }\n",
+            " \n",
+            "-        return new ArArchiveEntry(new String(name).trim(),\n",
+            "+        entryOffset = offset;\n",
+            "+        currentEntry = new ArArchiveEntry(new String(name).trim(),\n",
+            "                                           Long.parseLong(new String(length)\n",
+            "                                                          .trim()));\n",
+            "+        return currentEntry;\n",
+            "     }\n",
+            " \n",
+            " \n"
+          ],
+          "changed_lines": 22
+        },
+        {
+          "buggy_method": "  public int read() throws IOException {\n  final int ret = input.read();\n  offset += (ret > 0 ? 1 : 0);\n  return ret;\n  }",
+          "fixed_method": "  public int read() throws IOException {\n  byte[] single = new byte[1];\n  int num = read(single, 0, 1);\n  return num == -1 ? -1 : single[0] & 0xff;\n  }",
+          "diff": [
+            "@@ -126,12 +142,13 @@",
+            "             closed = true;\n",
+            "             input.close();\n",
+            "         }\n",
+            "+        currentEntry = null;\n",
+            "     }\n",
+            " \n",
+            "     public int read() throws IOException {\n",
+            "-        final int ret = input.read();\n",
+            "-        offset += (ret > 0 ? 1 : 0);\n",
+            "-        return ret;\n",
+            "+        byte[] single = new byte[1];\n",
+            "+        int num = read(single, 0, 1);\n",
+            "+        return num == -1 ? -1 : single[0] & 0xff;\n",
+            "     }\n",
+            " \n",
+            "     public int read(byte[] b) throws IOException {\n"
+          ],
+          "changed_lines": 7
+        },
+        {
+          "buggy_method": "  public int read(byte[] b, final int off, final int len) throws IOException {\n  int toRead = len;\n  final int ret = this.input.read(b, off, toRead);\n  offset += (ret > 0 ? ret : 0);\n  return ret;\n  }",
+          "fixed_method": "  public int read(byte[] b, final int off, final int len) throws IOException {\n  int toRead = len;\n  if (currentEntry != null) {\n  final long entryEnd = entryOffset + currentEntry.getLength();\n  if (len > 0 && entryEnd > offset) {\n  toRead = (int) Math.min(len, entryEnd - offset);\n  } else {\n  return -1;\n  }\n  }\n  final int ret = this.input.read(b, off, toRead);\n  offset += (ret > 0 ? ret : 0);\n  return ret;\n  }",
+          "diff": [
+            "@@ -140,6 +157,14 @@",
+            " \n",
+            "     public int read(byte[] b, final int off, final int len) throws IOException {\n",
+            "         int toRead = len;\n",
+            "+        if (currentEntry != null) {\n",
+            "+            final long entryEnd = entryOffset + currentEntry.getLength();\n",
+            "+            if (len > 0 && entryEnd > offset) {\n",
+            "+                toRead = (int) Math.min(len, entryEnd - offset);\n",
+            "+            } else {\n",
+            "+                return -1;\n",
+            "+            }\n",
+            "+        }\n",
+            "         final int ret = this.input.read(b, off, toRead);\n",
+            "         offset += (ret > 0 ? ret : 0);\n",
+            "         return ret;\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

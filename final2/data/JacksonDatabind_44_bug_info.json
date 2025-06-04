@@ -1,0 +1,121 @@
+{
+  "bug_id": "44",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.jsontype.TestSubtypes": [
+      {
+        "methodName": "testIssue1125WithDefault",
+        "error": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+        "message": "Unrecognized field \"b\" (class com.fasterxml.jackson.databind.jsontype.TestSubtypes$Default1125), not marked as ignorable (2 known properties: \"a\", \"def\"])",
+        "fail_line": "        Issue1125Wrapper result = MAPPER.readValue(aposToQuotes(\"{'value':{'a':3,'def':9,'b':5}}\"),",
+        "test_source": "  public void testIssue1125WithDefault() throws Exception {\n  Issue1125Wrapper result = MAPPER.readValue(aposToQuotes(\"{'value':{'a':3,'def':9,'b':5}}\"),\n  \t\tIssue1125Wrapper.class);\n  assertNotNull(result.value);\n  assertEquals(Default1125.class, result.value.getClass());\n  Default1125 impl = (Default1125) result.value;\n  assertEquals(3, impl.a);\n  assertEquals(5, impl.b);\n  assertEquals(9, impl.def);\n  }",
+        "stack": [
+          "UnrecognizedPropertyException.from line 63, DeserializationContext.reportUnknownProperty line 855, StdDeserializer.handleUnknownProperty line 1083, BeanDeserializerBase.handleUnknownProperty line 1389, BeanDeserializerBase.handleUnknownVanilla line 1367, BeanDeserializer.vanillaDeserialize line 266, BeanDeserializer._deserializeOther line 163, BeanDeserializer.deserialize line 135, AsPropertyTypeDeserializer._deserializeTypedUsingDefaultImpl line 136, AsPropertyTypeDeserializer.deserializeTypedFromObject line 99, BeanDeserializerBase.deserializeWithType line 1017, SettableBeanProperty.deserialize line 488, FieldProperty.deserializeAndSet line 101, BeanDeserializer.vanillaDeserialize line 260, BeanDeserializer.deserialize line 125, ObjectMapper._readMapAndClose line 3789, ObjectMapper.readValue line 2779, TestSubtypes.testIssue1125WithDefault line 319"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/type/SimpleType.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport java.util.*;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class SimpleType extends TypeBase { private static final long serialVersionUID = 1L; protected SimpleType(Class<?> cls) {\n        this(cls, TypeBindings.emptyBindings(), null, null);\n    }\n\n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts) {\n        this(cls, bindings, superClass, superInts, null, null, false);\n    }\n\n    \n    protected SimpleType(TypeBase base) {\n        super(base);\n    }\n\n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, bindings, superClass, superInts,\n                0, valueHandler, typeHandler, asStatic);\n    }\n\n    \n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, int extraHash, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, bindings, superClass, superInts, \n                extraHash, valueHandler, typeHandler, asStatic);\n    }\n    \n    \n    public static SimpleType constructUnsafe(Class<?> raw) {\n        return new SimpleType(raw, null,\n                \n                null, null, null, null, false);\n    }\n\n    \n    @Deprecated\n    public static SimpleType construct(Class<?> cls) {\n        \n        if (Map.class.isAssignableFrom(cls)) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for a Map (class: \"+cls.getName()+\")\");\n        }\n        if (Collection.class.isAssignableFrom(cls)) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for a Collection (class: \"+cls.getName()+\")\");\n        }\n        \n        if (cls.isArray()) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for an array (class: \"+cls.getName()+\")\");\n        }\n        TypeBindings b = TypeBindings.emptyBindings();\n        return new SimpleType(cls, b,\n                _buildSuperClass(cls.getSuperclass(), b), null, null, null, false);\n    }\n\n    @Override\n    @Deprecated\n    protected JavaType _narrow(Class<?> subclass) {\n        if (_class == subclass) {\n            return this;\n        }\n        \n        \n        \n        \n            \n            return new SimpleType(subclass, _bindings, this, _superInterfaces,\n                    _valueHandler, _typeHandler, _asStatic);\n        \n        \n        \n    }\n    \n    @Override\n    public JavaType withContentType(JavaType contentType) {\n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContentType()\");\n    }\n    \n    @Override\n    public SimpleType withTypeHandler(Object h) {\n        if (_typeHandler == h) {\n            return this;\n        }\n        return new SimpleType(_class, _bindings, _superClass, _superInterfaces, _valueHandler, h, _asStatic);\n    }\n\n    @Override\n    public JavaType withContentTypeHandler(Object h) {\n        \n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContenTypeHandler()\");\n    }\n\n    @Override\n    public SimpleType withValueHandler(Object h) {\n        if (h == _valueHandler) {\n            return this;\n        }\n        return new SimpleType(_class, _bindings, _superClass, _superInterfaces, h, _typeHandler, _asStatic);\n    }\n    \n    @Override\n    public SimpleType withContentValueHandler(Object h) {\n        \n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContenValueHandler()\");\n    }\n\n    @Override\n    public SimpleType withStaticTyping() {\n        return _asStatic ? this : new SimpleType(_class, _bindings,\n                _superClass, _superInterfaces, _valueHandler, _typeHandler, true);\n    }\n\n    @Override\n    public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces) {\n        \n        return null;\n    }\n    \n    @Override\n    protected String buildCanonicalName() {\n        StringBuilder sb = new StringBuilder();\n        sb.append(_class.getName());\n\n        final int count = _bindings.size();\n        if (count > 0) {\n            sb.append('<');\n            for (int i = 0; i < count; ++i) {\n                JavaType t = containedType(i);\n                if (i > 0) {\n                    sb.append(',');\n                }\n                sb.append(t.toCanonical());\n            }\n            sb.append('>');\n        }\n        return sb.toString();\n    }\n\n    \n\n    @Override\n    public boolean isContainerType() { return false; }\n\n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _classSignature(_class, sb, true);\n    }\n    \n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        _classSignature(_class, sb, false);\n\n        final int count = _bindings.size();\n        if (count > 0) {\n            sb.append('<');\n            for (int i = 0; i < count; ++i) {\n                sb = containedType(i).getGenericSignature(sb);\n            }\n            sb.append('>');\n        }\n        sb.append(';');\n        return sb;\n    }\n\n    \n\n    \n    private static JavaType _buildSuperClass(Class<?> superClass, TypeBindings b) {\n        if (superClass == null) {\n            return null;\n        }\n        if (superClass == Object.class) {\n            return TypeFactory.unknownType();\n        }\n        JavaType superSuper = _buildSuperClass(superClass.getSuperclass(), b);\n        return new SimpleType(superClass, b,\n                superSuper, null, null, null, false);\n    }\n\n    \n\n    @Override\n    public String toString() {\n        StringBuilder sb = new StringBuilder(40);\n        sb.append(\"[simple type, class \").append(buildCanonicalName()).append(']');\n        return sb.toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (o.getClass() != getClass()) return false;\n\n        SimpleType other = (SimpleType) o;\n\n        \n        if (other._class != this._class) return false;\n\n        \n        TypeBindings b1 = _bindings;\n        TypeBindings b2 = other._bindings;\n        return b1.equals(b2);\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport java.util.*;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class SimpleType extends TypeBase { private static final long serialVersionUID = 1L; protected SimpleType(Class<?> cls) {\n        this(cls, TypeBindings.emptyBindings(), null, null);\n    }\n\n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts) {\n        this(cls, bindings, superClass, superInts, null, null, false);\n    }\n\n    \n    protected SimpleType(TypeBase base) {\n        super(base);\n    }\n\n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, bindings, superClass, superInts,\n                0, valueHandler, typeHandler, asStatic);\n    }\n\n    \n    protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, int extraHash, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, bindings, superClass, superInts, \n                extraHash, valueHandler, typeHandler, asStatic);\n    }\n    \n    \n    public static SimpleType constructUnsafe(Class<?> raw) {\n        return new SimpleType(raw, null,\n                \n                null, null, null, null, false);\n    }\n\n    \n    @Deprecated\n    public static SimpleType construct(Class<?> cls) {\n        \n        if (Map.class.isAssignableFrom(cls)) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for a Map (class: \"+cls.getName()+\")\");\n        }\n        if (Collection.class.isAssignableFrom(cls)) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for a Collection (class: \"+cls.getName()+\")\");\n        }\n        \n        if (cls.isArray()) {\n            throw new IllegalArgumentException(\"Can not construct SimpleType for an array (class: \"+cls.getName()+\")\");\n        }\n        TypeBindings b = TypeBindings.emptyBindings();\n        return new SimpleType(cls, b,\n                _buildSuperClass(cls.getSuperclass(), b), null, null, null, false);\n    }\n\n    @Override\n    @Deprecated\n    protected JavaType _narrow(Class<?> subclass) {\n        if (_class == subclass) {\n            return this;\n        }\n        \n        \n        \n        \n        if (!_class.isAssignableFrom(subclass)) {\n            \n            return new SimpleType(subclass, _bindings, this, _superInterfaces,\n                    _valueHandler, _typeHandler, _asStatic);\n        }\n        \n        Class<?> next = subclass.getSuperclass();\n        if (next == _class) { \n            return new SimpleType(subclass, _bindings, this,\n                    _superInterfaces, _valueHandler, _typeHandler, _asStatic);\n        }\n        if ((next != null) && _class.isAssignableFrom(next)) {\n            JavaType superb = _narrow(next);\n            return new SimpleType(subclass, _bindings, superb,\n                    null, _valueHandler, _typeHandler, _asStatic);\n        }\n        \n        Class<?>[] nextI = subclass.getInterfaces();\n        for (Class<?> iface : nextI) {\n            if (iface == _class) { \n                return new SimpleType(subclass, _bindings, null,\n                        new JavaType[] { this }, _valueHandler, _typeHandler, _asStatic);\n            }\n            if (_class.isAssignableFrom(iface)) { \n                JavaType superb = _narrow(iface);\n                return new SimpleType(subclass, _bindings, null,\n                        new JavaType[] { superb }, _valueHandler, _typeHandler, _asStatic);\n            }\n        }\n        \n        throw new IllegalArgumentException(\"Internal error: Can not resolve sub-type for Class \"+subclass.getName()+\" to \"\n                +_class.getName());\n    }\n    \n    @Override\n    public JavaType withContentType(JavaType contentType) {\n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContentType()\");\n    }\n    \n    @Override\n    public SimpleType withTypeHandler(Object h) {\n        if (_typeHandler == h) {\n            return this;\n        }\n        return new SimpleType(_class, _bindings, _superClass, _superInterfaces, _valueHandler, h, _asStatic);\n    }\n\n    @Override\n    public JavaType withContentTypeHandler(Object h) {\n        \n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContenTypeHandler()\");\n    }\n\n    @Override\n    public SimpleType withValueHandler(Object h) {\n        if (h == _valueHandler) {\n            return this;\n        }\n        return new SimpleType(_class, _bindings, _superClass, _superInterfaces, h, _typeHandler, _asStatic);\n    }\n    \n    @Override\n    public SimpleType withContentValueHandler(Object h) {\n        \n        throw new IllegalArgumentException(\"Simple types have no content types; can not call withContenValueHandler()\");\n    }\n\n    @Override\n    public SimpleType withStaticTyping() {\n        return _asStatic ? this : new SimpleType(_class, _bindings,\n                _superClass, _superInterfaces, _valueHandler, _typeHandler, true);\n    }\n\n    @Override\n    public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces) {\n        \n        return null;\n    }\n    \n    @Override\n    protected String buildCanonicalName() {\n        StringBuilder sb = new StringBuilder();\n        sb.append(_class.getName());\n\n        final int count = _bindings.size();\n        if (count > 0) {\n            sb.append('<');\n            for (int i = 0; i < count; ++i) {\n                JavaType t = containedType(i);\n                if (i > 0) {\n                    sb.append(',');\n                }\n                sb.append(t.toCanonical());\n            }\n            sb.append('>');\n        }\n        return sb.toString();\n    }\n\n    \n\n    @Override\n    public boolean isContainerType() { return false; }\n\n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _classSignature(_class, sb, true);\n    }\n    \n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        _classSignature(_class, sb, false);\n\n        final int count = _bindings.size();\n        if (count > 0) {\n            sb.append('<');\n            for (int i = 0; i < count; ++i) {\n                sb = containedType(i).getGenericSignature(sb);\n            }\n            sb.append('>');\n        }\n        sb.append(';');\n        return sb;\n    }\n\n    \n\n    \n    private static JavaType _buildSuperClass(Class<?> superClass, TypeBindings b) {\n        if (superClass == null) {\n            return null;\n        }\n        if (superClass == Object.class) {\n            return TypeFactory.unknownType();\n        }\n        JavaType superSuper = _buildSuperClass(superClass.getSuperclass(), b);\n        return new SimpleType(superClass, b,\n                superSuper, null, null, null, false);\n    }\n\n    \n\n    @Override\n    public String toString() {\n        StringBuilder sb = new StringBuilder(40);\n        sb.append(\"[simple type, class \").append(buildCanonicalName()).append(']');\n        return sb.toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (o.getClass() != getClass()) return false;\n\n        SimpleType other = (SimpleType) o;\n\n        \n        if (other._class != this._class) return false;\n\n        \n        TypeBindings b1 = _bindings;\n        TypeBindings b2 = other._bindings;\n        return b1.equals(b2);\n    }\n}\n",
+      "buggy_signatures": [
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts)",
+        "protected SimpleType(TypeBase base)",
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, Object valueHandler, Object typeHandler, boolean asStatic)",
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, int extraHash, Object valueHandler, Object typeHandler, boolean asStatic)",
+        "public static SimpleType constructUnsafe(Class<?> raw)",
+        "public static SimpleType construct(Class<?> cls)",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType withContentType(JavaType contentType)",
+        "public SimpleType withTypeHandler(Object h)",
+        "public JavaType withContentTypeHandler(Object h)",
+        "public SimpleType withValueHandler(Object h)",
+        "public SimpleType withContentValueHandler(Object h)",
+        "public SimpleType withStaticTyping()",
+        "public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces)",
+        "protected String buildCanonicalName()",
+        "public boolean isContainerType()",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "private static JavaType _buildSuperClass(Class<?> superClass, TypeBindings b)",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "fixed_signatures": [
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts)",
+        "protected SimpleType(TypeBase base)",
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, Object valueHandler, Object typeHandler, boolean asStatic)",
+        "protected SimpleType(Class<?> cls, TypeBindings bindings, JavaType superClass, JavaType[] superInts, int extraHash, Object valueHandler, Object typeHandler, boolean asStatic)",
+        "public static SimpleType constructUnsafe(Class<?> raw)",
+        "public static SimpleType construct(Class<?> cls)",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType withContentType(JavaType contentType)",
+        "public SimpleType withTypeHandler(Object h)",
+        "public JavaType withContentTypeHandler(Object h)",
+        "public SimpleType withValueHandler(Object h)",
+        "public SimpleType withContentValueHandler(Object h)",
+        "public SimpleType withStaticTyping()",
+        "public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces)",
+        "protected String buildCanonicalName()",
+        "public boolean isContainerType()",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "private static JavaType _buildSuperClass(Class<?> superClass, TypeBindings b)",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public JavaType withContentType(JavaType contentType) {\n  throw new IllegalArgumentException(\"Simple types have no content types; can not call withContentType()\");\n  }",
+          "fixed_method": "  protected JavaType _narrow(Class<?> subclass) {\n  if (_class == subclass) {\n  return this;\n  }\n  \n  \n  \n  \n  if (!_class.isAssignableFrom(subclass)) {\n  \n  return new SimpleType(subclass, _bindings, this, _superInterfaces,\n  _valueHandler, _typeHandler, _asStatic);\n  }\n  \n  Class<?> next = subclass.getSuperclass();\n  if (next == _class) { \n  return new SimpleType(subclass, _bindings, this,\n  _superInterfaces, _valueHandler, _typeHandler, _asStatic);\n  }\n  if ((next != null) && _class.isAssignableFrom(next)) {\n  JavaType superb = _narrow(next);\n  return new SimpleType(subclass, _bindings, superb,\n  null, _valueHandler, _typeHandler, _asStatic);\n  }\n  \n  Class<?>[] nextI = subclass.getInterfaces();\n  for (Class<?> iface : nextI) {\n  if (iface == _class) { \n  return new SimpleType(subclass, _bindings, null,\n  new JavaType[] { this }, _valueHandler, _typeHandler, _asStatic);\n  }\n  if (_class.isAssignableFrom(iface)) { \n  JavaType superb = _narrow(iface);\n  return new SimpleType(subclass, _bindings, null,\n  new JavaType[] { superb }, _valueHandler, _typeHandler, _asStatic);\n  }\n  }\n  \n  throw new IllegalArgumentException(\"Internal error: Can not resolve sub-type for Class \"+subclass.getName()+\" to \"\n  +_class.getName());\n  }",
+          "diff": [
+            "@@ -129,15 +129,41 @@",
+            "         // 15-Jan-2016, tatu: Almost yes, but there are some complications with\n",
+            "         //    placeholder values (`Void`, `NoClass`), so can not quite do yet.\n",
+            "         // TODO: fix in 2.8\n",
+            "+        if (!_class.isAssignableFrom(subclass)) {\n",
+            "             /*\n",
+            "             throw new IllegalArgumentException(\"Class \"+subclass.getName()+\" not sub-type of \"\n",
+            "                     +_class.getName());\n",
+            "                     */\n",
+            "             return new SimpleType(subclass, _bindings, this, _superInterfaces,\n",
+            "                     _valueHandler, _typeHandler, _asStatic);\n",
+            "+        }\n",
+            "         // Otherwise, stitch together the hierarchy. First, super-class\n",
+            "+        Class<?> next = subclass.getSuperclass();\n",
+            "+        if (next == _class) { // straight up parent class? Great.\n",
+            "+            return new SimpleType(subclass, _bindings, this,\n",
+            "+                    _superInterfaces, _valueHandler, _typeHandler, _asStatic);\n",
+            "+        }\n",
+            "+        if ((next != null) && _class.isAssignableFrom(next)) {\n",
+            "+            JavaType superb = _narrow(next);\n",
+            "+            return new SimpleType(subclass, _bindings, superb,\n",
+            "+                    null, _valueHandler, _typeHandler, _asStatic);\n",
+            "+        }\n",
+            "         // if not found, try a super-interface\n",
+            "+        Class<?>[] nextI = subclass.getInterfaces();\n",
+            "+        for (Class<?> iface : nextI) {\n",
+            "+            if (iface == _class) { // directly implemented\n",
+            "+                return new SimpleType(subclass, _bindings, null,\n",
+            "+                        new JavaType[] { this }, _valueHandler, _typeHandler, _asStatic);\n",
+            "+            }\n",
+            "+            if (_class.isAssignableFrom(iface)) { // indirect, so recurse\n",
+            "+                JavaType superb = _narrow(iface);\n",
+            "+                return new SimpleType(subclass, _bindings, null,\n",
+            "+                        new JavaType[] { superb }, _valueHandler, _typeHandler, _asStatic);\n",
+            "+            }\n",
+            "+        }\n",
+            "         // should not get here but...\n",
+            "+        throw new IllegalArgumentException(\"Internal error: Can not resolve sub-type for Class \"+subclass.getName()+\" to \"\n",
+            "+                +_class.getName());\n",
+            "     }\n",
+            "     \n",
+            "     @Override\n"
+          ],
+          "changed_lines": 26
+        }
+      ]
+    }
+  ]
+}

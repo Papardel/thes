@@ -1,0 +1,82 @@
+{
+  "bug_id": "46",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.type.TestJavaType": [
+      {
+        "methodName": "testGenericSignature1195",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<...e<Ljava/lang/String;[>];> but was:<...e<Ljava/lang/String;[];>",
+        "fail_line": "        assertEquals(\"Ljava/util/concurrent/atomic/AtomicReference<Ljava/lang/String;>;\", t.getGenericSignature());",
+        "test_source": "  public void testGenericSignature1195() throws Exception {\n  TypeFactory tf = TypeFactory.defaultInstance();\n  Method m;\n  JavaType t;\n\n  m = Generic1195.class.getMethod(\"getList\");\n  t  = tf.constructType(m.getGenericReturnType());\n  assertEquals(\"Ljava/util/List<Ljava/lang/String;>;\", t.getGenericSignature());\n\n  m = Generic1195.class.getMethod(\"getMap\");\n  t  = tf.constructType(m.getGenericReturnType());\n  assertEquals(\"Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;\",\n  t.getGenericSignature());\n\n  m = Generic1195.class.getMethod(\"getGeneric\");\n  t  = tf.constructType(m.getGenericReturnType());\n  assertEquals(\"Ljava/util/concurrent/atomic/AtomicReference<Ljava/lang/String;>;\", t.getGenericSignature());\n  }",
+        "stack": [
+          "TestJavaType.testGenericSignature1195 line 56"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/type/ReferenceType.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class ReferenceType extends SimpleType { private static final long serialVersionUID = 1L; protected final JavaType _referencedType; protected ReferenceType(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, refType.hashCode(),\n                valueHandler, typeHandler, asStatic);\n        _referencedType = refType;\n    }\n\n    public static ReferenceType construct(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler) {\n        return new ReferenceType(cls, refType, null, null, false);\n    }                                   \n    \n    @Override\n    public ReferenceType withTypeHandler(Object h) {\n        if (h == _typeHandler) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType, _valueHandler, h, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withContentTypeHandler(Object h) {\n        if (h == _referencedType.<Object>getTypeHandler()) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withTypeHandler(h),\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withValueHandler(Object h) {\n        if (h == _valueHandler) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType, h, _typeHandler,_asStatic);\n    }\n\n    @Override\n    public ReferenceType withContentValueHandler(Object h) {\n        if (h == _referencedType.<Object>getValueHandler()) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withValueHandler(h),\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withStaticTyping() {\n        if (_asStatic) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withStaticTyping(),\n                 _valueHandler, _typeHandler, true);\n    }\n\n    @Override\n    protected String buildCanonicalName() {\n        StringBuilder sb = new StringBuilder();\n        sb.append(_class.getName());\n        sb.append('<');\n        sb.append(_referencedType.toCanonical());\n        return sb.toString();\n    }\n\n    \n    \n    @Override\n    protected JavaType _narrow(Class<?> subclass) {\n        \n        return new ReferenceType(subclass, _referencedType,\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    \n    \n    @Override\n    public JavaType getReferencedType() {\n        return _referencedType;\n    }\n\n    @Override\n    public boolean isReferenceType() {\n        return true;\n    }\n    \n    \n\n    @Override\n    public int containedTypeCount() {\n        return 1;\n    }\n\n    @Override\n    public JavaType containedType(int index) {\n        return (index == 0) ? _referencedType : null;\n    }\n\n    @Override\n    public String containedTypeName(int index) {\n        return (index == 0) ? \"T\" : null;\n    }\n\n    @Override\n    public Class<?> getParameterSource() {\n        \n        return _class;\n    }\n    \n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _classSignature(_class, sb, true);\n    }\n    \n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        _classSignature(_class, sb, false);\n        sb.append('<');\n        sb = _referencedType.getGenericSignature(sb);\n        sb.append(';');\n        return sb;\n    }\n    \n    \n\n    @Override\n    public String toString() {\n        return new StringBuilder(40)\n            .append(\"[reference type, class \")\n            .append(buildCanonicalName())\n            .append('<')\n            .append(_referencedType)\n            .append('>')\n            .append(']')\n            .toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (o.getClass() != getClass()) return false;\n\n        ReferenceType other = (ReferenceType) o;\n\n        if (other._class != _class) return false;\n        \n        \n        return _referencedType.equals(other._referencedType);\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class ReferenceType extends SimpleType { private static final long serialVersionUID = 1L; protected final JavaType _referencedType; protected ReferenceType(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler, boolean asStatic) {\n        super(cls, refType.hashCode(),\n                valueHandler, typeHandler, asStatic);\n        _referencedType = refType;\n    }\n\n    public static ReferenceType construct(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler) {\n        return new ReferenceType(cls, refType, null, null, false);\n    }                                   \n    \n    @Override\n    public ReferenceType withTypeHandler(Object h) {\n        if (h == _typeHandler) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType, _valueHandler, h, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withContentTypeHandler(Object h) {\n        if (h == _referencedType.<Object>getTypeHandler()) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withTypeHandler(h),\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withValueHandler(Object h) {\n        if (h == _valueHandler) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType, h, _typeHandler,_asStatic);\n    }\n\n    @Override\n    public ReferenceType withContentValueHandler(Object h) {\n        if (h == _referencedType.<Object>getValueHandler()) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withValueHandler(h),\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    @Override\n    public ReferenceType withStaticTyping() {\n        if (_asStatic) {\n            return this;\n        }\n        return new ReferenceType(_class, _referencedType.withStaticTyping(),\n                 _valueHandler, _typeHandler, true);\n    }\n\n    @Override\n    protected String buildCanonicalName() {\n        StringBuilder sb = new StringBuilder();\n        sb.append(_class.getName());\n        sb.append('<');\n        sb.append(_referencedType.toCanonical());\n        return sb.toString();\n    }\n\n    \n    \n    @Override\n    protected JavaType _narrow(Class<?> subclass) {\n        \n        return new ReferenceType(subclass, _referencedType,\n                _valueHandler, _typeHandler, _asStatic);\n    }\n\n    \n    \n    @Override\n    public JavaType getReferencedType() {\n        return _referencedType;\n    }\n\n    @Override\n    public boolean isReferenceType() {\n        return true;\n    }\n    \n    \n\n    @Override\n    public int containedTypeCount() {\n        return 1;\n    }\n\n    @Override\n    public JavaType containedType(int index) {\n        return (index == 0) ? _referencedType : null;\n    }\n\n    @Override\n    public String containedTypeName(int index) {\n        return (index == 0) ? \"T\" : null;\n    }\n\n    @Override\n    public Class<?> getParameterSource() {\n        \n        return _class;\n    }\n    \n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _classSignature(_class, sb, true);\n    }\n    \n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        _classSignature(_class, sb, false);\n        sb.append('<');\n        sb = _referencedType.getGenericSignature(sb);\n        sb.append(\">;\");\n        return sb;\n    }\n    \n    \n\n    @Override\n    public String toString() {\n        return new StringBuilder(40)\n            .append(\"[reference type, class \")\n            .append(buildCanonicalName())\n            .append('<')\n            .append(_referencedType)\n            .append('>')\n            .append(']')\n            .toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (o.getClass() != getClass()) return false;\n\n        ReferenceType other = (ReferenceType) o;\n\n        if (other._class != _class) return false;\n        \n        \n        return _referencedType.equals(other._referencedType);\n    }\n}\n",
+      "buggy_signatures": [
+        "public static ReferenceType construct(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler)",
+        "public ReferenceType withTypeHandler(Object h)",
+        "public ReferenceType withContentTypeHandler(Object h)",
+        "public ReferenceType withValueHandler(Object h)",
+        "public ReferenceType withContentValueHandler(Object h)",
+        "public ReferenceType withStaticTyping()",
+        "protected String buildCanonicalName()",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType getReferencedType()",
+        "public boolean isReferenceType()",
+        "public int containedTypeCount()",
+        "public JavaType containedType(int index)",
+        "public String containedTypeName(int index)",
+        "public Class<?> getParameterSource()",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "fixed_signatures": [
+        "public static ReferenceType construct(Class<?> cls, JavaType refType, Object valueHandler, Object typeHandler)",
+        "public ReferenceType withTypeHandler(Object h)",
+        "public ReferenceType withContentTypeHandler(Object h)",
+        "public ReferenceType withValueHandler(Object h)",
+        "public ReferenceType withContentValueHandler(Object h)",
+        "public ReferenceType withStaticTyping()",
+        "protected String buildCanonicalName()",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType getReferencedType()",
+        "public boolean isReferenceType()",
+        "public int containedTypeCount()",
+        "public JavaType containedType(int index)",
+        "public String containedTypeName(int index)",
+        "public Class<?> getParameterSource()",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public StringBuilder getGenericSignature(StringBuilder sb) {\n  _classSignature(_class, sb, false);\n  sb.append('<');\n  sb = _referencedType.getGenericSignature(sb);\n  sb.append(';');\n  return sb;\n  }",
+          "fixed_method": "  public StringBuilder getGenericSignature(StringBuilder sb) {\n  _classSignature(_class, sb, false);\n  sb.append('<');\n  sb = _referencedType.getGenericSignature(sb);\n  sb.append(\">;\");\n  return sb;\n  }",
+          "diff": [
+            "@@ -153,7 +153,7 @@",
+            "         _classSignature(_class, sb, false);\n",
+            "         sb.append('<');\n",
+            "         sb = _referencedType.getGenericSignature(sb);\n",
+            "-        sb.append(';');\n",
+            "+        sb.append(\">;\");\n",
+            "         return sb;\n",
+            "     }\n",
+            "     \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "bug_id": "Math_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 5\nTest Class: org.apache.commons.math3.complex.ComplexTest\nMethod: testReciprocalZero\nError: junit.framework.AssertionFailedError\nMessage: expected:<(NaN, NaN)> but was:<(Infinity, Infinity)>\nFailing Line:         Assert.assertEquals(Complex.ZERO.reciprocal(), Complex.INF);\nTest Source:\npublic void testReciprocalZero() {\n  Assert.assertEquals(Complex.ZERO.reciprocal(), Complex.INF);\n  }\nStack Trace:\nComplexTest.testReciprocalZero line 334\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "`"
+    }
+  ],
+  "classes": [
+    "Complex"
+  ]
+}

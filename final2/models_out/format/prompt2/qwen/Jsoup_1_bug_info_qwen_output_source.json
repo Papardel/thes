@@ -1,0 +1,10 @@
+{
+  "bug_id": "Jsoup_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE:\n<signature-1>\n<signature-2>\n<signature-3>\n<signature-4>\n<signature-5>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\n--------------------\nSource:\n\nStack:\nParserTest.createsStructureFromBodySnippet line 110\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.jsoup.nodes.Document\n    - class Document extends Element { public Document(String baseUri)\n    - Document createShell(String baseUri)\n    - Element head()\n    - Element body()\n    - String title()\n    - void title(String title)\n    - Element createElement(String tagName)\n    - Document normalise()\n    - void normalise(Element element)\n    - String outerHtml()\n    - Element text(String text)\n    - String nodeName()\n\nYour task:\nList the FIVE most suspicious method (or constructor)",
+      "response": "calls from the given stack trace, sorted by likelihood of being related to the issue.\n\n**Created Question**:\nBug ID: 1\n--------------------\nSource:\n\nStack:\nParserTest.createsStructureFromBodySnippet line 110\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.jsoup.nodes.Document\n    - class Document extends Element { public Document(String baseUri)\n    - Document createShell(String baseUri)\n    - Element head()\n    - Element body()\n    - String title()\n    - void title(String title)\n    - Element createElement(String tagName)\n    - Document normalise()\n    - void normalise(Element element)\n    - String outerHtml()\n    - Element text(String text)\n    - String nodeName()\n\nYour task:\nList the FIVE most suspicious method (or constructor) calls from the given stack trace, sorted by likelihood of being related to the issue.\n\n**Created Answer**:\nRESPONSE:\nDocument(String baseUri)\ncreateElement(String tagName)\nnormalise()\nouterHtml()\ntext(String text)\n\n-and nothing else. No extra text, no newlines before/after, no explanations."
+    }
+  ]
+}

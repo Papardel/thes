@@ -1,0 +1,108 @@
+{
+  "bug_id": "21",
+  "failed_tests": {
+    "org.apache.commons.math3.linear.RectangularCholeskyDecompositionTest": [
+      {
+        "methodName": "testMath789",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0.0> but was:<0.0180652917341963>",
+        "fail_line": "        Assert.assertEquals(0.0, m3.subtract(rebuiltM3).getNorm(), 1.0e-16);",
+        "test_source": "  public void testMath789() {\n\n  final RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][]{\n  {0.013445532, 0.010394690, 0.009881156, 0.010499559},\n  {0.010394690, 0.023006616, 0.008196856, 0.010732709},\n  {0.009881156, 0.008196856, 0.019023866, 0.009210099},\n  {0.010499559, 0.010732709, 0.009210099, 0.019107243}\n  });\n  RealMatrix root1 = new RectangularCholeskyDecomposition(m1, 1.0e-10).getRootMatrix();\n  RealMatrix rebuiltM1 = root1.multiply(root1.transpose());\n  Assert.assertEquals(0.0, m1.subtract(rebuiltM1).getNorm(), 1.0e-16);\n\n  final RealMatrix m2 = MatrixUtils.createRealMatrix(new double[][]{\n  {0.0, 0.0, 0.0, 0.0, 0.0},\n  {0.0, 0.013445532, 0.010394690, 0.009881156, 0.010499559},\n  {0.0, 0.010394690, 0.023006616, 0.008196856, 0.010732709},\n  {0.0, 0.009881156, 0.008196856, 0.019023866, 0.009210099},\n  {0.0, 0.010499559, 0.010732709, 0.009210099, 0.019107243}\n  });\n  RealMatrix root2 = new RectangularCholeskyDecomposition(m2, 1.0e-10).getRootMatrix();\n  RealMatrix rebuiltM2 = root2.multiply(root2.transpose());\n  Assert.assertEquals(0.0, m2.subtract(rebuiltM2).getNorm(), 1.0e-16);\n\n  final RealMatrix m3 = MatrixUtils.createRealMatrix(new double[][]{\n  {0.013445532, 0.010394690, 0.0, 0.009881156, 0.010499559},\n  {0.010394690, 0.023006616, 0.0, 0.008196856, 0.010732709},\n  {0.0, 0.0, 0.0, 0.0, 0.0},\n  {0.009881156, 0.008196856, 0.0, 0.019023866, 0.009210099},\n  {0.010499559, 0.010732709, 0.0, 0.009210099, 0.019107243}\n  });\n  RealMatrix root3 = new RectangularCholeskyDecomposition(m3, 1.0e-10).getRootMatrix();\n  RealMatrix rebuiltM3 = root3.multiply(root3.transpose());\n  Assert.assertEquals(0.0, m3.subtract(rebuiltM3).getNorm(), 1.0e-16);\n\n  }",
+        "stack": [
+          "RectangularCholeskyDecompositionTest.testMath789 line 108"
+        ]
+      },
+      {
+        "methodName": "testFullRank",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        Assert.assertTrue(root.subtract(base).getNorm() > 0.3);",
+        "test_source": "  public void testFullRank() {\n\n  RealMatrix base = MatrixUtils.createRealMatrix(new double[][] {\n  { 0.1159548705,  0.,  0.,  0.  },\n  { 0.0896442724, 0.1223540781,  0.,  0.  },\n  { 0.0852155322, 4.558668e-3,  0.1083577299,  0.  },\n  { 0.0905486674, 0.0213768077, 0.0128878333, 0.1014155693 }\n  });\n\n  RealMatrix m = base.multiply(base.transpose());\n\n  RectangularCholeskyDecomposition d =\n  new RectangularCholeskyDecomposition(m, 1.0e-10);\n\n  RealMatrix root = d.getRootMatrix();\n  RealMatrix rebuiltM = root.multiply(root.transpose());\n  Assert.assertEquals(0.0, m.subtract(rebuiltM).getNorm(), 1.0e-15);\n\n  // the pivoted Cholesky decomposition is *not* unique. Here, the root is\n  // not equal to the original trianbular base matrix\n  Assert.assertTrue(root.subtract(base).getNorm() > 0.3);\n\n  }",
+        "stack": [
+          "RectangularCholeskyDecompositionTest.testFullRank line 71"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math3.linear;\n\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class RectangularCholeskyDecomposition { private final RealMatrix root; private int rank; public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException {\n\n        final int order = matrix.getRowDimension();\n        final double[][] c = matrix.getData();\n        final double[][] b = new double[order][order];\n\n        int[] swap  = new int[order];\n        int[] index = new int[order];\n        for (int i = 0; i < order; ++i) {\n            index[i] = i;\n        }\n\n        int r = 0;\n        for (boolean loop = true; loop;) {\n\n            \n            swap[r] = r;\n            for (int i = r + 1; i < order; ++i) {\n                int ii  = index[i];\n                int isi = index[swap[i]];\n                if (c[ii][ii] > c[isi][isi]) {\n                    swap[r] = i;\n                }\n            }\n\n\n            \n            if (swap[r] != r) {\n                int tmp = index[r];\n                index[r] = index[swap[r]];\n                index[swap[r]] = tmp;\n            }\n\n            \n            int ir = index[r];\n            if (c[ir][ir] < small) {\n\n                if (r == 0) {\n                    throw new NonPositiveDefiniteMatrixException(c[ir][ir], ir, small);\n                }\n\n                \n                for (int i = r; i < order; ++i) {\n                    if (c[index[i]][index[i]] < -small) {\n                        \n                        \n                        throw new NonPositiveDefiniteMatrixException(c[index[i]][index[i]], i, small);\n                    }\n                }\n\n                \n                \n                ++r;\n                loop = false;\n\n            } else {\n\n                \n                final double sqrt = FastMath.sqrt(c[ir][ir]);\n                b[r][r] = sqrt;\n                final double inverse  = 1 / sqrt;\n                for (int i = r + 1; i < order; ++i) {\n                    final int ii = index[i];\n                    final double e = inverse * c[ii][ir];\n                    b[i][r] = e;\n                    c[ii][ii] -= e * e;\n                    for (int j = r + 1; j < i; ++j) {\n                        final int ij = index[j];\n                        final double f = c[ii][ij] - e * b[j][r];\n                        c[ii][ij] = f;\n                        c[ij][ii] = f;\n                    }\n                }\n\n                \n                loop = ++r < order;\n            }\n        }\n\n        \n        rank = r;\n        root = MatrixUtils.createRealMatrix(order, r);\n        for (int i = 0; i < order; ++i) {\n            for (int j = 0; j < r; ++j) {\n                root.setEntry(index[i], j, b[i][j]);\n            }\n        }\n\n    }\n\n    \n    public RealMatrix getRootMatrix() {\n        return root;\n    }\n\n    \n    public int getRank() {\n        return rank;\n    }\n\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math3.linear;\n\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class RectangularCholeskyDecomposition { private final RealMatrix root; private int rank; public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException {\n\n        final int order = matrix.getRowDimension();\n        final double[][] c = matrix.getData();\n        final double[][] b = new double[order][order];\n\n        int[] index = new int[order];\n        for (int i = 0; i < order; ++i) {\n            index[i] = i;\n        }\n\n        int r = 0;\n        for (boolean loop = true; loop;) {\n\n            \n            int swapR = r;\n            for (int i = r + 1; i < order; ++i) {\n                int ii  = index[i];\n                int isr = index[swapR];\n                if (c[ii][ii] > c[isr][isr]) {\n                    swapR = i;\n                }\n            }\n\n\n            \n            if (swapR != r) {\n                final int tmpIndex    = index[r];\n                index[r]              = index[swapR];\n                index[swapR]          = tmpIndex;\n                final double[] tmpRow = b[r];\n                b[r]                  = b[swapR];\n                b[swapR]              = tmpRow;\n            }\n\n            \n            int ir = index[r];\n            if (c[ir][ir] < small) {\n\n                if (r == 0) {\n                    throw new NonPositiveDefiniteMatrixException(c[ir][ir], ir, small);\n                }\n\n                \n                for (int i = r; i < order; ++i) {\n                    if (c[index[i]][index[i]] < -small) {\n                        \n                        \n                        throw new NonPositiveDefiniteMatrixException(c[index[i]][index[i]], i, small);\n                    }\n                }\n\n                \n                \n                ++r;\n                loop = false;\n\n            } else {\n\n                \n                final double sqrt = FastMath.sqrt(c[ir][ir]);\n                b[r][r] = sqrt;\n                final double inverse  = 1 / sqrt;\n                final double inverse2 = 1 / c[ir][ir];\n                for (int i = r + 1; i < order; ++i) {\n                    final int ii = index[i];\n                    final double e = inverse * c[ii][ir];\n                    b[i][r] = e;\n                    c[ii][ii] -= c[ii][ir] * c[ii][ir] * inverse2;\n                    for (int j = r + 1; j < i; ++j) {\n                        final int ij = index[j];\n                        final double f = c[ii][ij] - e * b[j][r];\n                        c[ii][ij] = f;\n                        c[ij][ii] = f;\n                    }\n                }\n\n                \n                loop = ++r < order;\n            }\n        }\n\n        \n        rank = r;\n        root = MatrixUtils.createRealMatrix(order, r);\n        for (int i = 0; i < order; ++i) {\n            for (int j = 0; j < r; ++j) {\n                root.setEntry(index[i], j, b[i][j]);\n            }\n        }\n\n    }\n\n    \n    public RealMatrix getRootMatrix() {\n        return root;\n    }\n\n    \n    public int getRank() {\n        return rank;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class RectangularCholeskyDecomposition { private final RealMatrix root; private int rank; public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException",
+        "public RealMatrix getRootMatrix()",
+        "public int getRank()"
+      ],
+      "fixed_signatures": [
+        "public class RectangularCholeskyDecomposition { private final RealMatrix root; private int rank; public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException",
+        "public RealMatrix getRootMatrix()",
+        "public int getRank()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException {\n\n  final int order = matrix.getRowDimension();\n  final double[][] c = matrix.getData();\n  final double[][] b = new double[order][order];\n\n  int[] swap  = new int[order];\n  int[] index = new int[order];\n  for (int i = 0; i < order; ++i) {\n  index[i] = i;\n  }\n\n  int r = 0;\n  for (boolean loop = true; loop;) {\n\n  \n  swap[r] = r;\n  for (int i = r + 1; i < order; ++i) {\n  int ii  = index[i];\n  int isi = index[swap[i]];\n  if (c[ii][ii] > c[isi][isi]) {\n  swap[r] = i;\n  }\n  }\n\n\n  \n  if (swap[r] != r) {\n  int tmp = index[r];\n  index[r] = index[swap[r]];\n  index[swap[r]] = tmp;\n  }\n\n  \n  int ir = index[r];\n  if (c[ir][ir] < small) {\n\n  if (r == 0) {\n  throw new NonPositiveDefiniteMatrixException(c[ir][ir], ir, small);\n  }\n\n  \n  for (int i = r; i < order; ++i) {\n  if (c[index[i]][index[i]] < -small) {\n  \n  \n  throw new NonPositiveDefiniteMatrixException(c[index[i]][index[i]], i, small);\n  }\n  }\n\n  \n  \n  ++r;\n  loop = false;\n\n  } else {\n\n  \n  final double sqrt = FastMath.sqrt(c[ir][ir]);\n  b[r][r] = sqrt;\n  final double inverse  = 1 / sqrt;\n  for (int i = r + 1; i < order; ++i) {\n  final int ii = index[i];\n  final double e = inverse * c[ii][ir];\n  b[i][r] = e;\n  c[ii][ii] -= e * e;\n  for (int j = r + 1; j < i; ++j) {\n  final int ij = index[j];\n  final double f = c[ii][ij] - e * b[j][r];\n  c[ii][ij] = f;\n  c[ij][ii] = f;\n  }\n  }\n\n  \n  loop = ++r < order;\n  }\n  }\n\n  \n  rank = r;\n  root = MatrixUtils.createRealMatrix(order, r);\n  for (int i = 0; i < order; ++i) {\n  for (int j = 0; j < r; ++j) {\n  root.setEntry(index[i], j, b[i][j]);\n  }\n  }\n\n  }",
+          "fixed_method": "  public RectangularCholeskyDecomposition(RealMatrix matrix, double small) throws NonPositiveDefiniteMatrixException {\n\n  final int order = matrix.getRowDimension();\n  final double[][] c = matrix.getData();\n  final double[][] b = new double[order][order];\n\n  int[] index = new int[order];\n  for (int i = 0; i < order; ++i) {\n  index[i] = i;\n  }\n\n  int r = 0;\n  for (boolean loop = true; loop;) {\n\n  \n  int swapR = r;\n  for (int i = r + 1; i < order; ++i) {\n  int ii  = index[i];\n  int isr = index[swapR];\n  if (c[ii][ii] > c[isr][isr]) {\n  swapR = i;\n  }\n  }\n\n\n  \n  if (swapR != r) {\n  final int tmpIndex  = index[r];\n  index[r]  = index[swapR];\n  index[swapR]  = tmpIndex;\n  final double[] tmpRow = b[r];\n  b[r]  = b[swapR];\n  b[swapR]  = tmpRow;\n  }\n\n  \n  int ir = index[r];\n  if (c[ir][ir] < small) {\n\n  if (r == 0) {\n  throw new NonPositiveDefiniteMatrixException(c[ir][ir], ir, small);\n  }\n\n  \n  for (int i = r; i < order; ++i) {\n  if (c[index[i]][index[i]] < -small) {\n  \n  \n  throw new NonPositiveDefiniteMatrixException(c[index[i]][index[i]], i, small);\n  }\n  }\n\n  \n  \n  ++r;\n  loop = false;\n\n  } else {\n\n  \n  final double sqrt = FastMath.sqrt(c[ir][ir]);\n  b[r][r] = sqrt;\n  final double inverse  = 1 / sqrt;\n  final double inverse2 = 1 / c[ir][ir];\n  for (int i = r + 1; i < order; ++i) {\n  final int ii = index[i];\n  final double e = inverse * c[ii][ir];\n  b[i][r] = e;\n  c[ii][ii] -= c[ii][ir] * c[ii][ir] * inverse2;\n  for (int j = r + 1; j < i; ++j) {\n  final int ij = index[j];\n  final double f = c[ii][ij] - e * b[j][r];\n  c[ii][ij] = f;\n  c[ij][ii] = f;\n  }\n  }\n\n  \n  loop = ++r < order;\n  }\n  }\n\n  \n  rank = r;\n  root = MatrixUtils.createRealMatrix(order, r);\n  for (int i = 0; i < order; ++i) {\n  for (int j = 0; j < r; ++j) {\n  root.setEntry(index[i], j, b[i][j]);\n  }\n  }\n\n  }",
+          "diff": [
+            "@@ -66,7 +66,6 @@",
+            "         final double[][] c = matrix.getData();\n",
+            "         final double[][] b = new double[order][order];\n",
+            " \n",
+            "-        int[] swap  = new int[order];\n",
+            "         int[] index = new int[order];\n",
+            "         for (int i = 0; i < order; ++i) {\n",
+            "             index[i] = i;\n",
+            "@@ -76,21 +75,24 @@",
+            "         for (boolean loop = true; loop;) {\n",
+            " \n",
+            "             // find maximal diagonal element\n",
+            "-            swap[r] = r;\n",
+            "+            int swapR = r;\n",
+            "             for (int i = r + 1; i < order; ++i) {\n",
+            "                 int ii  = index[i];\n",
+            "-                int isi = index[swap[i]];\n",
+            "-                if (c[ii][ii] > c[isi][isi]) {\n",
+            "-                    swap[r] = i;\n",
+            "+                int isr = index[swapR];\n",
+            "+                if (c[ii][ii] > c[isr][isr]) {\n",
+            "+                    swapR = i;\n",
+            "                 }\n",
+            "             }\n",
+            " \n",
+            " \n",
+            "             // swap elements\n",
+            "-            if (swap[r] != r) {\n",
+            "-                int tmp = index[r];\n",
+            "-                index[r] = index[swap[r]];\n",
+            "-                index[swap[r]] = tmp;\n",
+            "+            if (swapR != r) {\n",
+            "+                final int tmpIndex    = index[r];\n",
+            "+                index[r]              = index[swapR];\n",
+            "+                index[swapR]          = tmpIndex;\n",
+            "+                final double[] tmpRow = b[r];\n",
+            "+                b[r]                  = b[swapR];\n",
+            "+                b[swapR]              = tmpRow;\n",
+            "             }\n",
+            " \n",
+            "             // check diagonal element\n",
+            "@@ -121,11 +123,12 @@",
+            "                 final double sqrt = FastMath.sqrt(c[ir][ir]);\n",
+            "                 b[r][r] = sqrt;\n",
+            "                 final double inverse  = 1 / sqrt;\n",
+            "+                final double inverse2 = 1 / c[ir][ir];\n",
+            "                 for (int i = r + 1; i < order; ++i) {\n",
+            "                     final int ii = index[i];\n",
+            "                     final double e = inverse * c[ii][ir];\n",
+            "                     b[i][r] = e;\n",
+            "-                    c[ii][ii] -= e * e;\n",
+            "+                    c[ii][ii] -= c[ii][ir] * c[ii][ir] * inverse2;\n",
+            "                     for (int j = r + 1; j < i; ++j) {\n",
+            "                         final int ij = index[j];\n",
+            "                         final double f = c[ii][ij] - e * b[j][r];\n"
+          ],
+          "changed_lines": 23
+        }
+      ]
+    }
+  ]
+}

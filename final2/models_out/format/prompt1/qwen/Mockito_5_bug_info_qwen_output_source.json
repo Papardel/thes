@@ -1,0 +1,10 @@
+{
+  "bug_id": "Mockito_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 5\nTest Class: org.mockitointegration.NoJUnitDependenciesTest\nMethod: pure_mockito_should_not_depend_JUnit\nError: junit.framework.AssertionFailedError\nMessage: 'org.mockito.internal.verification.VerificationOverTimeImpl' has some dependency to JUnit\nFailing Line:             checkDependency(classLoader_without_JUnit, pureMockitoAPIClass);\nTest Source:\npublic void pure_mockito_should_not_depend_JUnit() throws Exception {\n  ClassLoader classLoader_without_JUnit = ClassLoaders.excludingClassLoader()\n  .withCodeSourceUrlOf(\n  Mockito.class,\n  Matcher.class,\n  Enhancer.class,\n  Objenesis.class\n  )\n  .without(\"junit\", \"org.junit\")\n  .build();\n\n  Set<String> pureMockitoAPIClasses = ClassLoaders.in(classLoader_without_JUnit).omit(\"runners\", \"junit\", \"JUnit\").listOwnedClasses();\n\n  for (String pureMockitoAPIClass : pureMockitoAPIClasses) {\n  checkDependency(classLoader_without_JUnit, pureMockitoAPIClass);\n  }\n  }\nStack Trace:\nNoJUnitDependenciesTest.checkDependency line 36, NoJUnitDependenciesTest.pure_mockito_should_not_depend_JUnit line 28\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any exception classes like java.lang.RuntimeException.\n\nRESPONSE: org.mockito.internal.verification.VerificationOverTimeImpl"
+    }
+  ]
+}

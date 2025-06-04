@@ -1,0 +1,83 @@
+{
+  "bug_id": "60",
+  "failed_tests": {
+    "org.apache.commons.math.distribution.NormalDistributionTest": [
+      {
+        "methodName": "testExtremeValues",
+        "error": "org.apache.commons.math.ConvergenceException",
+        "message": "Continued fraction diverged to NaN for value ∞",
+        "fail_line": "        assertEquals(distribution.cumulativeProbability(Double.MAX_VALUE), 1, 0);",
+        "test_source": "  public void testExtremeValues() throws Exception {\n  NormalDistribution distribution = new NormalDistributionImpl(0, 1);\n  for (int i = 0; i < 100; i++) { // make sure no convergence exception\n  double lowerTail = distribution.cumulativeProbability(-i);\n  double upperTail = distribution.cumulativeProbability(i);\n  if (i < 9) { // make sure not top-coded \n  // For i = 10, due to bad tail precision in erf (MATH-364), 1 is returned\n  // TODO: once MATH-364 is resolved, replace 9 with 30\n  assertTrue(lowerTail > 0.0d);\n  assertTrue(upperTail < 1.0d);\n  }\n  else { // make sure top coding not reversed\n  assertTrue(lowerTail < 0.00001);\n  assertTrue(upperTail > 0.99999);\n  }\n  }\n  \n  assertEquals(distribution.cumulativeProbability(Double.MAX_VALUE), 1, 0);\n  assertEquals(distribution.cumulativeProbability(-Double.MAX_VALUE), 0, 0);\n  assertEquals(distribution.cumulativeProbability(Double.POSITIVE_INFINITY), 1, 0);\n  assertEquals(distribution.cumulativeProbability(Double.NEGATIVE_INFINITY), 0, 0);\n  \n  }",
+        "stack": [
+          "ContinuedFraction.evaluate line 188, Gamma.regularizedGammaQ line 266, Gamma.regularizedGammaP line 173, Erf.erf line 51, NormalDistributionImpl.cumulativeProbability line 127, NormalDistributionTest.testExtremeValues line 174"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/distribution/NormalDistributionImpl.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math.distribution;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.special.Erf;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class NormalDistributionImpl extends AbstractContinuousDistribution implements NormalDistribution, Serializable { public static final double DEFAULT_INVERSE_ABSOLUTE_ACCURACY = 1e-9; private static final long serialVersionUID = 8589540077390120676L; private static final double SQRT2PI = FastMath.sqrt(2 * FastMath.PI); private final double mean; private final double standardDeviation; private final double solverAbsoluteAccuracy; public NormalDistributionImpl(double mean, double sd) {\n        this(mean, sd, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);\n    }\n\n    \n    public NormalDistributionImpl(double mean, double sd, double inverseCumAccuracy) {\n        if (sd <= 0) {\n            throw new NotStrictlyPositiveException(LocalizedFormats.STANDARD_DEVIATION, sd);\n        }\n\n        this.mean = mean;\n        standardDeviation = sd;\n        solverAbsoluteAccuracy = inverseCumAccuracy;\n    }\n\n    \n    public NormalDistributionImpl() {\n        this(0, 1);\n    }\n\n    \n    public double getMean() {\n        return mean;\n    }\n\n    \n    public double getStandardDeviation() {\n        return standardDeviation;\n    }\n\n    \n    @Override\n    public double density(double x) {\n        final double x0 = x - mean;\n        final double x1 = x0 / standardDeviation;\n        return FastMath.exp(-0.5 * x1 * x1) / (standardDeviation * SQRT2PI);\n    }\n\n    \n    public double cumulativeProbability(double x) throws MathException {\n        final double dev = x - mean;\n        try {\n        return 0.5 * (1.0 + Erf.erf((dev) /\n                    (standardDeviation * FastMath.sqrt(2.0))));\n        } catch (MaxIterationsExceededException ex) {\n            if (x < (mean - 20 * standardDeviation)) { \n                return 0;\n            } else if (x > (mean + 20 * standardDeviation)) {\n                return 1;\n            } else {\n                throw ex;\n            }\n        }\n    }\n\n    \n    @Override\n    protected double getSolverAbsoluteAccuracy() {\n        return solverAbsoluteAccuracy;\n    }\n\n    \n    @Override\n    public double inverseCumulativeProbability(final double p) throws MathException {\n        if (p == 0) {\n            return Double.NEGATIVE_INFINITY;\n        }\n        if (p == 1) {\n            return Double.POSITIVE_INFINITY;\n        }\n        return super.inverseCumulativeProbability(p);\n    }\n\n    \n    @Override\n    public double sample() throws MathException {\n        return randomData.nextGaussian(mean, standardDeviation);\n    }\n\n    \n    @Override\n    protected double getDomainLowerBound(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = -Double.MAX_VALUE;\n        } else {\n            ret = mean;\n        }\n\n        return ret;\n    }\n\n    \n    @Override\n    protected double getDomainUpperBound(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = mean;\n        } else {\n            ret = Double.MAX_VALUE;\n        }\n\n        return ret;\n    }\n\n    \n    @Override\n    protected double getInitialDomain(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = mean - standardDeviation;\n        } else if (p > 0.5) {\n            ret = mean + standardDeviation;\n        } else {\n            ret = mean;\n        }\n\n        return ret;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math.distribution;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.exception.util.LocalizedFormats;\nimport org.apache.commons.math.special.Erf;\nimport org.apache.commons.math.util.FastMath;\n\n\npublic class NormalDistributionImpl extends AbstractContinuousDistribution implements NormalDistribution, Serializable { public static final double DEFAULT_INVERSE_ABSOLUTE_ACCURACY = 1e-9; private static final long serialVersionUID = 8589540077390120676L; private static final double SQRT2PI = FastMath.sqrt(2 * FastMath.PI); private final double mean; private final double standardDeviation; private final double solverAbsoluteAccuracy; public NormalDistributionImpl(double mean, double sd) {\n        this(mean, sd, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);\n    }\n\n    \n    public NormalDistributionImpl(double mean, double sd, double inverseCumAccuracy) {\n        if (sd <= 0) {\n            throw new NotStrictlyPositiveException(LocalizedFormats.STANDARD_DEVIATION, sd);\n        }\n\n        this.mean = mean;\n        standardDeviation = sd;\n        solverAbsoluteAccuracy = inverseCumAccuracy;\n    }\n\n    \n    public NormalDistributionImpl() {\n        this(0, 1);\n    }\n\n    \n    public double getMean() {\n        return mean;\n    }\n\n    \n    public double getStandardDeviation() {\n        return standardDeviation;\n    }\n\n    \n    @Override\n    public double density(double x) {\n        final double x0 = x - mean;\n        final double x1 = x0 / standardDeviation;\n        return FastMath.exp(-0.5 * x1 * x1) / (standardDeviation * SQRT2PI);\n    }\n\n    \n    public double cumulativeProbability(double x) throws MathException {\n        final double dev = x - mean;\n        if (FastMath.abs(dev) > 40 * standardDeviation) { \n            return dev < 0 ? 0.0d : 1.0d;\n        }\n        return 0.5 * (1.0 + Erf.erf((dev) /\n                    (standardDeviation * FastMath.sqrt(2.0))));\n    }\n\n    \n    @Override\n    protected double getSolverAbsoluteAccuracy() {\n        return solverAbsoluteAccuracy;\n    }\n\n    \n    @Override\n    public double inverseCumulativeProbability(final double p) throws MathException {\n        if (p == 0) {\n            return Double.NEGATIVE_INFINITY;\n        }\n        if (p == 1) {\n            return Double.POSITIVE_INFINITY;\n        }\n        return super.inverseCumulativeProbability(p);\n    }\n\n    \n    @Override\n    public double sample() throws MathException {\n        return randomData.nextGaussian(mean, standardDeviation);\n    }\n\n    \n    @Override\n    protected double getDomainLowerBound(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = -Double.MAX_VALUE;\n        } else {\n            ret = mean;\n        }\n\n        return ret;\n    }\n\n    \n    @Override\n    protected double getDomainUpperBound(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = mean;\n        } else {\n            ret = Double.MAX_VALUE;\n        }\n\n        return ret;\n    }\n\n    \n    @Override\n    protected double getInitialDomain(double p) {\n        double ret;\n\n        if (p < 0.5) {\n            ret = mean - standardDeviation;\n        } else if (p > 0.5) {\n            ret = mean + standardDeviation;\n        } else {\n            ret = mean;\n        }\n\n        return ret;\n    }\n}\n",
+      "buggy_signatures": [
+        "public NormalDistributionImpl(double mean, double sd, double inverseCumAccuracy)",
+        "public NormalDistributionImpl()",
+        "public double getMean()",
+        "public double getStandardDeviation()",
+        "public double density(double x)",
+        "public double cumulativeProbability(double x) throws MathException",
+        "protected double getSolverAbsoluteAccuracy()",
+        "public double inverseCumulativeProbability(final double p) throws MathException",
+        "public double sample() throws MathException",
+        "protected double getDomainLowerBound(double p)",
+        "protected double getDomainUpperBound(double p)",
+        "protected double getInitialDomain(double p)"
+      ],
+      "fixed_signatures": [
+        "public NormalDistributionImpl(double mean, double sd, double inverseCumAccuracy)",
+        "public NormalDistributionImpl()",
+        "public double getMean()",
+        "public double getStandardDeviation()",
+        "public double density(double x)",
+        "public double cumulativeProbability(double x) throws MathException",
+        "protected double getSolverAbsoluteAccuracy()",
+        "public double inverseCumulativeProbability(final double p) throws MathException",
+        "public double sample() throws MathException",
+        "protected double getDomainLowerBound(double p)",
+        "protected double getDomainUpperBound(double p)",
+        "protected double getInitialDomain(double p)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public double cumulativeProbability(double x) throws MathException {\n  final double dev = x - mean;\n  try {\n  return 0.5 * (1.0 + Erf.erf((dev) /\n  (standardDeviation * FastMath.sqrt(2.0))));\n  } catch (MaxIterationsExceededException ex) {\n  if (x < (mean - 20 * standardDeviation)) { \n  return 0;\n  } else if (x > (mean + 20 * standardDeviation)) {\n  return 1;\n  } else {\n  throw ex;\n  }\n  }\n  }",
+          "fixed_method": "  public double cumulativeProbability(double x) throws MathException {\n  final double dev = x - mean;\n  if (FastMath.abs(dev) > 40 * standardDeviation) { \n  return dev < 0 ? 0.0d : 1.0d;\n  }\n  return 0.5 * (1.0 + Erf.erf((dev) /\n  (standardDeviation * FastMath.sqrt(2.0))));\n  }",
+          "diff": [
+            "@@ -123,18 +123,11 @@",
+            "      */\n",
+            "     public double cumulativeProbability(double x) throws MathException {\n",
+            "         final double dev = x - mean;\n",
+            "-        try {\n",
+            "+        if (FastMath.abs(dev) > 40 * standardDeviation) { \n",
+            "+            return dev < 0 ? 0.0d : 1.0d;\n",
+            "+        }\n",
+            "         return 0.5 * (1.0 + Erf.erf((dev) /\n",
+            "                     (standardDeviation * FastMath.sqrt(2.0))));\n",
+            "-        } catch (MaxIterationsExceededException ex) {\n",
+            "-            if (x < (mean - 20 * standardDeviation)) { // JDK 1.5 blows at 38\n",
+            "-                return 0;\n",
+            "-            } else if (x > (mean + 20 * standardDeviation)) {\n",
+            "-                return 1;\n",
+            "-            } else {\n",
+            "-                throw ex;\n",
+            "-            }\n",
+            "-        }\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 13
+        }
+      ]
+    }
+  ]
+}

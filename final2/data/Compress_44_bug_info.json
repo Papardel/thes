@@ -1,0 +1,83 @@
+{
+  "bug_id": "44",
+  "failed_tests": {
+    "org.apache.commons.compress.utils.ChecksumCalculatingInputStreamTest": [
+      {
+        "methodName": "testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionOne",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: java.lang.NullPointerException",
+        "fail_line": "",
+        "test_source": "  public void testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionOne() {\n\n  ChecksumCalculatingInputStream checksumCalculatingInputStream = new ChecksumCalculatingInputStream(null,null);\n\n\n  }",
+        "stack": [
+          ""
+        ]
+      },
+      {
+        "methodName": "testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionTwo",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: java.lang.NullPointerException",
+        "fail_line": "",
+        "test_source": "  public void testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionTwo() {\n\n  ChecksumCalculatingInputStream checksumCalculatingInputStream = new ChecksumCalculatingInputStream(null,new ByteArrayInputStream(new byte[1]));\n\n\n  }",
+        "stack": [
+          ""
+        ]
+      },
+      {
+        "methodName": "testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionThree",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: java.lang.NullPointerException",
+        "fail_line": "",
+        "test_source": "  public void testClassInstantiationWithParameterBeingNullThrowsNullPointerExceptionThree() {\n\n  ChecksumCalculatingInputStream checksumCalculatingInputStream = new ChecksumCalculatingInputStream(new CRC32(),null);\n\n  }",
+        "stack": [
+          ""
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/utils/ChecksumCalculatingInputStream.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.utils;\n\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.util.zip.Checksum;\n\n\npublic class ChecksumCalculatingInputStream extends InputStream { private final InputStream in; private final Checksum checksum; public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in) {\n\n\n\n        this.checksum = checksum;\n        this.in = in;\n    }\n\n    \n    @Override\n    public int read() throws IOException {\n        final int ret = in.read();\n        if (ret >= 0) {\n            checksum.update(ret);\n        }\n        return ret;\n    }\n\n    \n    @Override\n    public int read(final byte[] b) throws IOException {\n        return read(b, 0, b.length);\n    }\n\n    \n    @Override\n    public int read(final byte[] b, final int off, final int len) throws IOException {\n        final int ret = in.read(b, off, len);\n        if (ret >= 0) {\n            checksum.update(b, off, ret);\n        }\n        return ret;\n    }\n\n    @Override\n    public long skip(final long n) throws IOException {\n        \n        if (read() >= 0) {\n            return 1;\n        }\n        return 0;\n    }\n\n    \n    public long getValue() {\n        return checksum.getValue();\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.utils;\n\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.util.zip.Checksum;\n\n\npublic class ChecksumCalculatingInputStream extends InputStream { private final InputStream in; private final Checksum checksum; public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in) {\n\n        if ( checksum == null ){\n            throw new NullPointerException(\"Parameter checksum must not be null\");\n        }\n\n        if ( in == null ){\n            throw new NullPointerException(\"Parameter in must not be null\");\n        }\n\n        this.checksum = checksum;\n        this.in = in;\n    }\n\n    \n    @Override\n    public int read() throws IOException {\n        final int ret = in.read();\n        if (ret >= 0) {\n            checksum.update(ret);\n        }\n        return ret;\n    }\n\n    \n    @Override\n    public int read(final byte[] b) throws IOException {\n        return read(b, 0, b.length);\n    }\n\n    \n    @Override\n    public int read(final byte[] b, final int off, final int len) throws IOException {\n        final int ret = in.read(b, off, len);\n        if (ret >= 0) {\n            checksum.update(b, off, ret);\n        }\n        return ret;\n    }\n\n    @Override\n    public long skip(final long n) throws IOException {\n        \n        if (read() >= 0) {\n            return 1;\n        }\n        return 0;\n    }\n\n    \n    public long getValue() {\n        return checksum.getValue();\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class ChecksumCalculatingInputStream extends InputStream { private final InputStream in; private final Checksum checksum; public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in)",
+        "public int read() throws IOException",
+        "public int read(final byte[] b) throws IOException",
+        "public int read(final byte[] b, final int off, final int len) throws IOException",
+        "public long skip(final long n) throws IOException",
+        "public long getValue()"
+      ],
+      "fixed_signatures": [
+        "public class ChecksumCalculatingInputStream extends InputStream { private final InputStream in; private final Checksum checksum; public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in)",
+        "public int read() throws IOException",
+        "public int read(final byte[] b) throws IOException",
+        "public int read(final byte[] b, final int off, final int len) throws IOException",
+        "public long skip(final long n) throws IOException",
+        "public long getValue()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in) {\n\n\n\n  this.checksum = checksum;\n  this.in = in;\n  }",
+          "fixed_method": "  public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in) {\n\n  if ( checksum == null ){\n  throw new NullPointerException(\"Parameter checksum must not be null\");\n  }\n\n  if ( in == null ){\n  throw new NullPointerException(\"Parameter in must not be null\");\n  }\n\n  this.checksum = checksum;\n  this.in = in;\n  }",
+          "diff": [
+            "@@ -32,7 +32,13 @@",
+            " \n",
+            "     public ChecksumCalculatingInputStream(final Checksum checksum, final InputStream in) {\n",
+            " \n",
+            "+        if ( checksum == null ){\n",
+            "+            throw new NullPointerException(\"Parameter checksum must not be null\");\n",
+            "+        }\n",
+            " \n",
+            "+        if ( in == null ){\n",
+            "+            throw new NullPointerException(\"Parameter in must not be null\");\n",
+            "+        }\n",
+            " \n",
+            "         this.checksum = checksum;\n",
+            "         this.in = in;\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

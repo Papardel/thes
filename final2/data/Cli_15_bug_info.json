@@ -1,0 +1,121 @@
+{
+  "bug_id": "15",
+  "failed_tests": {
+    "org.apache.commons.cli2.bug.BugCLI158Test": [
+      {
+        "methodName": "testSingleOptionSingleArgument",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<[1[, 1000]]> but was:<[1[]]>",
+        "fail_line": "        assertEquals(\"[\" + enteredValue1 + \", 1000]\", b + \"\");",
+        "test_source": "  public void testSingleOptionSingleArgument() throws Exception {\n  Parser parser = createDefaultValueParser(new String[]{\"100\", \"1000\"});\n  String enteredValue1 = \"1\";\n  String[] args = new String[]{\"-b\", enteredValue1};\n  CommandLine cl = parser.parse(args);\n  CommandLine cmd = cl;\n  assertNotNull(cmd);\n  List b = cmd.getValues(\"-b\");\n  assertEquals(\"[\" + enteredValue1 + \", 1000]\", b + \"\");\n  }",
+        "stack": [
+          "BugCLI158Test.testSingleOptionSingleArgument line 70"
+        ]
+      },
+      {
+        "methodName": "testSingleOptionMaximumNumberOfArgument",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<[1, 2[, 10000]]> but was:<[1, 2[]]>",
+        "fail_line": "        assertEquals(\"[1, 2, 10000]\", b + \"\");",
+        "test_source": "  public void testSingleOptionMaximumNumberOfArgument() throws Exception {\n  String[] args = new String[]{\"-b\", \"1\", \"2\"};\n  final ArgumentBuilder abuilder = new ArgumentBuilder();\n  final DefaultOptionBuilder obuilder = new DefaultOptionBuilder();\n  final GroupBuilder gbuilder = new GroupBuilder();\n\n  DefaultOption bOption = obuilder.withShortName(\"b\")\n  .withLongName(\"b\")\n  .withArgument(abuilder.withName(\"b\")\n  .withMinimum(2)\n  .withMaximum(4)\n  .withDefault(\"100\")\n  .withDefault(\"1000\")\n  .withDefault(\"10000\")\n  .create())\n  .create();\n\n  Group options = gbuilder\n  .withName(\"options\")\n  .withOption(bOption)\n  .create();\n\n  Parser parser = new Parser();\n  parser.setHelpTrigger(\"--help\");\n  parser.setGroup(options);\n  CommandLine cl = parser.parse(args);\n  CommandLine cmd = cl;\n  assertNotNull(cmd);\n  List b = cmd.getValues(\"-b\");\n  assertEquals(\"[1, 2, 10000]\", b + \"\");\n  }",
+        "stack": [
+          "BugCLI158Test.testSingleOptionMaximumNumberOfArgument line 112"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java",
+      "buggy_full_code": "\npackage org.apache.commons.cli2.commandline;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Properties;\nimport java.util.Set;\n\nimport org.apache.commons.cli2.Argument;\nimport org.apache.commons.cli2.Option;\nimport org.apache.commons.cli2.WriteableCommandLine;\nimport org.apache.commons.cli2.option.PropertyOption;\nimport org.apache.commons.cli2.resource.ResourceConstants;\nimport org.apache.commons.cli2.resource.ResourceHelper;\n\n\npublic class WriteableCommandLineImpl extends CommandLineImpl implements WriteableCommandLine { private final Map optionToProperties = new HashMap(); private final List options = new ArrayList(); private final Map nameToOption = new HashMap(); private final Map values = new HashMap(); private final Map switches = new HashMap(); private final Map defaultValues = new HashMap(); private final Map defaultSwitches = new HashMap(); private final List normalised; private final Set prefixes; public WriteableCommandLineImpl(final Option rootOption, final List arguments) {\n        this.prefixes = rootOption.getPrefixes();\n        this.normalised = arguments;\n    }\n\n    public void addOption(Option option) {\n        options.add(option);\n        nameToOption.put(option.getPreferredName(), option);\n\n        for (Iterator i = option.getTriggers().iterator(); i.hasNext();) {\n            nameToOption.put(i.next(), option);\n        }\n    }\n\n    public void addValue(final Option option, final Object value) {\n        if (option instanceof Argument) {\n            addOption(option);\n        }\n\n        List valueList = (List) values.get(option);\n\n        if (valueList == null) {\n            valueList = new ArrayList();\n            values.put(option, valueList);\n        }\n\n        valueList.add(value);\n    }\n\n    public void addSwitch(final Option option, final boolean value) {\n        addOption(option);\n\n        if (switches.containsKey(option)) {\n            throw new IllegalStateException(ResourceHelper.getResourceHelper().getMessage(ResourceConstants.SWITCH_ALREADY_SET));\n        } else {\n            switches.put(option, value ? Boolean.TRUE : Boolean.FALSE);\n        }\n    }\n\n    public boolean hasOption(final Option option) {\n        final boolean present = options.contains(option);\n\n        return present;\n    }\n\n    public Option getOption(final String trigger) {\n        return (Option) nameToOption.get(trigger);\n    }\n\n    public List getValues(final Option option, List defaultValues) {\n        \n        List valueList = (List) values.get(option);\n\n        \n        if ((valueList == null) || valueList.isEmpty()) {\n            valueList = defaultValues;\n        }\n\n        \n        if ((valueList == null) || valueList.isEmpty()) {\n            valueList = (List) this.defaultValues.get(option);\n        }\n                \n                \n                    \n        \n        return valueList == null ? Collections.EMPTY_LIST : valueList;\n    }\n\n    public List getUndefaultedValues(Option option) {\n      \n      List valueList = (List) values.get(option);\n\n      \n      if (valueList == null) {\n        valueList = Collections.EMPTY_LIST;\n      }\n\n      return valueList;\n    }\n\n    public Boolean getSwitch(final Option option, final Boolean defaultValue) {\n        \n        Boolean bool = (Boolean) switches.get(option);\n\n        \n        if (bool == null) {\n            bool = defaultValue;\n        }\n\n        \n        if (bool == null) {\n            bool = (Boolean) this.defaultSwitches.get(option);\n        }\n\n        return bool;\n    }\n\n    public String getProperty(final String property) {\n        return getProperty(new PropertyOption(), property);\n    }\n\n    public void addProperty(final Option option, final String property, final String value) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            properties = new Properties();\n            optionToProperties.put(option, properties);\n        }\n        properties.setProperty(property, value);\n    }\n\n    public void addProperty(final String property, final String value) {\n        addProperty(new PropertyOption(), property, value);\n    }\n\n    public String getProperty(final Option option, final String property, final String defaultValue) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            return defaultValue;\n        }\n        return properties.getProperty(property, defaultValue);\n    }\n\n    public Set getProperties(final Option option) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            return Collections.EMPTY_SET;\n        }\n        return Collections.unmodifiableSet(properties.keySet());\n    }\n\n    public Set getProperties() {\n        return getProperties(new PropertyOption());\n    }\n\n    public boolean looksLikeOption(final String trigger) {\n        for (final Iterator i = prefixes.iterator(); i.hasNext();) {\n            final String prefix = (String) i.next();\n\n            if (trigger.startsWith(prefix)) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    public String toString() {\n        final StringBuffer buffer = new StringBuffer();\n\n        \n        for (final Iterator i = normalised.iterator(); i.hasNext();) {\n            final String arg = (String) i.next();\n\n            if (arg.indexOf(' ') >= 0) {\n                buffer.append(\"\\\"\").append(arg).append(\"\\\"\");\n            } else {\n                buffer.append(arg);\n            }\n\n            if (i.hasNext()) {\n                buffer.append(' ');\n            }\n        }\n\n        return buffer.toString();\n    }\n\n    public List getOptions() {\n        return Collections.unmodifiableList(options);\n    }\n\n    public Set getOptionTriggers() {\n        return Collections.unmodifiableSet(nameToOption.keySet());\n    }\n\n    public void setDefaultValues(final Option option, final List defaults) {\n        if (defaults == null) {\n            defaultValues.remove(option);\n        } else {\n            defaultValues.put(option, defaults);\n        }\n    }\n\n    public void setDefaultSwitch(final Option option, final Boolean defaultSwitch) {\n        if (defaultSwitch == null) {\n            defaultSwitches.remove(option);\n        } else {\n            defaultSwitches.put(option, defaultSwitch);\n        }\n    }\n\n    public List getNormalised() {\n        return Collections.unmodifiableList(normalised);\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.cli2.commandline;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Properties;\nimport java.util.Set;\n\nimport org.apache.commons.cli2.Argument;\nimport org.apache.commons.cli2.Option;\nimport org.apache.commons.cli2.WriteableCommandLine;\nimport org.apache.commons.cli2.option.PropertyOption;\nimport org.apache.commons.cli2.resource.ResourceConstants;\nimport org.apache.commons.cli2.resource.ResourceHelper;\n\n\npublic class WriteableCommandLineImpl extends CommandLineImpl implements WriteableCommandLine { private final Map optionToProperties = new HashMap(); private final List options = new ArrayList(); private final Map nameToOption = new HashMap(); private final Map values = new HashMap(); private final Map switches = new HashMap(); private final Map defaultValues = new HashMap(); private final Map defaultSwitches = new HashMap(); private final List normalised; private final Set prefixes; public WriteableCommandLineImpl(final Option rootOption, final List arguments) {\n        this.prefixes = rootOption.getPrefixes();\n        this.normalised = arguments;\n    }\n\n    public void addOption(Option option) {\n        options.add(option);\n        nameToOption.put(option.getPreferredName(), option);\n\n        for (Iterator i = option.getTriggers().iterator(); i.hasNext();) {\n            nameToOption.put(i.next(), option);\n        }\n    }\n\n    public void addValue(final Option option, final Object value) {\n        if (option instanceof Argument) {\n            addOption(option);\n        }\n\n        List valueList = (List) values.get(option);\n\n        if (valueList == null) {\n            valueList = new ArrayList();\n            values.put(option, valueList);\n        }\n\n        valueList.add(value);\n    }\n\n    public void addSwitch(final Option option, final boolean value) {\n        addOption(option);\n\n        if (switches.containsKey(option)) {\n            throw new IllegalStateException(ResourceHelper.getResourceHelper().getMessage(ResourceConstants.SWITCH_ALREADY_SET));\n        } else {\n            switches.put(option, value ? Boolean.TRUE : Boolean.FALSE);\n        }\n    }\n\n    public boolean hasOption(final Option option) {\n        final boolean present = options.contains(option);\n\n        return present;\n    }\n\n    public Option getOption(final String trigger) {\n        return (Option) nameToOption.get(trigger);\n    }\n\n    public List getValues(final Option option, List defaultValues) {\n        \n        List valueList = (List) values.get(option);\n\n        \n        if (defaultValues == null || defaultValues.isEmpty()) {\n            defaultValues = (List) this.defaultValues.get(option);\n        }\n\n        \n        if (defaultValues != null && !defaultValues.isEmpty()) {\n            if (valueList == null || valueList.isEmpty()) {\n                valueList = defaultValues;\n            } else {\n                \n                \n                if (defaultValues.size() > valueList.size()) {\n                    \n                    valueList = new ArrayList(valueList);\n                    for (int i=valueList.size(); i<defaultValues.size(); i++) {\n                        valueList.add(defaultValues.get(i));\n                    }\n                }\n            }\n        }\n        \n        return valueList == null ? Collections.EMPTY_LIST : valueList;\n    }\n\n    public List getUndefaultedValues(Option option) {\n      \n      List valueList = (List) values.get(option);\n\n      \n      if (valueList == null) {\n        valueList = Collections.EMPTY_LIST;\n      }\n\n      return valueList;\n    }\n\n    public Boolean getSwitch(final Option option, final Boolean defaultValue) {\n        \n        Boolean bool = (Boolean) switches.get(option);\n\n        \n        if (bool == null) {\n            bool = defaultValue;\n        }\n\n        \n        if (bool == null) {\n            bool = (Boolean) this.defaultSwitches.get(option);\n        }\n\n        return bool;\n    }\n\n    public String getProperty(final String property) {\n        return getProperty(new PropertyOption(), property);\n    }\n\n    public void addProperty(final Option option, final String property, final String value) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            properties = new Properties();\n            optionToProperties.put(option, properties);\n        }\n        properties.setProperty(property, value);\n    }\n\n    public void addProperty(final String property, final String value) {\n        addProperty(new PropertyOption(), property, value);\n    }\n\n    public String getProperty(final Option option, final String property, final String defaultValue) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            return defaultValue;\n        }\n        return properties.getProperty(property, defaultValue);\n    }\n\n    public Set getProperties(final Option option) {\n        Properties properties = (Properties) optionToProperties.get(option);\n        if (properties == null) {\n            return Collections.EMPTY_SET;\n        }\n        return Collections.unmodifiableSet(properties.keySet());\n    }\n\n    public Set getProperties() {\n        return getProperties(new PropertyOption());\n    }\n\n    public boolean looksLikeOption(final String trigger) {\n        for (final Iterator i = prefixes.iterator(); i.hasNext();) {\n            final String prefix = (String) i.next();\n\n            if (trigger.startsWith(prefix)) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    public String toString() {\n        final StringBuffer buffer = new StringBuffer();\n\n        \n        for (final Iterator i = normalised.iterator(); i.hasNext();) {\n            final String arg = (String) i.next();\n\n            if (arg.indexOf(' ') >= 0) {\n                buffer.append(\"\\\"\").append(arg).append(\"\\\"\");\n            } else {\n                buffer.append(arg);\n            }\n\n            if (i.hasNext()) {\n                buffer.append(' ');\n            }\n        }\n\n        return buffer.toString();\n    }\n\n    public List getOptions() {\n        return Collections.unmodifiableList(options);\n    }\n\n    public Set getOptionTriggers() {\n        return Collections.unmodifiableSet(nameToOption.keySet());\n    }\n\n    public void setDefaultValues(final Option option, final List defaults) {\n        if (defaults == null) {\n            defaultValues.remove(option);\n        } else {\n            defaultValues.put(option, defaults);\n        }\n    }\n\n    public void setDefaultSwitch(final Option option, final Boolean defaultSwitch) {\n        if (defaultSwitch == null) {\n            defaultSwitches.remove(option);\n        } else {\n            defaultSwitches.put(option, defaultSwitch);\n        }\n    }\n\n    public List getNormalised() {\n        return Collections.unmodifiableList(normalised);\n    }\n}\n",
+      "buggy_signatures": [
+        "public void addOption(Option option)",
+        "public void addValue(final Option option, final Object value)",
+        "public void addSwitch(final Option option, final boolean value)",
+        "public boolean hasOption(final Option option)",
+        "public Option getOption(final String trigger)",
+        "public List getValues(final Option option, List defaultValues)",
+        "public List getUndefaultedValues(Option option)",
+        "public Boolean getSwitch(final Option option, final Boolean defaultValue)",
+        "public String getProperty(final String property)",
+        "public void addProperty(final Option option, final String property, final String value)",
+        "public void addProperty(final String property, final String value)",
+        "public String getProperty(final Option option, final String property, final String defaultValue)",
+        "public Set getProperties(final Option option)",
+        "public Set getProperties()",
+        "public boolean looksLikeOption(final String trigger)",
+        "public String toString()",
+        "public List getOptions()",
+        "public Set getOptionTriggers()",
+        "public void setDefaultValues(final Option option, final List defaults)",
+        "public void setDefaultSwitch(final Option option, final Boolean defaultSwitch)",
+        "public List getNormalised()"
+      ],
+      "fixed_signatures": [
+        "public void addOption(Option option)",
+        "public void addValue(final Option option, final Object value)",
+        "public void addSwitch(final Option option, final boolean value)",
+        "public boolean hasOption(final Option option)",
+        "public Option getOption(final String trigger)",
+        "public List getValues(final Option option, List defaultValues)",
+        "public List getUndefaultedValues(Option option)",
+        "public Boolean getSwitch(final Option option, final Boolean defaultValue)",
+        "public String getProperty(final String property)",
+        "public void addProperty(final Option option, final String property, final String value)",
+        "public void addProperty(final String property, final String value)",
+        "public String getProperty(final Option option, final String property, final String defaultValue)",
+        "public Set getProperties(final Option option)",
+        "public Set getProperties()",
+        "public boolean looksLikeOption(final String trigger)",
+        "public String toString()",
+        "public List getOptions()",
+        "public Set getOptionTriggers()",
+        "public void setDefaultValues(final Option option, final List defaults)",
+        "public void setDefaultSwitch(final Option option, final Boolean defaultSwitch)",
+        "public List getNormalised()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public List getValues(final Option option, List defaultValues) {\n  \n  List valueList = (List) values.get(option);\n\n  \n  if ((valueList == null) || valueList.isEmpty()) {\n  valueList = defaultValues;\n  }\n\n  \n  if ((valueList == null) || valueList.isEmpty()) {\n  valueList = (List) this.defaultValues.get(option);\n  }\n  \n  \n  \n  \n  return valueList == null ? Collections.EMPTY_LIST : valueList;\n  }",
+          "fixed_method": "  public List getValues(final Option option, List defaultValues) {\n  \n  List valueList = (List) values.get(option);\n\n  \n  if (defaultValues == null || defaultValues.isEmpty()) {\n  defaultValues = (List) this.defaultValues.get(option);\n  }\n\n  \n  if (defaultValues != null && !defaultValues.isEmpty()) {\n  if (valueList == null || valueList.isEmpty()) {\n  valueList = defaultValues;\n  } else {\n  \n  \n  if (defaultValues.size() > valueList.size()) {\n  \n  valueList = new ArrayList(valueList);\n  for (int i=valueList.size(); i<defaultValues.size(); i++) {\n  valueList.add(defaultValues.get(i));\n  }\n  }\n  }\n  }\n  \n  return valueList == null ? Collections.EMPTY_LIST : valueList;\n  }",
+          "diff": [
+            "@@ -114,17 +114,26 @@",
+            "         List valueList = (List) values.get(option);\n",
+            " \n",
+            "         // grab the correct default values\n",
+            "-        if ((valueList == null) || valueList.isEmpty()) {\n",
+            "-            valueList = defaultValues;\n",
+            "+        if (defaultValues == null || defaultValues.isEmpty()) {\n",
+            "+            defaultValues = (List) this.defaultValues.get(option);\n",
+            "         }\n",
+            " \n",
+            "         // augment the list with the default values\n",
+            "-        if ((valueList == null) || valueList.isEmpty()) {\n",
+            "-            valueList = (List) this.defaultValues.get(option);\n",
+            "-        }\n",
+            "+        if (defaultValues != null && !defaultValues.isEmpty()) {\n",
+            "+            if (valueList == null || valueList.isEmpty()) {\n",
+            "+                valueList = defaultValues;\n",
+            "+            } else {\n",
+            "                 // if there are more default values as specified, add them to\n",
+            "                 // the list.\n",
+            "+                if (defaultValues.size() > valueList.size()) {\n",
+            "                     // copy the list first\n",
+            "+                    valueList = new ArrayList(valueList);\n",
+            "+                    for (int i=valueList.size(); i<defaultValues.size(); i++) {\n",
+            "+                        valueList.add(defaultValues.get(i));\n",
+            "+                    }\n",
+            "+                }\n",
+            "+            }\n",
+            "+        }\n",
+            "         \n",
+            "         return valueList == null ? Collections.EMPTY_LIST : valueList;\n",
+            "     }\n"
+          ],
+          "changed_lines": 19
+        }
+      ]
+    }
+  ]
+}

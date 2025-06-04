@@ -1,0 +1,93 @@
+{
+  "bug_id": "15",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.model.dom.DOMModelTest": [
+      {
+        "methodName": "testUnion",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating </vendor[1]/contact[4] | /vendor[1]/contact[1]> expected:<John> but was:<Jack Black>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 55, XMLModelTestCase.testUnion line 834"
+        ]
+      }
+    ],
+    "org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest": [
+      {
+        "methodName": "testUnion",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating </vendor[1]/contact[4] | /vendor[1]/contact[1]> expected:<John> but was:<Jack Black>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 55, XMLModelTestCase.testUnion line 834"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/axes/UnionContext.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.axes;\n\nimport java.util.ArrayList;\n\nimport org.apache.commons.jxpath.BasicNodeSet;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\n\n\npublic class UnionContext extends NodeSetContext { private EvalContext contexts[]; private boolean prepared; public UnionContext(EvalContext parentContext, EvalContext contexts[]) {\n        super(parentContext, new BasicNodeSet());\n        this.contexts = contexts;\n    }\n\n    public int getDocumentOrder() {\n        return contexts.length > 1 ? 1 : super.getDocumentOrder();\n    }\n\n    public boolean setPosition(int position) {\n        if (!prepared) {\n            prepared = true;\n            BasicNodeSet nodeSet = (BasicNodeSet) getNodeSet();\n            ArrayList pointers = new ArrayList();\n            for (int i = 0; i < contexts.length; i++) {\n                EvalContext ctx = (EvalContext) contexts[i];\n                while (ctx.nextSet()) {\n                    while (ctx.nextNode()) {\n                        NodePointer ptr = ctx.getCurrentNodePointer();\n                        if (!pointers.contains(ptr)) {\n                            nodeSet.add(ptr);\n                            pointers.add(ptr);\n                        }\n                    }\n                }\n            }\n        }\n        return super.setPosition(position);\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.axes;\n\nimport java.util.ArrayList;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.BasicNodeSet;\nimport org.apache.commons.jxpath.Pointer;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\n\n\npublic class UnionContext extends NodeSetContext { private EvalContext contexts[]; private boolean prepared; public UnionContext(EvalContext parentContext, EvalContext contexts[]) {\n        super(parentContext, new BasicNodeSet());\n        this.contexts = contexts;\n    }\n\n    public int getDocumentOrder() {\n        return contexts.length > 1 ? 1 : super.getDocumentOrder();\n    }\n\n    public boolean setPosition(int position) {\n        if (!prepared) {\n            prepared = true;\n            BasicNodeSet nodeSet = (BasicNodeSet) getNodeSet();\n            ArrayList pointers = new ArrayList();\n            for (int i = 0; i < contexts.length; i++) {\n                EvalContext ctx = (EvalContext) contexts[i];\n                while (ctx.nextSet()) {\n                    while (ctx.nextNode()) {\n                        NodePointer ptr = ctx.getCurrentNodePointer();\n                        if (!pointers.contains(ptr)) {\n                            pointers.add(ptr);\n                        }\n                    }\n                }\n            }\n            sortPointers(pointers);\n\n            for (Iterator it = pointers.iterator(); it.hasNext();) {\n                nodeSet.add((Pointer) it.next());\n            }\n        }\n        return super.setPosition(position);\n    }\n}",
+      "buggy_signatures": [
+        "public class UnionContext extends NodeSetContext { private EvalContext contexts[]; private boolean prepared; public UnionContext(EvalContext parentContext, EvalContext contexts[])",
+        "public int getDocumentOrder()",
+        "public boolean setPosition(int position)"
+      ],
+      "fixed_signatures": [
+        "public class UnionContext extends NodeSetContext { private EvalContext contexts[]; private boolean prepared; public UnionContext(EvalContext parentContext, EvalContext contexts[])",
+        "public int getDocumentOrder()",
+        "public boolean setPosition(int position)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -17,8 +17,10 @@",
+            " package org.apache.commons.jxpath.ri.axes;\n",
+            " \n",
+            " import java.util.ArrayList;\n",
+            "+import java.util.Iterator;\n",
+            " \n",
+            " import org.apache.commons.jxpath.BasicNodeSet;\n",
+            "+import org.apache.commons.jxpath.Pointer;\n",
+            " import org.apache.commons.jxpath.ri.EvalContext;\n",
+            " import org.apache.commons.jxpath.ri.model.NodePointer;\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public boolean setPosition(int position) {\n  if (!prepared) {\n  prepared = true;\n  BasicNodeSet nodeSet = (BasicNodeSet) getNodeSet();\n  ArrayList pointers = new ArrayList();\n  for (int i = 0; i < contexts.length; i++) {\n  EvalContext ctx = (EvalContext) contexts[i];\n  while (ctx.nextSet()) {\n  while (ctx.nextNode()) {\n  NodePointer ptr = ctx.getCurrentNodePointer();\n  if (!pointers.contains(ptr)) {\n  nodeSet.add(ptr);\n  pointers.add(ptr);\n  }\n  }\n  }\n  }\n  }\n  return super.setPosition(position);\n  }",
+          "fixed_method": "  public boolean setPosition(int position) {\n  if (!prepared) {\n  prepared = true;\n  BasicNodeSet nodeSet = (BasicNodeSet) getNodeSet();\n  ArrayList pointers = new ArrayList();\n  for (int i = 0; i < contexts.length; i++) {\n  EvalContext ctx = (EvalContext) contexts[i];\n  while (ctx.nextSet()) {\n  while (ctx.nextNode()) {\n  NodePointer ptr = ctx.getCurrentNodePointer();\n  if (!pointers.contains(ptr)) {\n  pointers.add(ptr);\n  }\n  }\n  }\n  }\n  sortPointers(pointers);\n\n  for (Iterator it = pointers.iterator(); it.hasNext();) {\n  nodeSet.add((Pointer) it.next());\n  }\n  }\n  return super.setPosition(position);\n  }",
+          "diff": [
+            "@@ -53,13 +55,17 @@",
+            "                     while (ctx.nextNode()) {\n",
+            "                         NodePointer ptr = ctx.getCurrentNodePointer();\n",
+            "                         if (!pointers.contains(ptr)) {\n",
+            "-                            nodeSet.add(ptr);\n",
+            "                             pointers.add(ptr);\n",
+            "                         }\n",
+            "                     }\n",
+            "                 }\n",
+            "             }\n",
+            "+            sortPointers(pointers);\n",
+            "+\n",
+            "+            for (Iterator it = pointers.iterator(); it.hasNext();) {\n",
+            "+                nodeSet.add((Pointer) it.next());\n",
+            "+            }\n",
+            "         }\n",
+            "         return super.setPosition(position);\n",
+            "     }\n",
+            "-}\n",
+            "+}"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

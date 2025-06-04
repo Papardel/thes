@@ -1,0 +1,91 @@
+{
+  "bug_id": "26",
+  "failed_tests": {
+    "org.mockito.internal.progress.HandyReturnValuesTest": [
+      {
+        "methodName": "should_default_values_for_primitive",
+        "error": "java.lang.ClassCastException",
+        "message": "class java.lang.Integer cannot be cast to class java.lang.Double (java.lang.Integer and java.lang.Double are in module java.base of loader 'bootstrap')",
+        "fail_line": "        assertThat(h.returnFor(double.class)).isEqualTo(0.0D);",
+        "test_source": "",
+        "stack": [
+          "HandyReturnValuesTest.should_default_values_for_primitive line 50"
+        ]
+      }
+    ],
+    "org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValuesTest": [
+      {
+        "methodName": "should_return_primitive",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0.0> but was:<0>",
+        "fail_line": "        assertEquals(0D, values.returnValueFor(Double.TYPE));",
+        "test_source": "",
+        "stack": [
+          "ReturnsEmptyValuesTest.should_return_primitive line 51"
+        ]
+      }
+    ],
+    "org.mockito.internal.stubbing.defaultanswers.ReturnsMocksTest": [
+      {
+        "methodName": "should_return_the_usual_default_values_for_primitives",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0.0> but was:<0>",
+        "fail_line": "        assertEquals(0d, answer.answer(invocationOf(HasPrimitiveMethods.class, \"doubleMethod\")));",
+        "test_source": "  public void should_return_the_usual_default_values_for_primitives() throws Throwable {\n  ReturnsMocks answer = new ReturnsMocks();\n  assertEquals(false, answer.answer(invocationOf(HasPrimitiveMethods.class, \"booleanMethod\")));\n  assertEquals((char) 0, answer.answer(invocationOf(HasPrimitiveMethods.class, \"charMethod\")));\n  assertEquals((byte) 0, answer.answer(invocationOf(HasPrimitiveMethods.class, \"byteMethod\")));\n  assertEquals((short) 0, answer.answer(invocationOf(HasPrimitiveMethods.class, \"shortMethod\")));\n  assertEquals(0, answer.answer(invocationOf(HasPrimitiveMethods.class, \"intMethod\")));\n  assertEquals(0L, answer.answer(invocationOf(HasPrimitiveMethods.class, \"longMethod\")));\n  assertEquals(0f, answer.answer(invocationOf(HasPrimitiveMethods.class, \"floatMethod\")));\n  assertEquals(0d, answer.answer(invocationOf(HasPrimitiveMethods.class, \"doubleMethod\")));\n  }",
+        "stack": [
+          "ReturnsMocksTest.should_return_the_usual_default_values_for_primitives line 51"
+        ]
+      }
+    ],
+    "org.mockito.internal.stubbing.defaultanswers.ReturnsSmartNullsTest": [
+      {
+        "methodName": "should_return_the_usual_default_values_for_primitives",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0.0> but was:<0>",
+        "fail_line": "        assertEquals(0d,        answer.answer(invocationOf(HasPrimitiveMethods.class, \"doubleMethod\")));",
+        "test_source": "  public void should_return_the_usual_default_values_for_primitives() throws Throwable {\n  Answer<Object> answer = new ReturnsSmartNulls();\n  assertEquals(false  ,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"booleanMethod\")));\n  assertEquals((char) 0,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"charMethod\")));\n  assertEquals((byte) 0,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"byteMethod\")));\n  assertEquals((short) 0, answer.answer(invocationOf(HasPrimitiveMethods.class, \"shortMethod\")));\n  assertEquals(0,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"intMethod\")));\n  assertEquals(0L,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"longMethod\")));\n  assertEquals(0f,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"floatMethod\")));\n  assertEquals(0d,  answer.answer(invocationOf(HasPrimitiveMethods.class, \"doubleMethod\")));\n  }",
+        "stack": [
+          "ReturnsSmartNullsTest.should_return_the_usual_default_values_for_primitives line 24"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/util/Primitives.java",
+      "buggy_full_code": "\npackage org.mockito.internal.util;\n\nimport java.util.HashMap;\nimport java.util.Map;\n\n@SuppressWarnings(\"unchecked\")\npublic class Primitives { public static <T> Class<T> primitiveTypeOf(Class<T> clazz) {\n        if(clazz.isPrimitive()) {\n            return clazz;\n        }\n        return (Class<T>) primitiveTypes.get(clazz);\n    }\n\n    public static boolean isPrimitiveWrapper(Class<?> type) {\n        return wrapperReturnValues.containsKey(type);\n    }\n\n    public static <T> T primitiveWrapperOf(Class<T> type) {\n        return (T) wrapperReturnValues.get(type);\n    }\n\n    public static <T> T primitiveValueOrNullFor(Class<T> primitiveType) {\n        return (T) primitiveValues.get(primitiveType);\n    }\n    private static Map<Class<?>, Class<?>> wrapperTypes = new HashMap<Class<?>, Class<?>>(); private static Map<Class<?>, Class<?>> primitiveTypes = new HashMap<Class<?>, Class<?>>(); private static Map<Class<?>, Object> wrapperReturnValues = new HashMap<Class<?>, Object>(); private static Map<Class<?>, Object> primitiveValues = new HashMap<Class<?>, Object>(); static {\n        primitiveTypes.put(Boolean.class, Boolean.TYPE);\n        primitiveTypes.put(Character.class, Character.TYPE);\n        primitiveTypes.put(Byte.class, Byte.TYPE);\n        primitiveTypes.put(Short.class, Short.TYPE);\n        primitiveTypes.put(Integer.class, Integer.TYPE);\n        primitiveTypes.put(Long.class, Long.TYPE);\n        primitiveTypes.put(Float.class, Float.TYPE);\n        primitiveTypes.put(Double.class, Double.TYPE);\n    }\n\n    static { wrapperReturnValues.put(Boolean.class, false); wrapperReturnValues.put(Character.class, '\\u0000'); wrapperReturnValues.put(Byte.class, (byte) 0); wrapperReturnValues.put(Short.class, (short) 0); wrapperReturnValues.put(Integer.class, 0); wrapperReturnValues.put(Long.class, 0L); wrapperReturnValues.put(Float.class, 0F); wrapperReturnValues.put(Double.class, 0D); } static {\n        primitiveValues.put(boolean.class, false);\n        primitiveValues.put(char.class, '\\u0000');\n        primitiveValues.put(byte.class, (byte) 0);\n        primitiveValues.put(short.class, (short) 0);\n        primitiveValues.put(int.class, 0);\n        primitiveValues.put(long.class, 0L);\n        primitiveValues.put(float.class, 0F);\n        primitiveValues.put(double.class, 0);\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal.util;\n\nimport java.util.HashMap;\nimport java.util.Map;\n\n@SuppressWarnings(\"unchecked\")\npublic class Primitives { public static <T> Class<T> primitiveTypeOf(Class<T> clazz) {\n        if(clazz.isPrimitive()) {\n            return clazz;\n        }\n        return (Class<T>) primitiveTypes.get(clazz);\n    }\n\n    public static boolean isPrimitiveWrapper(Class<?> type) {\n        return wrapperReturnValues.containsKey(type);\n    }\n\n    public static <T> T primitiveWrapperOf(Class<T> type) {\n        return (T) wrapperReturnValues.get(type);\n    }\n\n    public static <T> T primitiveValueOrNullFor(Class<T> primitiveType) {\n        return (T) primitiveValues.get(primitiveType);\n    }\n    private static Map<Class<?>, Class<?>> wrapperTypes = new HashMap<Class<?>, Class<?>>(); private static Map<Class<?>, Class<?>> primitiveTypes = new HashMap<Class<?>, Class<?>>(); private static Map<Class<?>, Object> wrapperReturnValues = new HashMap<Class<?>, Object>(); private static Map<Class<?>, Object> primitiveValues = new HashMap<Class<?>, Object>(); static {\n        primitiveTypes.put(Boolean.class, Boolean.TYPE);\n        primitiveTypes.put(Character.class, Character.TYPE);\n        primitiveTypes.put(Byte.class, Byte.TYPE);\n        primitiveTypes.put(Short.class, Short.TYPE);\n        primitiveTypes.put(Integer.class, Integer.TYPE);\n        primitiveTypes.put(Long.class, Long.TYPE);\n        primitiveTypes.put(Float.class, Float.TYPE);\n        primitiveTypes.put(Double.class, Double.TYPE);\n    }\n\n    static { wrapperReturnValues.put(Boolean.class, false); wrapperReturnValues.put(Character.class, '\\u0000'); wrapperReturnValues.put(Byte.class, (byte) 0); wrapperReturnValues.put(Short.class, (short) 0); wrapperReturnValues.put(Integer.class, 0); wrapperReturnValues.put(Long.class, 0L); wrapperReturnValues.put(Float.class, 0F); wrapperReturnValues.put(Double.class, 0D); } static {\n        primitiveValues.put(boolean.class, false);\n        primitiveValues.put(char.class, '\\u0000');\n        primitiveValues.put(byte.class, (byte) 0);\n        primitiveValues.put(short.class, (short) 0);\n        primitiveValues.put(int.class, 0);\n        primitiveValues.put(long.class, 0L);\n        primitiveValues.put(float.class, 0F);\n        primitiveValues.put(double.class, 0D);\n    }\n}",
+      "buggy_signatures": [
+        "public class Primitives { public static <T> Class<T> primitiveTypeOf(Class<T> clazz)",
+        "public static boolean isPrimitiveWrapper(Class<?> type)",
+        "public static <T> T primitiveWrapperOf(Class<T> type)",
+        "public static <T> T primitiveValueOrNullFor(Class<T> primitiveType)",
+        "static { wrapperReturnValues.put(Boolean.class, false); wrapperReturnValues.put(Character.class, '\\u0000'); wrapperReturnValues.put(Byte.class, (byte) 0); wrapperReturnValues.put(Short.class, (short) 0); wrapperReturnValues.put(Integer.class, 0); wrapperReturnValues.put(Long.class, 0L); wrapperReturnValues.put(Float.class, 0F); wrapperReturnValues.put(Double.class, 0D); } static"
+      ],
+      "fixed_signatures": [
+        "public class Primitives { public static <T> Class<T> primitiveTypeOf(Class<T> clazz)",
+        "public static boolean isPrimitiveWrapper(Class<?> type)",
+        "public static <T> T primitiveWrapperOf(Class<T> type)",
+        "public static <T> T primitiveValueOrNullFor(Class<T> primitiveType)",
+        "static { wrapperReturnValues.put(Boolean.class, false); wrapperReturnValues.put(Character.class, '\\u0000'); wrapperReturnValues.put(Byte.class, (byte) 0); wrapperReturnValues.put(Short.class, (short) 0); wrapperReturnValues.put(Integer.class, 0); wrapperReturnValues.put(Long.class, 0L); wrapperReturnValues.put(Float.class, 0F); wrapperReturnValues.put(Double.class, 0D); } static"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private static Map<Class<?>, Object> primitiveValues = new HashMap<Class<?>, Object>(); static {\n  primitiveTypes.put(Boolean.class, Boolean.TYPE);\n  primitiveTypes.put(Character.class, Character.TYPE);\n  primitiveTypes.put(Byte.class, Byte.TYPE);\n  primitiveTypes.put(Short.class, Short.TYPE);\n  primitiveTypes.put(Integer.class, Integer.TYPE);\n  primitiveTypes.put(Long.class, Long.TYPE);\n  primitiveTypes.put(Float.class, Float.TYPE);\n  primitiveTypes.put(Double.class, Double.TYPE);\n  }",
+          "fixed_method": "  private static Map<Class<?>, Object> primitiveValues = new HashMap<Class<?>, Object>(); static {\n  primitiveTypes.put(Boolean.class, Boolean.TYPE);\n  primitiveTypes.put(Character.class, Character.TYPE);\n  primitiveTypes.put(Byte.class, Byte.TYPE);\n  primitiveTypes.put(Short.class, Short.TYPE);\n  primitiveTypes.put(Integer.class, Integer.TYPE);\n  primitiveTypes.put(Long.class, Long.TYPE);\n  primitiveTypes.put(Float.class, Float.TYPE);\n  primitiveTypes.put(Double.class, Double.TYPE);\n  }",
+          "diff": [
+            "@@ -63,6 +63,6 @@",
+            "         primitiveValues.put(int.class, 0);\n",
+            "         primitiveValues.put(long.class, 0L);\n",
+            "         primitiveValues.put(float.class, 0F);\n",
+            "-        primitiveValues.put(double.class, 0);\n",
+            "+        primitiveValues.put(double.class, 0D);\n",
+            "     }\n",
+            " }"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

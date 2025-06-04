@@ -1,0 +1,168 @@
+{
+  "bug_id": "21",
+  "failed_tests": {
+    "org.jsoup.select.SelectorTest": [
+      {
+        "methodName": "handlesCommasInSelector",
+        "error": "java.util.regex.PatternSyntaxException",
+        "message": "Unclosed character class near index 3",
+        "fail_line": "        Elements containers = doc.select(\"div, li:matches([0-9,]+)\");",
+        "test_source": "",
+        "stack": [
+          "QueryParser.matches line 262, QueryParser.findElements line 144, QueryParser.parse line 71, QueryParser.parse line 37, QueryParser.parse line 64, QueryParser.parse line 37, Selector.<init> line 66, Selector.select line 79, Element.select line 255, SelectorTest.handlesCommasInSelector line 594"
+        ]
+      },
+      {
+        "methodName": "mixCombinatorGroup",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2> but was:<3>",
+        "fail_line": "        assertEquals(2, els.size());",
+        "test_source": "",
+        "stack": [
+          "SelectorTest.mixCombinatorGroup line 329"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/select/CombiningEvaluator.java",
+      "buggy_full_code": "package org.jsoup.select;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.nodes.Element;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.Collection;\nimport java.util.List;\n\n\nabstract class CombiningEvaluator extends Evaluator { final List<Evaluator> evaluators; CombiningEvaluator() {\n        super();\n        evaluators = new ArrayList<Evaluator>();\n    }\n\n    CombiningEvaluator(Collection<Evaluator> evaluators) {\n        this();\n        this.evaluators.addAll(evaluators);\n    }\n\n    static final class And extends CombiningEvaluator { And(Collection<Evaluator> evaluators) {\n            super(evaluators);\n        }\n\n        And(Evaluator... evaluators) {\n            this(Arrays.asList(evaluators));\n        }\n\n        @Override\n        public boolean matches(Element root, Element node) {\n            for (Evaluator s : evaluators) {\n                if (!s.matches(root, node))\n                    return false;\n            }\n            return true;\n        }\n\n        @Override\n        public String toString() {\n            return StringUtil.join(evaluators, \" \");\n        }\n    }\n\n    static final class Or extends CombiningEvaluator { Or(Collection<Evaluator> evaluators) {\n            super();\n            if (evaluators.size() > 1)\n                this.evaluators.add(new And(evaluators));\n            else \n                this.evaluators.addAll(evaluators);\n        }\n\n\n        public void add(Evaluator e) {\n            evaluators.add(e);\n        }\n\n        @Override\n        public boolean matches(Element root, Element node) {\n            for (Evaluator s : evaluators) {\n                if (s.matches(root, node))\n                    return true;\n            }\n            return false;\n        }\n\n        @Override\n        public String toString() {\n            return String.format(\":or%s\", evaluators);\n        }\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.select;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.nodes.Element;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.Collection;\nimport java.util.List;\n\n\nabstract class CombiningEvaluator extends Evaluator { final List<Evaluator> evaluators; CombiningEvaluator() {\n        super();\n        evaluators = new ArrayList<Evaluator>();\n    }\n\n    CombiningEvaluator(Collection<Evaluator> evaluators) {\n        this();\n        this.evaluators.addAll(evaluators);\n    }\n\n    static final class And extends CombiningEvaluator { And(Collection<Evaluator> evaluators) {\n            super(evaluators);\n        }\n\n        And(Evaluator... evaluators) {\n            this(Arrays.asList(evaluators));\n        }\n\n        @Override\n        public boolean matches(Element root, Element node) {\n            for (Evaluator s : evaluators) {\n                if (!s.matches(root, node))\n                    return false;\n            }\n            return true;\n        }\n\n        @Override\n        public String toString() {\n            return StringUtil.join(evaluators, \" \");\n        }\n    }\n\n    static final class Or extends CombiningEvaluator { Or(Collection<Evaluator> evaluators) {\n            super();\n            if (evaluators.size() > 1)\n                this.evaluators.add(new And(evaluators));\n            else \n                this.evaluators.addAll(evaluators);\n        }\n\n        Or() {\n            super();\n        }\n\n        public void add(Evaluator e) {\n            evaluators.add(e);\n        }\n\n        @Override\n        public boolean matches(Element root, Element node) {\n            for (Evaluator s : evaluators) {\n                if (s.matches(root, node))\n                    return true;\n            }\n            return false;\n        }\n\n        @Override\n        public String toString() {\n            return String.format(\":or%s\", evaluators);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "abstract class CombiningEvaluator extends Evaluator { final List<Evaluator> evaluators; CombiningEvaluator()",
+        "static final class And extends CombiningEvaluator { And(Collection<Evaluator> evaluators)",
+        "public boolean matches(Element root, Element node)",
+        "public String toString()",
+        "static final class Or extends CombiningEvaluator { Or(Collection<Evaluator> evaluators)",
+        "public void add(Evaluator e)",
+        "public boolean matches(Element root, Element node)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "abstract class CombiningEvaluator extends Evaluator { final List<Evaluator> evaluators; CombiningEvaluator()",
+        "static final class And extends CombiningEvaluator { And(Collection<Evaluator> evaluators)",
+        "public boolean matches(Element root, Element node)",
+        "public String toString()",
+        "static final class Or extends CombiningEvaluator { Or(Collection<Evaluator> evaluators)",
+        "public void add(Evaluator e)",
+        "public boolean matches(Element root, Element node)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void add(Evaluator e) {\n  evaluators.add(e);\n  }",
+          "fixed_method": "  public String toString() {\n  return StringUtil.join(evaluators, \" \");\n  }",
+          "diff": [
+            "@@ -61,6 +61,9 @@",
+            "                 this.evaluators.addAll(evaluators);\n",
+            "         }\n",
+            " \n",
+            "+        Or() {\n",
+            "+            super();\n",
+            "+        }\n",
+            " \n",
+            "         public void add(Evaluator e) {\n",
+            "             evaluators.add(e);\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    },
+    {
+      "name": "org/jsoup/select/QueryParser.java",
+      "buggy_full_code": "package org.jsoup.select;\n\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Pattern;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.TokenQueue;\n\n\nclass QueryParser {\n    private final static String[] combinators = {\",\", \">\", \"+\", \"~\", \" \"}; private TokenQueue tq; private String query; private List<Evaluator> evals = new ArrayList<Evaluator>(); private QueryParser(String query) {\n        this.query = query;\n        this.tq = new TokenQueue(query);\n    }\n\n    \n    public static Evaluator parse(String query) {\n        QueryParser p = new QueryParser(query);\n        return p.parse();\n    }\n\n    \n    Evaluator parse() {\n        tq.consumeWhitespace();\n\n        if (tq.matchesAny(combinators)) { \n            evals.add(new StructuralEvaluator.Root());\n            combinator(tq.consume());\n        } else {\n            findElements();\n        }\n\n        while (!tq.isEmpty()) {\n            \n            boolean seenWhite = tq.consumeWhitespace();\n\n            if (tq.matchChomp(\",\")) {\n                CombiningEvaluator.Or or = new CombiningEvaluator.Or(evals);\n                evals.clear();\n                evals.add(or);\n                while (!tq.isEmpty()) {\n                    String subQuery = tq.chompTo(\",\");\n                    or.add(parse(subQuery));\n                }\n            } else if (tq.matchesAny(combinators)) {\n                combinator(tq.consume());\n            } else if (seenWhite) {\n                combinator(' ');\n            } else { \n                findElements(); \n            }\n        }\n\n        if (evals.size() == 1)\n            return evals.get(0);\n\n        return new CombiningEvaluator.And(evals);\n    }\n\n    private void combinator(char combinator) {\n        tq.consumeWhitespace();\n        String subQuery = consumeSubQuery(); \n        Evaluator e;\n\n        if (evals.size() == 1)\n            e = evals.get(0);\n        else\n            e = new CombiningEvaluator.And(evals);\n        evals.clear();\n        Evaluator f = parse(subQuery);\n\n        if (combinator == '>')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediateParent(e)));\n        else if (combinator == ' ')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.Parent(e)));\n        else if (combinator == '+')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n        else if (combinator == '~')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n        else\n            throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n    }\n\n    private String consumeSubQuery() {\n        StringBuilder sq = new StringBuilder();\n        while (!tq.isEmpty()) {\n            if (tq.matches(\"(\"))\n                sq.append(\"(\").append(tq.chompBalanced('(', ')')).append(\")\");\n            else if (tq.matches(\"[\"))\n                sq.append(\"[\").append(tq.chompBalanced('[', ']')).append(\"]\");\n            else if (tq.matchesAny(combinators))\n                break;\n            else\n                sq.append(tq.consume());\n        }\n        return sq.toString();\n    }\n\n    private void findElements() {\n        if (tq.matchChomp(\"#\"))\n            byId();\n        else if (tq.matchChomp(\".\"))\n            byClass();\n        else if (tq.matchesWord())\n            byTag();\n        else if (tq.matches(\"[\"))\n            byAttribute();\n        else if (tq.matchChomp(\"*\"))\n            allElements();\n        else if (tq.matchChomp(\":lt(\"))\n            indexLessThan();\n        else if (tq.matchChomp(\":gt(\"))\n            indexGreaterThan();\n        else if (tq.matchChomp(\":eq(\"))\n            indexEquals();\n        else if (tq.matches(\":has(\"))\n            has();\n        else if (tq.matches(\":contains(\"))\n            contains(false);\n        else if (tq.matches(\":containsOwn(\"))\n            contains(true);\n        else if (tq.matches(\":matches(\"))\n            matches(false);\n        else if (tq.matches(\":matchesOwn(\"))\n            matches(true);\n        else if (tq.matches(\":not(\"))\n            not();\n        else \n            throw new Selector.SelectorParseException(\"Could not parse query '%s': unexpected token at '%s'\", query, tq.remainder());\n\n    }\n\n    private void byId() {\n        String id = tq.consumeCssIdentifier();\n        Validate.notEmpty(id);\n        evals.add(new Evaluator.Id(id));\n    }\n\n    private void byClass() {\n        String className = tq.consumeCssIdentifier();\n        Validate.notEmpty(className);\n        evals.add(new Evaluator.Class(className.trim().toLowerCase()));\n    }\n\n    private void byTag() {\n        String tagName = tq.consumeElementSelector();\n        Validate.notEmpty(tagName);\n\n        \n        if (tagName.contains(\"|\"))\n            tagName = tagName.replace(\"|\", \":\");\n\n        evals.add(new Evaluator.Tag(tagName.trim().toLowerCase()));\n    }\n\n    private void byAttribute() {\n        TokenQueue cq = new TokenQueue(tq.chompBalanced('[', ']')); \n        String key = cq.consumeToAny(\"=\", \"!=\", \"^=\", \"$=\", \"*=\", \"~=\"); \n        Validate.notEmpty(key);\n        cq.consumeWhitespace();\n\n        if (cq.isEmpty()) {\n            if (key.startsWith(\"^\"))\n                evals.add(new Evaluator.AttributeStarting(key.substring(1)));\n            else\n                evals.add(new Evaluator.Attribute(key));\n        } else {\n            if (cq.matchChomp(\"=\"))\n                evals.add(new Evaluator.AttributeWithValue(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"!=\"))\n                evals.add(new Evaluator.AttributeWithValueNot(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"^=\"))\n                evals.add(new Evaluator.AttributeWithValueStarting(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"$=\"))\n                evals.add(new Evaluator.AttributeWithValueEnding(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"*=\"))\n                evals.add(new Evaluator.AttributeWithValueContaining(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"~=\"))\n                evals.add(new Evaluator.AttributeWithValueMatching(key, Pattern.compile(cq.remainder())));\n            else\n                throw new Selector.SelectorParseException(\"Could not parse attribute query '%s': unexpected token at '%s'\", query, cq.remainder());\n        }\n    }\n\n    private void allElements() {\n        evals.add(new Evaluator.AllElements());\n    }\n\n    \n    private void indexLessThan() {\n        evals.add(new Evaluator.IndexLessThan(consumeIndex()));\n    }\n\n    private void indexGreaterThan() {\n        evals.add(new Evaluator.IndexGreaterThan(consumeIndex()));\n    }\n\n    private void indexEquals() {\n        evals.add(new Evaluator.IndexEquals(consumeIndex()));\n    }\n\n    private int consumeIndex() {\n        String indexS = tq.chompTo(\")\").trim();\n        Validate.isTrue(StringUtil.isNumeric(indexS), \"Index must be numeric\");\n        return Integer.parseInt(indexS);\n    }\n\n    \n    private void has() {\n        tq.consume(\":has\");\n        String subQuery = tq.chompBalanced('(', ')');\n        Validate.notEmpty(subQuery, \":has(el) subselect must not be empty\");\n        evals.add(new StructuralEvaluator.Has(parse(subQuery)));\n    }\n\n    \n    private void contains(boolean own) {\n        tq.consume(own ? \":containsOwn\" : \":contains\");\n        String searchText = TokenQueue.unescape(tq.chompBalanced('(', ')'));\n        Validate.notEmpty(searchText, \":contains(text) query must not be empty\");\n        if (own)\n            evals.add(new Evaluator.ContainsOwnText(searchText));\n        else\n            evals.add(new Evaluator.ContainsText(searchText));\n    }\n\n    \n    private void matches(boolean own) {\n        tq.consume(own ? \":matchesOwn\" : \":matches\");\n        String regex = tq.chompBalanced('(', ')'); \n        Validate.notEmpty(regex, \":matches(regex) query must not be empty\");\n\n        if (own)\n            evals.add(new Evaluator.MatchesOwn(Pattern.compile(regex)));\n        else\n            evals.add(new Evaluator.Matches(Pattern.compile(regex)));\n    }\n\n    \n    private void not() {\n        tq.consume(\":not\");\n        String subQuery = tq.chompBalanced('(', ')');\n        Validate.notEmpty(subQuery, \":not(selector) subselect must not be empty\");\n\n        evals.add(new StructuralEvaluator.Not(parse(subQuery)));\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.select;\n\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Pattern;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.TokenQueue;\n\n\nclass QueryParser {\n    private final static String[] combinators = {\",\", \">\", \"+\", \"~\", \" \"}; private TokenQueue tq; private String query; private List<Evaluator> evals = new ArrayList<Evaluator>(); private QueryParser(String query) {\n        this.query = query;\n        this.tq = new TokenQueue(query);\n    }\n\n    \n    public static Evaluator parse(String query) {\n        QueryParser p = new QueryParser(query);\n        return p.parse();\n    }\n\n    \n    Evaluator parse() {\n        tq.consumeWhitespace();\n\n        if (tq.matchesAny(combinators)) { \n            evals.add(new StructuralEvaluator.Root());\n            combinator(tq.consume());\n        } else {\n            findElements();\n        }\n\n        while (!tq.isEmpty()) {\n            \n            boolean seenWhite = tq.consumeWhitespace();\n\n            if (tq.matchesAny(combinators)) {\n                combinator(tq.consume());\n            } else if (seenWhite) {\n                combinator(' ');\n            } else { \n                findElements(); \n            }\n        }\n\n        if (evals.size() == 1)\n            return evals.get(0);\n\n        return new CombiningEvaluator.And(evals);\n    }\n\n    private void combinator(char combinator) {\n        tq.consumeWhitespace();\n        String subQuery = consumeSubQuery(); \n        Evaluator e;\n\n        if (evals.size() == 1)\n            e = evals.get(0);\n        else\n            e = new CombiningEvaluator.And(evals);\n        evals.clear();\n        Evaluator f = parse(subQuery);\n\n        if (combinator == '>')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediateParent(e)));\n        else if (combinator == ' ')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.Parent(e)));\n        else if (combinator == '+')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n        else if (combinator == '~')\n            evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n        else if (combinator == ',') { \n            CombiningEvaluator.Or or;\n            if (e instanceof CombiningEvaluator.Or) {\n                or = (CombiningEvaluator.Or) e;\n                or.add(f);\n            } else {\n                or = new CombiningEvaluator.Or();\n                or.add(e);\n                or.add(f);\n            }\n            evals.add(or);\n        }\n        else\n            throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n    }\n\n    private String consumeSubQuery() {\n        StringBuilder sq = new StringBuilder();\n        while (!tq.isEmpty()) {\n            if (tq.matches(\"(\"))\n                sq.append(\"(\").append(tq.chompBalanced('(', ')')).append(\")\");\n            else if (tq.matches(\"[\"))\n                sq.append(\"[\").append(tq.chompBalanced('[', ']')).append(\"]\");\n            else if (tq.matchesAny(combinators))\n                break;\n            else\n                sq.append(tq.consume());\n        }\n        return sq.toString();\n    }\n\n    private void findElements() {\n        if (tq.matchChomp(\"#\"))\n            byId();\n        else if (tq.matchChomp(\".\"))\n            byClass();\n        else if (tq.matchesWord())\n            byTag();\n        else if (tq.matches(\"[\"))\n            byAttribute();\n        else if (tq.matchChomp(\"*\"))\n            allElements();\n        else if (tq.matchChomp(\":lt(\"))\n            indexLessThan();\n        else if (tq.matchChomp(\":gt(\"))\n            indexGreaterThan();\n        else if (tq.matchChomp(\":eq(\"))\n            indexEquals();\n        else if (tq.matches(\":has(\"))\n            has();\n        else if (tq.matches(\":contains(\"))\n            contains(false);\n        else if (tq.matches(\":containsOwn(\"))\n            contains(true);\n        else if (tq.matches(\":matches(\"))\n            matches(false);\n        else if (tq.matches(\":matchesOwn(\"))\n            matches(true);\n        else if (tq.matches(\":not(\"))\n            not();\n        else \n            throw new Selector.SelectorParseException(\"Could not parse query '%s': unexpected token at '%s'\", query, tq.remainder());\n\n    }\n\n    private void byId() {\n        String id = tq.consumeCssIdentifier();\n        Validate.notEmpty(id);\n        evals.add(new Evaluator.Id(id));\n    }\n\n    private void byClass() {\n        String className = tq.consumeCssIdentifier();\n        Validate.notEmpty(className);\n        evals.add(new Evaluator.Class(className.trim().toLowerCase()));\n    }\n\n    private void byTag() {\n        String tagName = tq.consumeElementSelector();\n        Validate.notEmpty(tagName);\n\n        \n        if (tagName.contains(\"|\"))\n            tagName = tagName.replace(\"|\", \":\");\n\n        evals.add(new Evaluator.Tag(tagName.trim().toLowerCase()));\n    }\n\n    private void byAttribute() {\n        TokenQueue cq = new TokenQueue(tq.chompBalanced('[', ']')); \n        String key = cq.consumeToAny(\"=\", \"!=\", \"^=\", \"$=\", \"*=\", \"~=\"); \n        Validate.notEmpty(key);\n        cq.consumeWhitespace();\n\n        if (cq.isEmpty()) {\n            if (key.startsWith(\"^\"))\n                evals.add(new Evaluator.AttributeStarting(key.substring(1)));\n            else\n                evals.add(new Evaluator.Attribute(key));\n        } else {\n            if (cq.matchChomp(\"=\"))\n                evals.add(new Evaluator.AttributeWithValue(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"!=\"))\n                evals.add(new Evaluator.AttributeWithValueNot(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"^=\"))\n                evals.add(new Evaluator.AttributeWithValueStarting(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"$=\"))\n                evals.add(new Evaluator.AttributeWithValueEnding(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"*=\"))\n                evals.add(new Evaluator.AttributeWithValueContaining(key, cq.remainder()));\n\n            else if (cq.matchChomp(\"~=\"))\n                evals.add(new Evaluator.AttributeWithValueMatching(key, Pattern.compile(cq.remainder())));\n            else\n                throw new Selector.SelectorParseException(\"Could not parse attribute query '%s': unexpected token at '%s'\", query, cq.remainder());\n        }\n    }\n\n    private void allElements() {\n        evals.add(new Evaluator.AllElements());\n    }\n\n    \n    private void indexLessThan() {\n        evals.add(new Evaluator.IndexLessThan(consumeIndex()));\n    }\n\n    private void indexGreaterThan() {\n        evals.add(new Evaluator.IndexGreaterThan(consumeIndex()));\n    }\n\n    private void indexEquals() {\n        evals.add(new Evaluator.IndexEquals(consumeIndex()));\n    }\n\n    private int consumeIndex() {\n        String indexS = tq.chompTo(\")\").trim();\n        Validate.isTrue(StringUtil.isNumeric(indexS), \"Index must be numeric\");\n        return Integer.parseInt(indexS);\n    }\n\n    \n    private void has() {\n        tq.consume(\":has\");\n        String subQuery = tq.chompBalanced('(', ')');\n        Validate.notEmpty(subQuery, \":has(el) subselect must not be empty\");\n        evals.add(new StructuralEvaluator.Has(parse(subQuery)));\n    }\n\n    \n    private void contains(boolean own) {\n        tq.consume(own ? \":containsOwn\" : \":contains\");\n        String searchText = TokenQueue.unescape(tq.chompBalanced('(', ')'));\n        Validate.notEmpty(searchText, \":contains(text) query must not be empty\");\n        if (own)\n            evals.add(new Evaluator.ContainsOwnText(searchText));\n        else\n            evals.add(new Evaluator.ContainsText(searchText));\n    }\n\n    \n    private void matches(boolean own) {\n        tq.consume(own ? \":matchesOwn\" : \":matches\");\n        String regex = tq.chompBalanced('(', ')'); \n        Validate.notEmpty(regex, \":matches(regex) query must not be empty\");\n\n        if (own)\n            evals.add(new Evaluator.MatchesOwn(Pattern.compile(regex)));\n        else\n            evals.add(new Evaluator.Matches(Pattern.compile(regex)));\n    }\n\n    \n    private void not() {\n        tq.consume(\":not\");\n        String subQuery = tq.chompBalanced('(', ')');\n        Validate.notEmpty(subQuery, \":not(selector) subselect must not be empty\");\n\n        evals.add(new StructuralEvaluator.Not(parse(subQuery)));\n    }\n}\n",
+      "buggy_signatures": [
+        "public static Evaluator parse(String query)",
+        "private void combinator(char combinator)",
+        "private String consumeSubQuery()",
+        "private void findElements()",
+        "private void byId()",
+        "private void byClass()",
+        "private void byTag()",
+        "private void byAttribute()",
+        "private void allElements()",
+        "private void indexLessThan()",
+        "private void indexGreaterThan()",
+        "private void indexEquals()",
+        "private int consumeIndex()",
+        "private void has()",
+        "private void contains(boolean own)",
+        "private void matches(boolean own)",
+        "private void not()"
+      ],
+      "fixed_signatures": [
+        "public static Evaluator parse(String query)",
+        "private void combinator(char combinator)",
+        "private String consumeSubQuery()",
+        "private void findElements()",
+        "private void byId()",
+        "private void byClass()",
+        "private void byTag()",
+        "private void byAttribute()",
+        "private void allElements()",
+        "private void indexLessThan()",
+        "private void indexGreaterThan()",
+        "private void indexEquals()",
+        "private int consumeIndex()",
+        "private void has()",
+        "private void contains(boolean own)",
+        "private void matches(boolean own)",
+        "private void not()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static Evaluator parse(String query) {\n  QueryParser p = new QueryParser(query);\n  return p.parse();\n  }",
+          "fixed_method": "  public static Evaluator parse(String query) {\n  QueryParser p = new QueryParser(query);\n  return p.parse();\n  }",
+          "diff": [
+            "@@ -55,15 +55,7 @@",
+            "             // hierarchy and extras\n",
+            "             boolean seenWhite = tq.consumeWhitespace();\n",
+            " \n",
+            "-            if (tq.matchChomp(\",\")) {\n",
+            "-                CombiningEvaluator.Or or = new CombiningEvaluator.Or(evals);\n",
+            "-                evals.clear();\n",
+            "-                evals.add(or);\n",
+            "-                while (!tq.isEmpty()) {\n",
+            "-                    String subQuery = tq.chompTo(\",\");\n",
+            "-                    or.add(parse(subQuery));\n",
+            "-                }\n",
+            "-            } else if (tq.matchesAny(combinators)) {\n",
+            "+            if (tq.matchesAny(combinators)) {\n",
+            "                 combinator(tq.consume());\n",
+            "             } else if (seenWhite) {\n",
+            "                 combinator(' ');\n"
+          ],
+          "changed_lines": 10
+        },
+        {
+          "buggy_method": "  private void combinator(char combinator) {\n  tq.consumeWhitespace();\n  String subQuery = consumeSubQuery(); \n  Evaluator e;\n\n  if (evals.size() == 1)\n  e = evals.get(0);\n  else\n  e = new CombiningEvaluator.And(evals);\n  evals.clear();\n  Evaluator f = parse(subQuery);\n\n  if (combinator == '>')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediateParent(e)));\n  else if (combinator == ' ')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.Parent(e)));\n  else if (combinator == '+')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n  else if (combinator == '~')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n  else\n  throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n  }",
+          "fixed_method": "  private void combinator(char combinator) {\n  tq.consumeWhitespace();\n  String subQuery = consumeSubQuery(); \n  Evaluator e;\n\n  if (evals.size() == 1)\n  e = evals.get(0);\n  else\n  e = new CombiningEvaluator.And(evals);\n  evals.clear();\n  Evaluator f = parse(subQuery);\n\n  if (combinator == '>')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediateParent(e)));\n  else if (combinator == ' ')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.Parent(e)));\n  else if (combinator == '+')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n  else if (combinator == '~')\n  evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n  else if (combinator == ',') { \n  CombiningEvaluator.Or or;\n  if (e instanceof CombiningEvaluator.Or) {\n  or = (CombiningEvaluator.Or) e;\n  or.add(f);\n  } else {\n  or = new CombiningEvaluator.Or();\n  or.add(e);\n  or.add(f);\n  }\n  evals.add(or);\n  }\n  else\n  throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n  }",
+          "diff": [
+            "@@ -98,6 +90,18 @@",
+            "             evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n",
+            "         else if (combinator == '~')\n",
+            "             evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n",
+            "+        else if (combinator == ',') { // group or\n",
+            "+            CombiningEvaluator.Or or;\n",
+            "+            if (e instanceof CombiningEvaluator.Or) {\n",
+            "+                or = (CombiningEvaluator.Or) e;\n",
+            "+                or.add(f);\n",
+            "+            } else {\n",
+            "+                or = new CombiningEvaluator.Or();\n",
+            "+                or.add(e);\n",
+            "+                or.add(f);\n",
+            "+            }\n",
+            "+            evals.add(or);\n",
+            "+        }\n",
+            "         else\n",
+            "             throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n",
+            "     }\n"
+          ],
+          "changed_lines": 12
+        }
+      ]
+    }
+  ]
+}

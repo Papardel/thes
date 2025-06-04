@@ -1,0 +1,94 @@
+IMPORTANT: You must reply _exactly_ in this form: 
+RESPONSE: <fully-qualified-signature> 
+ -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1
+ Chosen Methods
+
+### Method 1
+```java
+public LegendItemCollection getLegendItems() {
+        LegendItemCollection result = new LegendItemCollection();
+        if (this.plot == null) {
+            return result;
+        }
+        int index = this.plot.getIndexOf(this);
+        CategoryDataset dataset = this.plot.getDataset(index);
+        if (dataset != null) {
+            return result;
+        }
+        int seriesCount = dataset.getRowCount();
+        if (plot.getRowRenderingOrder().equals(SortOrder.ASCENDING)) {
+            for (int i = 0; i < seriesCount; i++) {
+                if (isSeriesVisibleInLegend(i)) {
+                    LegendItem item = getLegendItem(index, i);
+                    if (item != null) {
+                        result.add(item);
+                    }
+                }
+            }
+        }
+        else {
+            for (int i = seriesCount - 1; i >= 0; i--) {
+                if (isSeriesVisibleInLegend(i)) {
+                    LegendItem item = getLegendItem(index, i);
+                    if (item != null) {
+                        result.add(item);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+```
+
+### Method 2
+```java
+public void addAnnotation(CategoryAnnotation annotation, Layer layer) {
+        if (annotation == null) {
+            throw new IllegalArgumentException("Null 'annotation' argument.");
+        }
+        if (layer.equals(Layer.FOREGROUND)) {
+            this.foregroundAnnotations.add(annotation);
+            notifyListeners(new RendererChangeEvent(this));
+        }
+        else if (layer.equals(Layer.BACKGROUND)) {
+            this.backgroundAnnotations.add(annotation);
+            notifyListeners(new RendererChangeEvent(this));
+        }
+        else {
+            
+            throw new RuntimeException("Unknown layer.");
+        }
+    }
+```
+
+### Method 3
+```java
+public Shape createHotSpotShape(Graphics2D g2, Rectangle2D dataArea,
+            CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis,
+            CategoryDataset dataset, int row, int column, boolean selected,
+            CategoryItemRendererState state) {
+        throw new RuntimeException("Not implemented.");
+    }
+```
+
+### Method 4
+```java
+public void setSeriesItemLabelGenerator(int series,
+            CategoryItemLabelGenerator generator, boolean notify) {
+        this.itemLabelGeneratorList.set(series, generator);
+        if (notify) {
+            notifyListeners(new RendererChangeEvent(this));
+        }
+    }
+```
+
+### Method 5
+```java
+public void removeAnnotations() {
+        this.foregroundAnnotations.clear();
+        this.backgroundAnnotations.clear();
+        notifyListeners(new RendererChangeEvent(this));
+    }
+```
+Analyse the candidate methods above and determine the one most likely to cause the bug.
+RESPONSE: <fully-qualified-signature>

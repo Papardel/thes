@@ -1,0 +1,13 @@
+{
+  "bug_id": "Chart_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 1\nTest Class: org.jfree.chart.renderer.category.junit.AbstractCategoryItemRendererTests\nMethod: test2947660\nError: junit.framework.AssertionFailedError\nMessage: expected:<1> but was:<0>\nFailing Line:         assertEquals(1, lic.getItemCount());\nTest Source:\npublic void test2947660() {\n  AbstractCategoryItemRenderer r = new LineAndShapeRenderer();\n  assertNotNull(r.getLegendItems());\n  assertEquals(0, r.getLegendItems().getItemCount());\n\n  DefaultCategoryDataset dataset = new DefaultCategoryDataset();\n  CategoryPlot plot = new CategoryPlot();\n  plot.setDataset(dataset);\n  plot.setRenderer(r);\n  assertEquals(0, r.getLegendItems().getItemCount());\n\n  dataset.addValue(1.0, \"S1\", \"C1\");\n  LegendItemCollection lic = r.getLegendItems();\n  assertEquals(1, lic.getItemCount());\n  assertEquals(\"S1\", lic.get(0).getLabel());\n  }\nStack Trace:\nAbstractCategoryItemRendererTests.test2947660 line 409\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "RESPONSE: org.jfree.chart.renderer.category.LineAndShapeRenderer"
+    }
+  ],
+  "classes": [
+    "AbstractCategoryItemRenderer"
+  ]
+}

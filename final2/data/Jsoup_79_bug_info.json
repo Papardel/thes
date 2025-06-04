@@ -1,0 +1,87 @@
+{
+  "bug_id": "79",
+  "failed_tests": {
+    "org.jsoup.nodes.TextNodeTest": [
+      {
+        "methodName": "testLeadNodesHaveNoChildren",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "Leaf Nodes do not have child nodes.",
+        "fail_line": "        List<Node> nodes = tn.childNodes();",
+        "test_source": "",
+        "stack": [
+          "LeafNode.ensureChildNodes line 94, Node.childNodes line 209, TextNodeTest.testLeadNodesHaveNoChildren line 82"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/LeafNode.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\n\nimport java.util.List;\n\nabstract class LeafNode extends Node { Object value; protected final boolean hasAttributes() {\n        return value instanceof Attributes;\n    }\n\n    @Override\n    public final Attributes attributes() {\n        ensureAttributes();\n        return (Attributes) value;\n    }\n\n    private void ensureAttributes() {\n        if (!hasAttributes()) {\n            Object coreValue = value;\n            Attributes attributes = new Attributes();\n            value = attributes;\n            if (coreValue != null)\n                attributes.put(nodeName(), (String) coreValue);\n        }\n    }\n\n    String coreValue() {\n        return attr(nodeName());\n    }\n\n    void coreValue(String value) {\n        attr(nodeName(), value);\n    }\n\n    @Override\n    public String attr(String key) {\n        Validate.notNull(key);\n        if (!hasAttributes()) {\n            return key.equals(nodeName()) ? (String) value : EmptyString;\n        }\n        return super.attr(key);\n    }\n\n    @Override\n    public Node attr(String key, String value) {\n        if (!hasAttributes() && key.equals(nodeName())) {\n            this.value = value;\n        } else {\n            ensureAttributes();\n            super.attr(key, value);\n        }\n        return this;\n    }\n\n    @Override\n    public boolean hasAttr(String key) {\n        ensureAttributes();\n        return super.hasAttr(key);\n    }\n\n    @Override\n    public Node removeAttr(String key) {\n        ensureAttributes();\n        return super.removeAttr(key);\n    }\n\n    @Override\n    public String absUrl(String key) {\n        ensureAttributes();\n        return super.absUrl(key);\n    }\n\n    @Override\n    public String baseUri() {\n        return hasParent() ? parent().baseUri() : \"\";\n    }\n\n    @Override\n    protected void doSetBaseUri(String baseUri) {\n        \n    }\n\n    @Override\n    public int childNodeSize() {\n        return 0;\n    }\n\n    @Override\n    protected List<Node> ensureChildNodes() {\n        throw new UnsupportedOperationException(\"Leaf Nodes do not have child nodes.\");\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\n\nimport java.util.Collections;\nimport java.util.List;\n\nabstract class LeafNode extends Node { private static final List<Node> EmptyNodes = Collections.emptyList(); Object value; protected final boolean hasAttributes() {\n        return value instanceof Attributes;\n    }\n\n    @Override\n    public final Attributes attributes() {\n        ensureAttributes();\n        return (Attributes) value;\n    }\n\n    private void ensureAttributes() {\n        if (!hasAttributes()) {\n            Object coreValue = value;\n            Attributes attributes = new Attributes();\n            value = attributes;\n            if (coreValue != null)\n                attributes.put(nodeName(), (String) coreValue);\n        }\n    }\n\n    String coreValue() {\n        return attr(nodeName());\n    }\n\n    void coreValue(String value) {\n        attr(nodeName(), value);\n    }\n\n    @Override\n    public String attr(String key) {\n        Validate.notNull(key);\n        if (!hasAttributes()) {\n            return key.equals(nodeName()) ? (String) value : EmptyString;\n        }\n        return super.attr(key);\n    }\n\n    @Override\n    public Node attr(String key, String value) {\n        if (!hasAttributes() && key.equals(nodeName())) {\n            this.value = value;\n        } else {\n            ensureAttributes();\n            super.attr(key, value);\n        }\n        return this;\n    }\n\n    @Override\n    public boolean hasAttr(String key) {\n        ensureAttributes();\n        return super.hasAttr(key);\n    }\n\n    @Override\n    public Node removeAttr(String key) {\n        ensureAttributes();\n        return super.removeAttr(key);\n    }\n\n    @Override\n    public String absUrl(String key) {\n        ensureAttributes();\n        return super.absUrl(key);\n    }\n\n    @Override\n    public String baseUri() {\n        return hasParent() ? parent().baseUri() : \"\";\n    }\n\n    @Override\n    protected void doSetBaseUri(String baseUri) {\n        \n    }\n\n    @Override\n    public int childNodeSize() {\n        return 0;\n    }\n\n    @Override\n    protected List<Node> ensureChildNodes() {\n        return EmptyNodes;\n    }\n}\n",
+      "buggy_signatures": [
+        "abstract class LeafNode extends Node { Object value; protected final boolean hasAttributes()",
+        "public final Attributes attributes()",
+        "private void ensureAttributes()",
+        "public String attr(String key)",
+        "public Node attr(String key, String value)",
+        "public boolean hasAttr(String key)",
+        "public Node removeAttr(String key)",
+        "public String absUrl(String key)",
+        "public String baseUri()",
+        "protected void doSetBaseUri(String baseUri)",
+        "public int childNodeSize()",
+        "protected List<Node> ensureChildNodes()"
+      ],
+      "fixed_signatures": [
+        "public final Attributes attributes()",
+        "private void ensureAttributes()",
+        "public String attr(String key)",
+        "public Node attr(String key, String value)",
+        "public boolean hasAttr(String key)",
+        "public Node removeAttr(String key)",
+        "public String absUrl(String key)",
+        "public String baseUri()",
+        "protected void doSetBaseUri(String baseUri)",
+        "public int childNodeSize()",
+        "protected List<Node> ensureChildNodes()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected final boolean hasAttributes() {\n  return value instanceof Attributes;\n  }",
+          "fixed_method": "  private static final List<Node> EmptyNodes = Collections.emptyList(); Object value; protected final boolean hasAttributes() {\n  return value instanceof Attributes;\n  }",
+          "diff": [
+            "@@ -2,9 +2,11 @@",
+            " \n",
+            " import org.jsoup.helper.Validate;\n",
+            " \n",
+            "+import java.util.Collections;\n",
+            " import java.util.List;\n",
+            " \n",
+            " abstract class LeafNode extends Node {\n",
+            "+    private static final List<Node> EmptyNodes = Collections.emptyList();\n",
+            " \n",
+            "     Object value; // either a string value, or an attribute map (in the rare case multiple attributes are set)\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  protected List<Node> ensureChildNodes() {\n  throw new UnsupportedOperationException(\"Leaf Nodes do not have child nodes.\");\n  }",
+          "fixed_method": "  protected List<Node> ensureChildNodes() {\n  return EmptyNodes;\n  }",
+          "diff": [
+            "@@ -91,6 +93,6 @@",
+            " \n",
+            "     @Override\n",
+            "     protected List<Node> ensureChildNodes() {\n",
+            "-        throw new UnsupportedOperationException(\"Leaf Nodes do not have child nodes.\");\n",
+            "+        return EmptyNodes;\n",
+            "     }\n",
+            " }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

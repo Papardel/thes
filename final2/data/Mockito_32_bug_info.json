@@ -1,0 +1,69 @@
+{
+  "bug_id": "32",
+  "failed_tests": {
+    "org.mockitousage.bugs.SpyShouldHaveNiceNameTest": [
+      {
+        "methodName": "shouldPrintNiceName",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "<'",
+        "fail_line": "            Assertions.assertThat(e.getMessage()).contains(\"veryCoolSpy\");",
+        "test_source": "  public void shouldPrintNiceName() {\n  //when\n  veryCoolSpy.add(1);\n\n  try {\n  verify(veryCoolSpy).add(2);\n  fail();\n  } catch(AssertionError e) {\n  Assertions.assertThat(e.getMessage()).contains(\"veryCoolSpy\");\n  }\n  }",
+        "stack": [
+          "Fail.failure line 228, Assert.failure line 149, StringAssert.contains line 221, SpyShouldHaveNiceNameTest.shouldPrintNiceName line 31"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/configuration/SpyAnnotationEngine.java",
+      "buggy_full_code": "\npackage org.mockito.internal.configuration;\n\nimport java.lang.annotation.Annotation;\nimport java.lang.reflect.Field;\n\nimport org.mockito.Captor;\nimport org.mockito.Mock;\nimport org.mockito.Mockito;\nimport org.mockito.Spy;\nimport org.mockito.configuration.AnnotationEngine;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.exceptions.base.MockitoException;\nimport org.mockito.internal.util.MockUtil;\n\n\n@SuppressWarnings({\"unchecked\"})\npublic class SpyAnnotationEngine implements AnnotationEngine { public Object createMockFor(Annotation annotation, Field field) {\n        return null;\n    }\n    \n    @SuppressWarnings(\"deprecation\")\n    public void process(Class<?> context, Object testClass) {\n        Field[] fields = context.getDeclaredFields();\n        for (Field field : fields) {\n            if (field.isAnnotationPresent(Spy.class)) {\n                assertNoAnnotations(Spy.class, field, Mock.class, org.mockito.MockitoAnnotations.Mock.class, Captor.class);\n                boolean wasAccessible = field.isAccessible();\n                field.setAccessible(true);\n                try {\n                    Object instance = field.get(testClass);\n                    if (instance == null) {\n                        throw new MockitoException(\"Cannot create a @Spy for '\" + field.getName() + \"' field because the *instance* is missing\\n\" +\n                        \t\t  \"The instance must be created *before* initMocks();\\n\" +\n                                  \"Example of correct usage of @Spy:\\n\" +\n                            \t  \"   @Spy List mock = new LinkedList();\\n\" +\n                            \t  \"   \n\n                    }\n                    if (new MockUtil().isMock(instance)) { \n                        \n                        Mockito.reset(instance);\n                    } else {\n                        field.set(testClass, Mockito.spy(instance));\n                    }\n                } catch (IllegalAccessException e) {\n                    throw new MockitoException(\"Problems initiating spied field \" + field.getName(), e);\n                } finally {\n                    field.setAccessible(wasAccessible);\n                }\n            }\n        }\n    }\n    \n    \n    void assertNoAnnotations(Class annotation, Field field, Class ... undesiredAnnotations) {\n        for (Class u : undesiredAnnotations) {\n            if (field.isAnnotationPresent(u)) {\n                new Reporter().unsupportedCombinationOfAnnotations(annotation.getSimpleName(), annotation.getClass().getSimpleName());\n            }\n        }        \n    }    \n}\n",
+      "fixed_full_code": "\npackage org.mockito.internal.configuration;\n\nimport java.lang.annotation.Annotation;\nimport java.lang.reflect.Field;\n\nimport org.mockito.Captor;\nimport org.mockito.Mock;\nimport org.mockito.Mockito;\nimport org.mockito.Spy;\nimport org.mockito.configuration.AnnotationEngine;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.exceptions.base.MockitoException;\nimport org.mockito.internal.util.MockUtil;\n\nimport static org.mockito.Mockito.withSettings; @SuppressWarnings({\"unchecked\"}) public class SpyAnnotationEngine implements AnnotationEngine {\n\n    public Object createMockFor(Annotation annotation, Field field) {\n        return null;\n    }\n    \n    @SuppressWarnings(\"deprecation\")\n    public void process(Class<?> context, Object testClass) {\n        Field[] fields = context.getDeclaredFields();\n        for (Field field : fields) {\n            if (field.isAnnotationPresent(Spy.class)) {\n                assertNoAnnotations(Spy.class, field, Mock.class, org.mockito.MockitoAnnotations.Mock.class, Captor.class);\n                boolean wasAccessible = field.isAccessible();\n                field.setAccessible(true);\n                try {\n                    Object instance = field.get(testClass);\n                    if (instance == null) {\n                        throw new MockitoException(\"Cannot create a @Spy for '\" + field.getName() + \"' field because the *instance* is missing\\n\" +\n                        \t\t  \"The instance must be created *before* initMocks();\\n\" +\n                                  \"Example of correct usage of @Spy:\\n\" +\n                            \t  \"   @Spy List mock = new LinkedList();\\n\" +\n                            \t  \"   \n\n                    }\n                    if (new MockUtil().isMock(instance)) { \n                        \n                        Mockito.reset(instance);\n                    } else {\n                        field.set(testClass, Mockito.mock(instance.getClass(), withSettings()\n                                .spiedInstance(instance)\n                                .defaultAnswer(Mockito.CALLS_REAL_METHODS)\n                                .name(field.getName())));\n                    }\n                } catch (IllegalAccessException e) {\n                    throw new MockitoException(\"Problems initiating spied field \" + field.getName(), e);\n                } finally {\n                    field.setAccessible(wasAccessible);\n                }\n            }\n        }\n    }\n    \n    \n    void assertNoAnnotations(Class annotation, Field field, Class ... undesiredAnnotations) {\n        for (Class u : undesiredAnnotations) {\n            if (field.isAnnotationPresent(u)) {\n                new Reporter().unsupportedCombinationOfAnnotations(annotation.getSimpleName(), annotation.getClass().getSimpleName());\n            }\n        }        \n    }    \n}\n",
+      "buggy_signatures": [
+        "public class SpyAnnotationEngine implements AnnotationEngine { public Object createMockFor(Annotation annotation, Field field)",
+        "public void process(Class<?> context, Object testClass)"
+      ],
+      "fixed_signatures": [
+        "static org.mockito.Mockito.withSettings; @SuppressWarnings({\"unchecked\"}) public class SpyAnnotationEngine implements AnnotationEngine",
+        "public Object createMockFor(Annotation annotation, Field field)",
+        "public void process(Class<?> context, Object testClass)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -16,6 +16,7 @@",
+            " import org.mockito.exceptions.base.MockitoException;\n",
+            " import org.mockito.internal.util.MockUtil;\n",
+            " \n",
+            "+import static org.mockito.Mockito.withSettings;\n",
+            " \n",
+            " @SuppressWarnings({\"unchecked\"})\n",
+            " public class SpyAnnotationEngine implements AnnotationEngine {\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public void process(Class<?> context, Object testClass) {\n  Field[] fields = context.getDeclaredFields();\n  for (Field field : fields) {\n  if (field.isAnnotationPresent(Spy.class)) {\n  assertNoAnnotations(Spy.class, field, Mock.class, org.mockito.MockitoAnnotations.Mock.class, Captor.class);\n  boolean wasAccessible = field.isAccessible();\n  field.setAccessible(true);\n  try {\n  Object instance = field.get(testClass);\n  if (instance == null) {\n  throw new MockitoException(\"Cannot create a @Spy for '\" + field.getName() + \"' field because the *instance* is missing\\n\" +\n  \t\t  \"The instance must be created *before* initMocks();\\n\" +\n  \"Example of correct usage of @Spy:\\n\" +\n  \t  \"  @Spy List mock = new LinkedList();\\n\" +\n  \t  \"  \n\n  }\n  if (new MockUtil().isMock(instance)) { \n  \n  Mockito.reset(instance);\n  } else {\n  field.set(testClass, Mockito.spy(instance));\n  }\n  } catch (IllegalAccessException e) {\n  throw new MockitoException(\"Problems initiating spied field \" + field.getName(), e);\n  } finally {\n  field.setAccessible(wasAccessible);\n  }\n  }\n  }\n  }",
+          "fixed_method": "  public void process(Class<?> context, Object testClass) {\n  Field[] fields = context.getDeclaredFields();\n  for (Field field : fields) {\n  if (field.isAnnotationPresent(Spy.class)) {\n  assertNoAnnotations(Spy.class, field, Mock.class, org.mockito.MockitoAnnotations.Mock.class, Captor.class);\n  boolean wasAccessible = field.isAccessible();\n  field.setAccessible(true);\n  try {\n  Object instance = field.get(testClass);\n  if (instance == null) {\n  throw new MockitoException(\"Cannot create a @Spy for '\" + field.getName() + \"' field because the *instance* is missing\\n\" +\n  \t\t  \"The instance must be created *before* initMocks();\\n\" +\n  \"Example of correct usage of @Spy:\\n\" +\n  \t  \"  @Spy List mock = new LinkedList();\\n\" +\n  \t  \"  \n\n  }\n  if (new MockUtil().isMock(instance)) { \n  \n  Mockito.reset(instance);\n  } else {\n  field.set(testClass, Mockito.mock(instance.getClass(), withSettings()\n  .spiedInstance(instance)\n  .defaultAnswer(Mockito.CALLS_REAL_METHODS)\n  .name(field.getName())));\n  }\n  } catch (IllegalAccessException e) {\n  throw new MockitoException(\"Problems initiating spied field \" + field.getName(), e);\n  } finally {\n  field.setAccessible(wasAccessible);\n  }\n  }\n  }\n  }",
+          "diff": [
+            "@@ -46,7 +47,10 @@",
+            "                         // instance has been spied earlier\n",
+            "                         Mockito.reset(instance);\n",
+            "                     } else {\n",
+            "-                        field.set(testClass, Mockito.spy(instance));\n",
+            "+                        field.set(testClass, Mockito.mock(instance.getClass(), withSettings()\n",
+            "+                                .spiedInstance(instance)\n",
+            "+                                .defaultAnswer(Mockito.CALLS_REAL_METHODS)\n",
+            "+                                .name(field.getName())));\n",
+            "                     }\n",
+            "                 } catch (IllegalAccessException e) {\n",
+            "                     throw new MockitoException(\"Problems initiating spied field \" + field.getName(), e);\n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "bug_id": "14",
+  "failed_tests": {
+    "com.fasterxml.jackson.core.io.TestIOContext": [
+      {
+        "methodName": "testAllocations",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected an exception with one of substrings ([smaller than original]): got one with message \"Trying to release buffer not owned by the context\"",
+        "fail_line": "            verifyException(e, \"smaller than original\");",
+        "test_source": "  public void testAllocations() throws Exception {\n  IOContext ctxt = new IOContext(new BufferRecycler(), \"N/A\", true);\n\n  /* I/O Read buffer */\n\n  // First succeeds:\n  assertNotNull(ctxt.allocReadIOBuffer());\n  // second fails\n  try {\n  ctxt.allocReadIOBuffer();\n  } catch (IllegalStateException e) {\n  verifyException(e, \"second time\");\n  }\n  // Also: can't succeed with different buffer\n  try {\n  ctxt.releaseReadIOBuffer(new byte[1]);\n  } catch (IllegalArgumentException e) {\n  verifyException(e, \"smaller than original\");\n  }\n  // but call with null is a NOP for convenience\n  ctxt.releaseReadIOBuffer(null);\n\n  /* I/O Write buffer */\n\n  assertNotNull(ctxt.allocWriteEncodingBuffer());\n  try {\n  ctxt.allocWriteEncodingBuffer();\n  } catch (IllegalStateException e) {\n  verifyException(e, \"second time\");\n  }\n  try {\n  ctxt.releaseWriteEncodingBuffer(new byte[1]);\n  } catch (IllegalArgumentException e) {\n  verifyException(e, \"smaller than original\");\n  }\n  ctxt.releaseWriteEncodingBuffer(null);\n\n  /* Token (read) buffer */\n\n  assertNotNull(ctxt.allocTokenBuffer());\n  try {\n  ctxt.allocTokenBuffer();\n  } catch (IllegalStateException e) {\n  verifyException(e, \"second time\");\n  }\n  try {\n  ctxt.releaseTokenBuffer(new char[1]);\n  } catch (IllegalArgumentException e) {\n  verifyException(e, \"smaller than original\");\n  }\n  ctxt.releaseTokenBuffer(null);\n\n  /* Concat (write?) buffer */\n\n  assertNotNull(ctxt.allocConcatBuffer());\n  try {\n  ctxt.allocConcatBuffer();\n  } catch (IllegalStateException e) {\n  verifyException(e, \"second time\");\n  }\n  try {\n  ctxt.releaseConcatBuffer(new char[1]);\n  } catch (IllegalArgumentException e) {\n  verifyException(e, \"smaller than original\");\n  }\n  ctxt.releaseConcatBuffer(null);\n\n  /* NameCopy (write?) buffer */\n\n  assertNotNull(ctxt.allocNameCopyBuffer(100));\n  try {\n  ctxt.allocNameCopyBuffer(100);\n  } catch (IllegalStateException e) {\n  verifyException(e, \"second time\");\n  }\n  try {\n  ctxt.releaseNameCopyBuffer(new char[1]);\n  } catch (IllegalArgumentException e) {\n  verifyException(e, \"smaller than original\");\n  }\n  ctxt.releaseNameCopyBuffer(null);\n  }",
+        "stack": [
+          "BaseTest.verifyException line 390, TestIOContext.testAllocations line 27"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/core/io/IOContext.java",
+      "buggy_full_code": "package com.fasterxml.jackson.core.io;\n\nimport com.fasterxml.jackson.core.JsonEncoding;\nimport com.fasterxml.jackson.core.util.BufferRecycler;\nimport com.fasterxml.jackson.core.util.TextBuffer;\n\n\npublic class IOContext { protected final Object _sourceRef; protected JsonEncoding _encoding; protected final boolean _managedResource; protected final BufferRecycler _bufferRecycler; protected byte[] _readIOBuffer; protected byte[] _writeEncodingBuffer; protected byte[] _base64Buffer; protected char[] _tokenCBuffer; protected char[] _concatCBuffer; protected char[] _nameCopyBuffer; public IOContext(BufferRecycler br, Object sourceRef, boolean managedResource) {\n        _bufferRecycler = br;\n        _sourceRef = sourceRef;\n        _managedResource = managedResource;\n    }\n\n    public void setEncoding(JsonEncoding enc) {\n        _encoding = enc;\n    }\n\n    \n    public IOContext withEncoding(JsonEncoding enc) {\n        _encoding = enc;\n        return this;\n    }\n    \n    \n\n    public Object getSourceReference() { return _sourceRef; }\n    public JsonEncoding getEncoding() { return _encoding; }\n    public boolean isResourceManaged() { return _managedResource; }\n\n    \n\n    public TextBuffer constructTextBuffer() {\n        return new TextBuffer(_bufferRecycler);\n    }\n\n    \n    public byte[] allocReadIOBuffer() {\n        _verifyAlloc(_readIOBuffer);\n        return (_readIOBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER));\n    }\n\n    \n    public byte[] allocReadIOBuffer(int minSize) {\n        _verifyAlloc(_readIOBuffer);\n        return (_readIOBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER, minSize));\n    }\n    \n    public byte[] allocWriteEncodingBuffer() {\n        _verifyAlloc(_writeEncodingBuffer);\n        return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER));\n    }\n\n    \n    public byte[] allocWriteEncodingBuffer(int minSize) {\n        _verifyAlloc(_writeEncodingBuffer);\n        return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER, minSize));\n    }\n    \n    \n    public byte[] allocBase64Buffer() {\n        _verifyAlloc(_base64Buffer);\n        return (_base64Buffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_BASE64_CODEC_BUFFER));\n    }\n    \n    public char[] allocTokenBuffer() {\n        _verifyAlloc(_tokenCBuffer);\n        return (_tokenCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER));\n    }\n\n    \n    public char[] allocTokenBuffer(int minSize) {\n        _verifyAlloc(_tokenCBuffer);\n        return (_tokenCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER, minSize));\n    }\n    \n    public char[] allocConcatBuffer() {\n        _verifyAlloc(_concatCBuffer);\n        return (_concatCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_CONCAT_BUFFER));\n    }\n\n    public char[] allocNameCopyBuffer(int minSize) {\n        _verifyAlloc(_nameCopyBuffer);\n        return (_nameCopyBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, minSize));\n    }\n\n    \n    public void releaseReadIOBuffer(byte[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _readIOBuffer);\n            _readIOBuffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER, buf);\n        }\n    }\n\n    public void releaseWriteEncodingBuffer(byte[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _writeEncodingBuffer);\n            _writeEncodingBuffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER, buf);\n        }\n    }\n\n    public void releaseBase64Buffer(byte[] buf) {\n        if (buf != null) { \n            _verifyRelease(buf, _base64Buffer);\n            _base64Buffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_BASE64_CODEC_BUFFER, buf);\n        }\n    }\n    \n    public void releaseTokenBuffer(char[] buf) {\n        if (buf != null) {\n            _verifyRelease(buf, _tokenCBuffer);\n            _tokenCBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER, buf);\n        }\n    }\n\n    public void releaseConcatBuffer(char[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _concatCBuffer);\n            _concatCBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_CONCAT_BUFFER, buf);\n        }\n    }\n\n    public void releaseNameCopyBuffer(char[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _nameCopyBuffer);\n            _nameCopyBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, buf);\n        }\n    }\n\n    \n\n    protected final void _verifyAlloc(Object buffer) {\n        if (buffer != null) { throw new IllegalStateException(\"Trying to call same allocXxx() method second time\"); }\n    }\n\n    protected final void _verifyRelease(byte[] toRelease, byte[] src) {\n        \n        if ((toRelease != src) && (toRelease.length <= src.length)) { throw wrongBuf(); }\n    }\n\n    protected final void _verifyRelease(char[] toRelease, char[] src) {\n        \n        if ((toRelease != src) && (toRelease.length <= src.length)) { throw wrongBuf(); }\n    }\n\n    private IllegalArgumentException wrongBuf() {\n        \nreturn new IllegalArgumentException(\"Trying to release buffer not owned by the context\"); \n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.core.io;\n\nimport com.fasterxml.jackson.core.JsonEncoding;\nimport com.fasterxml.jackson.core.util.BufferRecycler;\nimport com.fasterxml.jackson.core.util.TextBuffer;\n\n\npublic class IOContext { protected final Object _sourceRef; protected JsonEncoding _encoding; protected final boolean _managedResource; protected final BufferRecycler _bufferRecycler; protected byte[] _readIOBuffer; protected byte[] _writeEncodingBuffer; protected byte[] _base64Buffer; protected char[] _tokenCBuffer; protected char[] _concatCBuffer; protected char[] _nameCopyBuffer; public IOContext(BufferRecycler br, Object sourceRef, boolean managedResource) {\n        _bufferRecycler = br;\n        _sourceRef = sourceRef;\n        _managedResource = managedResource;\n    }\n\n    public void setEncoding(JsonEncoding enc) {\n        _encoding = enc;\n    }\n\n    \n    public IOContext withEncoding(JsonEncoding enc) {\n        _encoding = enc;\n        return this;\n    }\n    \n    \n\n    public Object getSourceReference() { return _sourceRef; }\n    public JsonEncoding getEncoding() { return _encoding; }\n    public boolean isResourceManaged() { return _managedResource; }\n\n    \n\n    public TextBuffer constructTextBuffer() {\n        return new TextBuffer(_bufferRecycler);\n    }\n\n    \n    public byte[] allocReadIOBuffer() {\n        _verifyAlloc(_readIOBuffer);\n        return (_readIOBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER));\n    }\n\n    \n    public byte[] allocReadIOBuffer(int minSize) {\n        _verifyAlloc(_readIOBuffer);\n        return (_readIOBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER, minSize));\n    }\n    \n    public byte[] allocWriteEncodingBuffer() {\n        _verifyAlloc(_writeEncodingBuffer);\n        return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER));\n    }\n\n    \n    public byte[] allocWriteEncodingBuffer(int minSize) {\n        _verifyAlloc(_writeEncodingBuffer);\n        return (_writeEncodingBuffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER, minSize));\n    }\n    \n    \n    public byte[] allocBase64Buffer() {\n        _verifyAlloc(_base64Buffer);\n        return (_base64Buffer = _bufferRecycler.allocByteBuffer(BufferRecycler.BYTE_BASE64_CODEC_BUFFER));\n    }\n    \n    public char[] allocTokenBuffer() {\n        _verifyAlloc(_tokenCBuffer);\n        return (_tokenCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER));\n    }\n\n    \n    public char[] allocTokenBuffer(int minSize) {\n        _verifyAlloc(_tokenCBuffer);\n        return (_tokenCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER, minSize));\n    }\n    \n    public char[] allocConcatBuffer() {\n        _verifyAlloc(_concatCBuffer);\n        return (_concatCBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_CONCAT_BUFFER));\n    }\n\n    public char[] allocNameCopyBuffer(int minSize) {\n        _verifyAlloc(_nameCopyBuffer);\n        return (_nameCopyBuffer = _bufferRecycler.allocCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, minSize));\n    }\n\n    \n    public void releaseReadIOBuffer(byte[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _readIOBuffer);\n            _readIOBuffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_READ_IO_BUFFER, buf);\n        }\n    }\n\n    public void releaseWriteEncodingBuffer(byte[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _writeEncodingBuffer);\n            _writeEncodingBuffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_WRITE_ENCODING_BUFFER, buf);\n        }\n    }\n\n    public void releaseBase64Buffer(byte[] buf) {\n        if (buf != null) { \n            _verifyRelease(buf, _base64Buffer);\n            _base64Buffer = null;\n            _bufferRecycler.releaseByteBuffer(BufferRecycler.BYTE_BASE64_CODEC_BUFFER, buf);\n        }\n    }\n    \n    public void releaseTokenBuffer(char[] buf) {\n        if (buf != null) {\n            _verifyRelease(buf, _tokenCBuffer);\n            _tokenCBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_TOKEN_BUFFER, buf);\n        }\n    }\n\n    public void releaseConcatBuffer(char[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _concatCBuffer);\n            _concatCBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_CONCAT_BUFFER, buf);\n        }\n    }\n\n    public void releaseNameCopyBuffer(char[] buf) {\n        if (buf != null) {\n            \n            _verifyRelease(buf, _nameCopyBuffer);\n            _nameCopyBuffer = null;\n            _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, buf);\n        }\n    }\n\n    \n\n    protected final void _verifyAlloc(Object buffer) {\n        if (buffer != null) { throw new IllegalStateException(\"Trying to call same allocXxx() method second time\"); }\n    }\n\n    protected final void _verifyRelease(byte[] toRelease, byte[] src) {\n        \n        if ((toRelease != src) && (toRelease.length < src.length)) { throw wrongBuf(); }\n    }\n\n    protected final void _verifyRelease(char[] toRelease, char[] src) {\n        \n        if ((toRelease != src) && (toRelease.length < src.length)) { throw wrongBuf(); }\n    }\n\n    private IllegalArgumentException wrongBuf() {\n        \n        return new IllegalArgumentException(\"Trying to release buffer smaller than original\");\n    }\n}\n",
+      "buggy_signatures": [
+        "public class IOContext { protected final Object _sourceRef; protected JsonEncoding _encoding; protected final boolean _managedResource; protected final BufferRecycler _bufferRecycler; protected byte[] _readIOBuffer; protected byte[] _writeEncodingBuffer; protected byte[] _base64Buffer; protected char[] _tokenCBuffer; protected char[] _concatCBuffer; protected char[] _nameCopyBuffer; public IOContext(BufferRecycler br, Object sourceRef, boolean managedResource)",
+        "public void setEncoding(JsonEncoding enc)",
+        "public IOContext withEncoding(JsonEncoding enc)",
+        "public Object getSourceReference()",
+        "public JsonEncoding getEncoding()",
+        "public boolean isResourceManaged()",
+        "public TextBuffer constructTextBuffer()",
+        "public byte[] allocReadIOBuffer()",
+        "public byte[] allocReadIOBuffer(int minSize)",
+        "public byte[] allocWriteEncodingBuffer()",
+        "public byte[] allocWriteEncodingBuffer(int minSize)",
+        "public byte[] allocBase64Buffer()",
+        "public char[] allocTokenBuffer()",
+        "public char[] allocTokenBuffer(int minSize)",
+        "public char[] allocConcatBuffer()",
+        "public char[] allocNameCopyBuffer(int minSize)",
+        "public void releaseReadIOBuffer(byte[] buf)",
+        "public void releaseWriteEncodingBuffer(byte[] buf)",
+        "public void releaseBase64Buffer(byte[] buf)",
+        "public void releaseTokenBuffer(char[] buf)",
+        "public void releaseConcatBuffer(char[] buf)",
+        "public void releaseNameCopyBuffer(char[] buf)",
+        "protected final void _verifyAlloc(Object buffer)",
+        "protected final void _verifyRelease(byte[] toRelease, byte[] src)",
+        "protected final void _verifyRelease(char[] toRelease, char[] src)",
+        "private IllegalArgumentException wrongBuf()"
+      ],
+      "fixed_signatures": [
+        "public class IOContext { protected final Object _sourceRef; protected JsonEncoding _encoding; protected final boolean _managedResource; protected final BufferRecycler _bufferRecycler; protected byte[] _readIOBuffer; protected byte[] _writeEncodingBuffer; protected byte[] _base64Buffer; protected char[] _tokenCBuffer; protected char[] _concatCBuffer; protected char[] _nameCopyBuffer; public IOContext(BufferRecycler br, Object sourceRef, boolean managedResource)",
+        "public void setEncoding(JsonEncoding enc)",
+        "public IOContext withEncoding(JsonEncoding enc)",
+        "public Object getSourceReference()",
+        "public JsonEncoding getEncoding()",
+        "public boolean isResourceManaged()",
+        "public TextBuffer constructTextBuffer()",
+        "public byte[] allocReadIOBuffer()",
+        "public byte[] allocReadIOBuffer(int minSize)",
+        "public byte[] allocWriteEncodingBuffer()",
+        "public byte[] allocWriteEncodingBuffer(int minSize)",
+        "public byte[] allocBase64Buffer()",
+        "public char[] allocTokenBuffer()",
+        "public char[] allocTokenBuffer(int minSize)",
+        "public char[] allocConcatBuffer()",
+        "public char[] allocNameCopyBuffer(int minSize)",
+        "public void releaseReadIOBuffer(byte[] buf)",
+        "public void releaseWriteEncodingBuffer(byte[] buf)",
+        "public void releaseBase64Buffer(byte[] buf)",
+        "public void releaseTokenBuffer(char[] buf)",
+        "public void releaseConcatBuffer(char[] buf)",
+        "public void releaseNameCopyBuffer(char[] buf)",
+        "protected final void _verifyAlloc(Object buffer)",
+        "protected final void _verifyRelease(byte[] toRelease, byte[] src)",
+        "protected final void _verifyRelease(char[] toRelease, char[] src)",
+        "private IllegalArgumentException wrongBuf()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private IllegalArgumentException wrongBuf() {\n  \nreturn new IllegalArgumentException(\"Trying to release buffer not owned by the context\"); \n  }",
+          "fixed_method": "  private IllegalArgumentException wrongBuf() {\n  \n  return new IllegalArgumentException(\"Trying to release buffer smaller than original\");\n  }",
+          "diff": [
+            "@@ -271,16 +271,16 @@",
+            " \n",
+            "     protected final void _verifyRelease(byte[] toRelease, byte[] src) {\n",
+            "         // 07-Mar-2016, tatu: As per [core#255], only prevent shrinking of buffer\n",
+            "-        if ((toRelease != src) && (toRelease.length <= src.length)) { throw wrongBuf(); }\n",
+            "+        if ((toRelease != src) && (toRelease.length < src.length)) { throw wrongBuf(); }\n",
+            "     }\n",
+            " \n",
+            "     protected final void _verifyRelease(char[] toRelease, char[] src) {\n",
+            "         // 07-Mar-2016, tatu: As per [core#255], only prevent shrinking of buffer\n",
+            "-        if ((toRelease != src) && (toRelease.length <= src.length)) { throw wrongBuf(); }\n",
+            "+        if ((toRelease != src) && (toRelease.length < src.length)) { throw wrongBuf(); }\n",
+            "     }\n",
+            " \n",
+            "     private IllegalArgumentException wrongBuf() {\n",
+            "         // sanity check failed; trying to return different, smaller buffer.\n",
+            "-return new IllegalArgumentException(\"Trying to release buffer not owned by the context\"); \n",
+            "+        return new IllegalArgumentException(\"Trying to release buffer smaller than original\");\n",
+            "     }\n",
+            " }\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

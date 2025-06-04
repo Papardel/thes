@@ -1,0 +1,87 @@
+{
+  "bug_id": "27",
+  "failed_tests": {
+    "org.apache.commons.cli.BasicParserTest": [
+      {
+        "methodName": "testOptionGroupLong",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "selected option expected:<bar> but was:<null>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "ParserTestCase.testOptionGroupLong line 631"
+        ]
+      }
+    ],
+    "org.apache.commons.cli.GnuParserTest": [
+      {
+        "methodName": "testOptionGroupLong",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "selected option expected:<bar> but was:<null>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "ParserTestCase.testOptionGroupLong line 631"
+        ]
+      }
+    ],
+    "org.apache.commons.cli.PosixParserTest": [
+      {
+        "methodName": "testOptionGroupLong",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "selected option expected:<bar> but was:<null>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "ParserTestCase.testOptionGroupLong line 631"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/OptionGroup.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.Map;\n\n\npublic class OptionGroup implements Serializable { private static final long serialVersionUID = 1L; private Map optionMap = new HashMap(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n        \n        \n        optionMap.put(option.getKey(), option);\n\n        return this;\n    }\n\n    \n    public Collection getNames() {\n        \n        return optionMap.keySet();\n    }\n\n    \n    public Collection getOptions() {\n        \n        return optionMap.values();\n    }\n\n    \n    public void setSelected(Option option) throws AlreadySelectedException {\n        if (option == null)\n        {\n            \n            selected = null;\n            return;\n        }\n        \n        \n        \n        \n        if (selected == null || selected.equals(option.getOpt()))\n        {\n            selected = option.getOpt();\n        }\n        else\n        {\n            throw new AlreadySelectedException(this, option);\n        }\n    }\n\n    \n    public String getSelected() {\n        return selected;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    public String toString() {\n        StringBuffer buff = new StringBuffer();\n\n        Iterator iter = getOptions().iterator();\n\n        buff.append(\"[\");\n\n        while (iter.hasNext())\n        {\n            Option option = (Option) iter.next();\n\n            if (option.getOpt() != null)\n            {\n                buff.append(\"-\");\n                buff.append(option.getOpt());\n            }\n            else\n            {\n                buff.append(\"--\");\n                buff.append(option.getLongOpt());\n            }\n\n            buff.append(\" \");\n            buff.append(option.getDescription());\n\n            if (iter.hasNext())\n            {\n                buff.append(\", \");\n            }\n        }\n\n        buff.append(\"]\");\n\n        return buff.toString();\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.Map;\n\n\npublic class OptionGroup implements Serializable { private static final long serialVersionUID = 1L; private Map optionMap = new HashMap(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n        \n        \n        optionMap.put(option.getKey(), option);\n\n        return this;\n    }\n\n    \n    public Collection getNames() {\n        \n        return optionMap.keySet();\n    }\n\n    \n    public Collection getOptions() {\n        \n        return optionMap.values();\n    }\n\n    \n    public void setSelected(Option option) throws AlreadySelectedException {\n        if (option == null)\n        {\n            \n            selected = null;\n            return;\n        }\n        \n        \n        \n        \n        if (selected == null || selected.equals(option.getKey()))\n        {\n            selected = option.getKey();\n        }\n        else\n        {\n            throw new AlreadySelectedException(this, option);\n        }\n    }\n\n    \n    public String getSelected() {\n        return selected;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    public String toString() {\n        StringBuffer buff = new StringBuffer();\n\n        Iterator iter = getOptions().iterator();\n\n        buff.append(\"[\");\n\n        while (iter.hasNext())\n        {\n            Option option = (Option) iter.next();\n\n            if (option.getOpt() != null)\n            {\n                buff.append(\"-\");\n                buff.append(option.getOpt());\n            }\n            else\n            {\n                buff.append(\"--\");\n                buff.append(option.getLongOpt());\n            }\n\n            buff.append(\" \");\n            buff.append(option.getDescription());\n\n            if (iter.hasNext())\n            {\n                buff.append(\", \");\n            }\n        }\n\n        buff.append(\"]\");\n\n        return buff.toString();\n    }\n}\n",
+      "buggy_signatures": [
+        "public Collection getNames()",
+        "public Collection getOptions()",
+        "public void setSelected(Option option) throws AlreadySelectedException",
+        "public String getSelected()",
+        "public void setRequired(boolean required)",
+        "public boolean isRequired()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public Collection getNames()",
+        "public Collection getOptions()",
+        "public void setSelected(Option option) throws AlreadySelectedException",
+        "public String getSelected()",
+        "public void setRequired(boolean required)",
+        "public boolean isRequired()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void setSelected(Option option) throws AlreadySelectedException {\n  if (option == null)\n  {\n  \n  selected = null;\n  return;\n  }\n  \n  \n  \n  \n  if (selected == null || selected.equals(option.getOpt()))\n  {\n  selected = option.getOpt();\n  }\n  else\n  {\n  throw new AlreadySelectedException(this, option);\n  }\n  }",
+          "fixed_method": "  public void setSelected(Option option) throws AlreadySelectedException {\n  if (option == null)\n  {\n  \n  selected = null;\n  return;\n  }\n  \n  \n  \n  \n  if (selected == null || selected.equals(option.getKey()))\n  {\n  selected = option.getKey();\n  }\n  else\n  {\n  throw new AlreadySelectedException(this, option);\n  }\n  }",
+          "diff": [
+            "@@ -95,9 +95,9 @@",
+            "         // if no option has already been selected or the \n",
+            "         // same option is being reselected then set the\n",
+            "         // selected member variable\n",
+            "-        if (selected == null || selected.equals(option.getOpt()))\n",
+            "+        if (selected == null || selected.equals(option.getKey()))\n",
+            "         {\n",
+            "-            selected = option.getOpt();\n",
+            "+            selected = option.getKey();\n",
+            "         }\n",
+            "         else\n",
+            "         {\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "bug_id": "19",
+  "failed_tests": {
+    "org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest": [
+      {
+        "methodName": "testUnfinishedEntity",
+        "error": "java.lang.StringIndexOutOfBoundsException",
+        "message": "String index out of range: 19",
+        "fail_line": "        String result = neu.translate(input);",
+        "test_source": "  public void testUnfinishedEntity() {\n  NumericEntityUnescaper neu = new NumericEntityUnescaper();\n  String input = \"Test &#x30 not test\";\n  String expected = \"Test \\u0030 not test\";\n\n  String result = neu.translate(input);\n  assertEquals(\"Failed to support unfinished entities (i.e. missing semi-colon\", expected, result);\n  }",
+        "stack": [
+          "NumericEntityUnescaper.translate line 54, CharSequenceTranslator.translate line 86, CharSequenceTranslator.translate line 59, NumericEntityUnescaperTest.testUnfinishedEntity line 51"
+        ]
+      },
+      {
+        "methodName": "testOutOfBounds",
+        "error": "java.lang.StringIndexOutOfBoundsException",
+        "message": "String index out of range: 7",
+        "fail_line": "        assertEquals(\"Failed to ignore when last character is &\", \"Test &#\", neu.translate(\"Test &#\"));",
+        "test_source": "  public void testOutOfBounds() {\n  NumericEntityUnescaper neu = new NumericEntityUnescaper();\n\n  assertEquals(\"Failed to ignore when last character is &\", \"Test &\", neu.translate(\"Test &\"));\n  assertEquals(\"Failed to ignore when last character is &\", \"Test &#\", neu.translate(\"Test &#\"));\n  assertEquals(\"Failed to ignore when last character is &\", \"Test &#x\", neu.translate(\"Test &#x\"));\n  assertEquals(\"Failed to ignore when last character is &\", \"Test &#X\", neu.translate(\"Test &#X\"));\n  }",
+        "stack": [
+          "NumericEntityUnescaper.translate line 44, CharSequenceTranslator.translate line 86, CharSequenceTranslator.translate line 59, NumericEntityUnescaperTest.testOutOfBounds line 41"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang3.text.translate;\n\nimport java.io.IOException;\nimport java.io.Writer;\n\n\npublic class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException {\n        int seqEnd = input.length();\n        \n        if(input.charAt(index) == '&' && index < seqEnd - 1 && input.charAt(index + 1) == '#') {\n            int start = index + 2;\n            boolean isHex = false;\n\n            char firstChar = input.charAt(start);\n            if(firstChar == 'x' || firstChar == 'X') {\n                start++;\n                isHex = true;\n\n                \n            }\n\n            int end = start;\n            \n            while(input.charAt(end) != ';') \n            {\n                end++;\n            }\n\n            int entityValue;\n            try {\n                if(isHex) {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n                } else {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n                }\n            } catch(NumberFormatException nfe) {\n            System.err.println(\"FAIL: \" + input.subSequence(start, end) + \"[\" + start +\"][\"+ end +\"]\");\n                return 0;\n            }\n\n            if(entityValue > 0xFFFF) {\n                char[] chrs = Character.toChars(entityValue);\n                out.write(chrs[0]);\n                out.write(chrs[1]);\n            } else {\n                out.write(entityValue);\n            }\n\n\n            return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n        }\n        return 0;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang3.text.translate;\n\nimport java.io.IOException;\nimport java.io.Writer;\n\n\npublic class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException {\n        int seqEnd = input.length();\n        \n        if(input.charAt(index) == '&' && index < seqEnd - 2 && input.charAt(index + 1) == '#') {\n            int start = index + 2;\n            boolean isHex = false;\n\n            char firstChar = input.charAt(start);\n            if(firstChar == 'x' || firstChar == 'X') {\n                start++;\n                isHex = true;\n\n                \n                if(start == seqEnd) {\n                    return 0;\n                }\n            }\n\n            int end = start;\n            \n            while(end < seqEnd && ( (input.charAt(end) >= '0' && input.charAt(end) <= '9') ||\n                                    (input.charAt(end) >= 'a' && input.charAt(end) <= 'f') ||\n                                    (input.charAt(end) >= 'A' && input.charAt(end) <= 'F') ) )\n            {\n                end++;\n            }\n\n            int entityValue;\n            try {\n                if(isHex) {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n                } else {\n                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n                }\n            } catch(NumberFormatException nfe) {\n            System.err.println(\"FAIL: \" + input.subSequence(start, end) + \"[\" + start +\"][\"+ end +\"]\");\n                return 0;\n            }\n\n            if(entityValue > 0xFFFF) {\n                char[] chrs = Character.toChars(entityValue);\n                out.write(chrs[0]);\n                out.write(chrs[1]);\n            } else {\n                out.write(entityValue);\n            }\n\n            boolean semiNext = (end != seqEnd) && (input.charAt(end) == ';');\n\n            return 2 + (end - start) + (isHex ? 1 : 0) + (semiNext ? 1 : 0);\n        }\n        return 0;\n    }\n}\n",
+      "buggy_signatures": [
+        "public class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public class NumericEntityUnescaper extends CharSequenceTranslator { @Override public int translate(CharSequence input, int index, Writer out) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int translate(CharSequence input, int index, Writer out) throws IOException {\n  int seqEnd = input.length();\n  \n  if(input.charAt(index) == '&' && index < seqEnd - 1 && input.charAt(index + 1) == '#') {\n  int start = index + 2;\n  boolean isHex = false;\n\n  char firstChar = input.charAt(start);\n  if(firstChar == 'x' || firstChar == 'X') {\n  start++;\n  isHex = true;\n\n  \n  }\n\n  int end = start;\n  \n  while(input.charAt(end) != ';') \n  {\n  end++;\n  }\n\n  int entityValue;\n  try {\n  if(isHex) {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n  } else {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n  }\n  } catch(NumberFormatException nfe) {\n  System.err.println(\"FAIL: \" + input.subSequence(start, end) + \"[\" + start +\"][\"+ end +\"]\");\n  return 0;\n  }\n\n  if(entityValue > 0xFFFF) {\n  char[] chrs = Character.toChars(entityValue);\n  out.write(chrs[0]);\n  out.write(chrs[1]);\n  } else {\n  out.write(entityValue);\n  }\n\n\n  return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n  }\n  return 0;\n  }",
+          "fixed_method": "  public int translate(CharSequence input, int index, Writer out) throws IOException {\n  int seqEnd = input.length();\n  \n  if(input.charAt(index) == '&' && index < seqEnd - 2 && input.charAt(index + 1) == '#') {\n  int start = index + 2;\n  boolean isHex = false;\n\n  char firstChar = input.charAt(start);\n  if(firstChar == 'x' || firstChar == 'X') {\n  start++;\n  isHex = true;\n\n  \n  if(start == seqEnd) {\n  return 0;\n  }\n  }\n\n  int end = start;\n  \n  while(end < seqEnd && ( (input.charAt(end) >= '0' && input.charAt(end) <= '9') ||\n  (input.charAt(end) >= 'a' && input.charAt(end) <= 'f') ||\n  (input.charAt(end) >= 'A' && input.charAt(end) <= 'F') ) )\n  {\n  end++;\n  }\n\n  int entityValue;\n  try {\n  if(isHex) {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);\n  } else {\n  entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);\n  }\n  } catch(NumberFormatException nfe) {\n  System.err.println(\"FAIL: \" + input.subSequence(start, end) + \"[\" + start +\"][\"+ end +\"]\");\n  return 0;\n  }\n\n  if(entityValue > 0xFFFF) {\n  char[] chrs = Character.toChars(entityValue);\n  out.write(chrs[0]);\n  out.write(chrs[1]);\n  } else {\n  out.write(entityValue);\n  }\n\n  boolean semiNext = (end != seqEnd) && (input.charAt(end) == ';');\n\n  return 2 + (end - start) + (isHex ? 1 : 0) + (semiNext ? 1 : 0);\n  }\n  return 0;\n  }",
+          "diff": [
+            "@@ -37,7 +37,7 @@",
+            "     public int translate(CharSequence input, int index, Writer out) throws IOException {\n",
+            "         int seqEnd = input.length();\n",
+            "         // Uses -2 to ensure there is something after the &#\n",
+            "-        if(input.charAt(index) == '&' && index < seqEnd - 1 && input.charAt(index + 1) == '#') {\n",
+            "+        if(input.charAt(index) == '&' && index < seqEnd - 2 && input.charAt(index + 1) == '#') {\n",
+            "             int start = index + 2;\n",
+            "             boolean isHex = false;\n",
+            " \n",
+            "@@ -47,11 +47,16 @@",
+            "                 isHex = true;\n",
+            " \n",
+            "                 // Check there's more than just an x after the &#\n",
+            "+                if(start == seqEnd) {\n",
+            "+                    return 0;\n",
+            "+                }\n",
+            "             }\n",
+            " \n",
+            "             int end = start;\n",
+            "             // Note that this supports character codes without a ; on the end\n",
+            "-            while(input.charAt(end) != ';') \n",
+            "+            while(end < seqEnd && ( (input.charAt(end) >= '0' && input.charAt(end) <= '9') ||\n",
+            "+                                    (input.charAt(end) >= 'a' && input.charAt(end) <= 'f') ||\n",
+            "+                                    (input.charAt(end) >= 'A' && input.charAt(end) <= 'F') ) )\n",
+            "             {\n",
+            "                 end++;\n",
+            "             }\n",
+            "@@ -76,8 +81,9 @@",
+            "                 out.write(entityValue);\n",
+            "             }\n",
+            " \n",
+            "+            boolean semiNext = (end != seqEnd) && (input.charAt(end) == ';');\n",
+            " \n",
+            "-            return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n",
+            "+            return 2 + (end - start) + (isHex ? 1 : 0) + (semiNext ? 1 : 0);\n",
+            "         }\n",
+            "         return 0;\n",
+            "     }\n"
+          ],
+          "changed_lines": 12
+        }
+      ]
+    }
+  ]
+}

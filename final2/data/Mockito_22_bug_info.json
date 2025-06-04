@@ -1,0 +1,58 @@
+{
+  "bug_id": "22",
+  "failed_tests": {
+    "org.mockito.internal.matchers.EqualityTest": [
+      {
+        "methodName": "shouldKnowIfObjectsAreEqual",
+        "error": "java.lang.RuntimeException",
+        "message": "",
+        "fail_line": "\tassertTrue(areEqual(badequals,badequals));",
+        "test_source": "  public void shouldKnowIfObjectsAreEqual() throws Exception {\n  int[] arr = new int[] {1, 2};\n  assertTrue(areEqual(arr, arr));\n  assertTrue(areEqual(new int[] {1, 2}, new int[] {1, 2}));\n  assertTrue(areEqual(new Double[] {1.0}, new Double[] {1.0}));\n  assertTrue(areEqual(new String[0], new String[0]));\n  assertTrue(areEqual(new Object[10], new Object[10]));\n  assertTrue(areEqual(new int[] {1}, new Integer[] {1}));\n  assertTrue(areEqual(new Object[] {\"1\"}, new String[] {\"1\"}));\n\tObject badequals=new BadEquals();\n\tassertTrue(areEqual(badequals,badequals));\n\n  assertFalse(areEqual(new Object[9], new Object[10]));\n  assertFalse(areEqual(new int[] {1, 2}, new int[] {1}));\n  assertFalse(areEqual(new int[] {1}, new double[] {1.0}));\n  }",
+        "stack": [
+          "EqualityTest$BadEquals.equals line 34, Equality.areEqual line 18, EqualityTest.shouldKnowIfObjectsAreEqual line 24"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/matchers/Equality.java",
+      "buggy_full_code": "\npackage org.mockito.internal.matchers;\n\nimport java.lang.reflect.Array;\n\n\npublic class Equality { public static boolean areEqual(Object o1, Object o2) {\n        if (o1 == null || o2 == null) {\n            return o1 == null && o2 == null;\n        } else if (isArray(o1)) {\n            return isArray(o2) && areArraysEqual(o1, o2);\n        } else {\n            return o1.equals(o2);\n        }\n    }\n\n    static boolean areArraysEqual(Object o1, Object o2) {\n        return areArrayLengthsEqual(o1, o2)\n                && areArrayElementsEqual(o1, o2);\n    }\n\n    static boolean areArrayLengthsEqual(Object o1, Object o2) {\n        return Array.getLength(o1) == Array.getLength(o2);\n    }\n\n    static boolean areArrayElementsEqual(Object o1, Object o2) {\n        for (int i = 0; i < Array.getLength(o1); i++) {\n            if (!areEqual(Array.get(o1, i), Array.get(o2, i))) return false;\n        }\n        return true;\n    }\n\n    static boolean isArray(Object o) {\n        return o.getClass().isArray();\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal.matchers;\n\nimport java.lang.reflect.Array;\n\n\npublic class Equality { public static boolean areEqual(Object o1, Object o2) {\n        if (o1 == o2 ) {\n            return true;\n\t} else if (o1 == null || o2 == null) {\n            return o1 == null && o2 == null;\n        } else if (isArray(o1)) {\n            return isArray(o2) && areArraysEqual(o1, o2);\n        } else {\n            return o1.equals(o2);\n        }\n    }\n\n    static boolean areArraysEqual(Object o1, Object o2) {\n        return areArrayLengthsEqual(o1, o2)\n                && areArrayElementsEqual(o1, o2);\n    }\n\n    static boolean areArrayLengthsEqual(Object o1, Object o2) {\n        return Array.getLength(o1) == Array.getLength(o2);\n    }\n\n    static boolean areArrayElementsEqual(Object o1, Object o2) {\n        for (int i = 0; i < Array.getLength(o1); i++) {\n            if (!areEqual(Array.get(o1, i), Array.get(o2, i))) return false;\n        }\n        return true;\n    }\n\n    static boolean isArray(Object o) {\n        return o.getClass().isArray();\n    }\n}",
+      "buggy_signatures": [
+        "public class Equality { public static boolean areEqual(Object o1, Object o2)",
+        "static boolean areArraysEqual(Object o1, Object o2)",
+        "static boolean areArrayLengthsEqual(Object o1, Object o2)",
+        "static boolean areArrayElementsEqual(Object o1, Object o2)",
+        "static boolean isArray(Object o)"
+      ],
+      "fixed_signatures": [
+        "public class Equality { public static boolean areEqual(Object o1, Object o2)",
+        "static boolean areArraysEqual(Object o1, Object o2)",
+        "static boolean areArrayLengthsEqual(Object o1, Object o2)",
+        "static boolean areArrayElementsEqual(Object o1, Object o2)",
+        "static boolean isArray(Object o)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static boolean areEqual(Object o1, Object o2) {\n  if (o1 == null || o2 == null) {\n  return o1 == null && o2 == null;\n  } else if (isArray(o1)) {\n  return isArray(o2) && areArraysEqual(o1, o2);\n  } else {\n  return o1.equals(o2);\n  }\n  }",
+          "fixed_method": "  public static boolean areEqual(Object o1, Object o2) {\n  if (o1 == o2 ) {\n  return true;\n\t} else if (o1 == null || o2 == null) {\n  return o1 == null && o2 == null;\n  } else if (isArray(o1)) {\n  return isArray(o2) && areArraysEqual(o1, o2);\n  } else {\n  return o1.equals(o2);\n  }\n  }",
+          "diff": [
+            "@@ -10,7 +10,9 @@",
+            " public class Equality {\n",
+            " \n",
+            "     public static boolean areEqual(Object o1, Object o2) {\n",
+            "-        if (o1 == null || o2 == null) {\n",
+            "+        if (o1 == o2 ) {\n",
+            "+            return true;\n",
+            "+\t} else if (o1 == null || o2 == null) {\n",
+            "             return o1 == null && o2 == null;\n",
+            "         } else if (isArray(o1)) {\n",
+            "             return isArray(o2) && areArraysEqual(o1, o2);\n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "bug_id": "20",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.compiler.JXPath149Test": [
+      {
+        "methodName": "testComplexOperationWithVariables",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating <$a + $b <= $c> expected:<true> but was:<false>",
+        "fail_line": "        assertXPathValue(context, \"$a + $b <= $c\", Boolean.TRUE);",
+        "test_source": "  public void testComplexOperationWithVariables() {\n  JXPathContext context = JXPathContext.newContext(null);\n  context.getVariables().declareVariable(\"a\", Integer.valueOf(0));\n  context.getVariables().declareVariable(\"b\", Integer.valueOf(0));\n  context.getVariables().declareVariable(\"c\", Integer.valueOf(1));\n  assertXPathValue(context, \"$a + $b <= $c\", Boolean.TRUE);\n  }",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 52, JXPath149Test.testComplexOperationWithVariables line 29"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/compiler/CoreOperationRelationalExpression.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationRelationalExpression extends CoreOperation { protected CoreOperationRelationalExpression(Expression[] args) {\n        super(args);\n    }\n\n    public final Object computeValue(EvalContext context) {\n        return compute(args[0].compute(context), args[1].compute(context))\n                ? Boolean.TRUE : Boolean.FALSE;\n    }\n\n    protected final int getPrecedence() {\n        return RELATIONAL_EXPR_PRECEDENCE;\n    }\n\n    protected final boolean isSymmetric() {\n        return false;\n    }\n\n    \n    protected abstract boolean evaluateCompare(int compare); private boolean compute(Object left, Object right) {\n        left = reduce(left);\n        right = reduce(right);\n\n        if (left instanceof InitialContext) {\n            ((InitialContext) left).reset();\n        }\n        if (right instanceof InitialContext) {\n            ((InitialContext) right).reset();\n        }\n        if (left instanceof Iterator && right instanceof Iterator) {\n            return findMatch((Iterator) left, (Iterator) right);\n        }\n        if (left instanceof Iterator) {\n            return containsMatch((Iterator) left, right);\n        }\n        if (right instanceof Iterator) {\n            return containsMatch((Iterator) right, left);\n        }\n        double ld = InfoSetUtil.doubleValue(left);\n        if (Double.isNaN(ld)) {\n            return false;\n        }\n        double rd = InfoSetUtil.doubleValue(right);\n        if (Double.isNaN(rd)) {\n            return false;\n        }\n        return evaluateCompare(ld == rd ? 0 : ld < rd ? -1 : 1);\n    }\n\n    \n    private Object reduce(Object o) {\n        if (o instanceof SelfContext) {\n            o = ((EvalContext) o).getSingleNodePointer();\n        }\n        if (o instanceof Collection) {\n            o = ((Collection) o).iterator();\n        }\n        return o;\n    }\n\n    \n    private boolean containsMatch(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (compute(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    \n\n    \n    private boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (containsMatch(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationRelationalExpression extends CoreOperation { protected CoreOperationRelationalExpression(Expression[] args) {\n        super(args);\n    }\n\n    public final Object computeValue(EvalContext context) {\n        return compute(args[0].compute(context), args[1].compute(context))\n                ? Boolean.TRUE : Boolean.FALSE;\n    }\n\n    protected final int getPrecedence() {\n        return RELATIONAL_EXPR_PRECEDENCE;\n    }\n\n    protected final boolean isSymmetric() {\n        return false;\n    }\n\n    \n    protected abstract boolean evaluateCompare(int compare); private boolean compute(Object left, Object right) {\n        left = reduce(left);\n        right = reduce(right);\n\n        if (left instanceof InitialContext) {\n            ((InitialContext) left).reset();\n        }\n        if (right instanceof InitialContext) {\n            ((InitialContext) right).reset();\n        }\n        if (left instanceof Iterator && right instanceof Iterator) {\n            return findMatch((Iterator) left, (Iterator) right);\n        }\n        if (left instanceof Iterator) {\n            return containsMatch((Iterator) left, right);\n        }\n        if (right instanceof Iterator) {\n            return containsMatch(left, (Iterator) right);\n        }\n        double ld = InfoSetUtil.doubleValue(left);\n        if (Double.isNaN(ld)) {\n            return false;\n        }\n        double rd = InfoSetUtil.doubleValue(right);\n        if (Double.isNaN(rd)) {\n            return false;\n        }\n        return evaluateCompare(ld == rd ? 0 : ld < rd ? -1 : 1);\n    }\n\n    \n    private Object reduce(Object o) {\n        if (o instanceof SelfContext) {\n            o = ((EvalContext) o).getSingleNodePointer();\n        }\n        if (o instanceof Collection) {\n            o = ((Collection) o).iterator();\n        }\n        return o;\n    }\n\n    \n    private boolean containsMatch(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (compute(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    \n    private boolean containsMatch(Object value, Iterator it) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (compute(value, element)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    \n    private boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (containsMatch(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public abstract class CoreOperationRelationalExpression extends CoreOperation { protected CoreOperationRelationalExpression(Expression[] args)",
+        "public final Object computeValue(EvalContext context)",
+        "protected final int getPrecedence()",
+        "protected final boolean isSymmetric()",
+        "protected abstract boolean evaluateCompare(int compare); private boolean compute(Object left, Object right)",
+        "private Object reduce(Object o)",
+        "private boolean containsMatch(Iterator it, Object value)",
+        "private boolean findMatch(Iterator lit, Iterator rit)"
+      ],
+      "fixed_signatures": [
+        "public abstract class CoreOperationRelationalExpression extends CoreOperation { protected CoreOperationRelationalExpression(Expression[] args)",
+        "public final Object computeValue(EvalContext context)",
+        "protected final int getPrecedence()",
+        "protected final boolean isSymmetric()",
+        "protected abstract boolean evaluateCompare(int compare); private boolean compute(Object left, Object right)",
+        "private Object reduce(Object o)",
+        "private boolean containsMatch(Iterator it, Object value)",
+        "private boolean containsMatch(Object value, Iterator it)",
+        "private boolean findMatch(Iterator lit, Iterator rit)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private boolean compute(Object left, Object right) {\n  left = reduce(left);\n  right = reduce(right);\n\n  if (left instanceof InitialContext) {\n  ((InitialContext) left).reset();\n  }\n  if (right instanceof InitialContext) {\n  ((InitialContext) right).reset();\n  }\n  if (left instanceof Iterator && right instanceof Iterator) {\n  return findMatch((Iterator) left, (Iterator) right);\n  }\n  if (left instanceof Iterator) {\n  return containsMatch((Iterator) left, right);\n  }\n  if (right instanceof Iterator) {\n  return containsMatch((Iterator) right, left);\n  }\n  double ld = InfoSetUtil.doubleValue(left);\n  if (Double.isNaN(ld)) {\n  return false;\n  }\n  double rd = InfoSetUtil.doubleValue(right);\n  if (Double.isNaN(rd)) {\n  return false;\n  }\n  return evaluateCompare(ld == rd ? 0 : ld < rd ? -1 : 1);\n  }",
+          "fixed_method": "  private boolean compute(Object left, Object right) {\n  left = reduce(left);\n  right = reduce(right);\n\n  if (left instanceof InitialContext) {\n  ((InitialContext) left).reset();\n  }\n  if (right instanceof InitialContext) {\n  ((InitialContext) right).reset();\n  }\n  if (left instanceof Iterator && right instanceof Iterator) {\n  return findMatch((Iterator) left, (Iterator) right);\n  }\n  if (left instanceof Iterator) {\n  return containsMatch((Iterator) left, right);\n  }\n  if (right instanceof Iterator) {\n  return containsMatch(left, (Iterator) right);\n  }\n  double ld = InfoSetUtil.doubleValue(left);\n  if (Double.isNaN(ld)) {\n  return false;\n  }\n  double rd = InfoSetUtil.doubleValue(right);\n  if (Double.isNaN(rd)) {\n  return false;\n  }\n  return evaluateCompare(ld == rd ? 0 : ld < rd ? -1 : 1);\n  }",
+          "diff": [
+            "@@ -85,7 +85,7 @@",
+            "             return containsMatch((Iterator) left, right);\n",
+            "         }\n",
+            "         if (right instanceof Iterator) {\n",
+            "-            return containsMatch((Iterator) right, left);\n",
+            "+            return containsMatch(left, (Iterator) right);\n",
+            "         }\n",
+            "         double ld = InfoSetUtil.doubleValue(left);\n",
+            "         if (Double.isNaN(ld)) {\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  private boolean containsMatch(Iterator it, Object value) {\n  while (it.hasNext()) {\n  Object element = it.next();\n  if (compute(element, value)) {\n  return true;\n  }\n  }\n  return false;\n  }",
+          "fixed_method": "  private boolean containsMatch(Object value, Iterator it) {\n  while (it.hasNext()) {\n  Object element = it.next();\n  if (compute(value, element)) {\n  return true;\n  }\n  }\n  return false;\n  }",
+          "diff": [
+            "@@ -135,6 +135,15 @@",
+            "      * @param value to look for\n",
+            "      * @return whether a match was found\n",
+            "      */\n",
+            "+    private boolean containsMatch(Object value, Iterator it) {\n",
+            "+        while (it.hasNext()) {\n",
+            "+            Object element = it.next();\n",
+            "+            if (compute(value, element)) {\n",
+            "+                return true;\n",
+            "+            }\n",
+            "+        }\n",
+            "+        return false;\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * Learn whether there is an intersection between two Iterators.\n"
+          ],
+          "changed_lines": 9
+        }
+      ]
+    }
+  ]
+}

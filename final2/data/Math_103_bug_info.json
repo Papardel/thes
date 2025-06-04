@@ -1,0 +1,76 @@
+{
+  "bug_id": "103",
+  "failed_tests": {
+    "org.apache.commons.math.distribution.NormalDistributionTest": [
+      {
+        "methodName": "testExtremeValues",
+        "error": "org.apache.commons.math.MaxIterationsExceededException",
+        "message": "Maximal number of iterations (10,000) exceeded",
+        "fail_line": "            double lowerTail = distribution.cumulativeProbability((double)-i);",
+        "test_source": "  public void testExtremeValues() throws Exception {\n  NormalDistribution distribution = (NormalDistribution) getDistribution();\n  distribution.setMean(0);\n  distribution.setStandardDeviation(1);\n  for (int i = 0; i < 100; i+=5) { // make sure no convergence exception\n  double lowerTail = distribution.cumulativeProbability((double)-i);\n  double upperTail = distribution.cumulativeProbability((double) i);\n  if (i < 10) { // make sure not top-coded\n  assertTrue(lowerTail > 0.0d);\n  assertTrue(upperTail < 1.0d);\n  }\n  else { // make sure top coding not reversed\n  assertTrue(lowerTail < 0.00001);\n  assertTrue(upperTail > 0.99999);\n  }\n  } \n  }",
+        "stack": [
+          "Gamma.regularizedGammaP line 180, Erf.erf line 56, NormalDistributionImpl.cumulativeProbability line 109, NormalDistributionTest.testExtremeValues line 133"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/distribution/NormalDistributionImpl.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math.distribution;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.special.Erf;\n\n\npublic class NormalDistributionImpl extends AbstractContinuousDistribution implements NormalDistribution, Serializable { private static final long serialVersionUID = 8589540077390120676L; private double mean = 0; private double standardDeviation = 1; public NormalDistributionImpl(double mean, double sd) {\n        super();\n        setMean(mean);\n        setStandardDeviation(sd);\n    }\n    \n    \n    public NormalDistributionImpl() {\n        this(0.0, 1.0);\n    }\n    \n     \n    public double getMean() {\n        return mean;\n    }\n    \n    \n    public void setMean(double mean) {\n        this.mean = mean;\n    }\n\n    \n    public double getStandardDeviation() {\n        return standardDeviation;\n    }\n\n    \n    public void setStandardDeviation(double sd) {\n        if (sd <= 0.0) {\n            throw new IllegalArgumentException(\n                \"Standard deviation must be positive.\");\n        }       \n        standardDeviation = sd;\n    }\n\n    \n    public double cumulativeProbability(double x) throws MathException {\n            return 0.5 * (1.0 + Erf.erf((x - mean) /\n                    (standardDeviation * Math.sqrt(2.0))));\n    }\n    \n    \n    public double inverseCumulativeProbability(final double p) throws MathException {\n        if (p == 0) {\n            return Double.NEGATIVE_INFINITY;\n        }\n        if (p == 1) {\n            return Double.POSITIVE_INFINITY;\n        }\n        return super.inverseCumulativeProbability(p);\n    }\n    \n    \n    protected double getDomainLowerBound(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = -Double.MAX_VALUE;\n        } else {\n            ret = getMean();\n        }\n        \n        return ret;\n    }\n\n    \n    protected double getDomainUpperBound(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = getMean();\n        } else {\n            ret = Double.MAX_VALUE;\n        }\n        \n        return ret;\n    }\n\n    \n    protected double getInitialDomain(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = getMean() - getStandardDeviation();\n        } else if (p > .5) {\n            ret = getMean() + getStandardDeviation();\n        } else {\n            ret = getMean();\n        }\n        \n        return ret;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math.distribution;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.special.Erf;\n\n\npublic class NormalDistributionImpl extends AbstractContinuousDistribution implements NormalDistribution, Serializable { private static final long serialVersionUID = 8589540077390120676L; private double mean = 0; private double standardDeviation = 1; public NormalDistributionImpl(double mean, double sd) {\n        super();\n        setMean(mean);\n        setStandardDeviation(sd);\n    }\n    \n    \n    public NormalDistributionImpl() {\n        this(0.0, 1.0);\n    }\n    \n     \n    public double getMean() {\n        return mean;\n    }\n    \n    \n    public void setMean(double mean) {\n        this.mean = mean;\n    }\n\n    \n    public double getStandardDeviation() {\n        return standardDeviation;\n    }\n\n    \n    public void setStandardDeviation(double sd) {\n        if (sd <= 0.0) {\n            throw new IllegalArgumentException(\n                \"Standard deviation must be positive.\");\n        }       \n        standardDeviation = sd;\n    }\n\n    \n    public double cumulativeProbability(double x) throws MathException {\n        try {\n            return 0.5 * (1.0 + Erf.erf((x - mean) /\n                    (standardDeviation * Math.sqrt(2.0))));\n        } catch (MaxIterationsExceededException ex) {\n            if (x < (mean - 20 * standardDeviation)) { \n                return 0.0d;\n            } else if (x > (mean + 20 * standardDeviation)) {\n                return 1.0d;\n            } else {\n                throw ex;\n            }\n        }\n    }\n    \n    \n    public double inverseCumulativeProbability(final double p) throws MathException {\n        if (p == 0) {\n            return Double.NEGATIVE_INFINITY;\n        }\n        if (p == 1) {\n            return Double.POSITIVE_INFINITY;\n        }\n        return super.inverseCumulativeProbability(p);\n    }\n    \n    \n    protected double getDomainLowerBound(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = -Double.MAX_VALUE;\n        } else {\n            ret = getMean();\n        }\n        \n        return ret;\n    }\n\n    \n    protected double getDomainUpperBound(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = getMean();\n        } else {\n            ret = Double.MAX_VALUE;\n        }\n        \n        return ret;\n    }\n\n    \n    protected double getInitialDomain(double p) {\n        double ret;\n\n        if (p < .5) {\n            ret = getMean() - getStandardDeviation();\n        } else if (p > .5) {\n            ret = getMean() + getStandardDeviation();\n        } else {\n            ret = getMean();\n        }\n        \n        return ret;\n    }\n}\n",
+      "buggy_signatures": [
+        "public NormalDistributionImpl()",
+        "public double getMean()",
+        "public void setMean(double mean)",
+        "public double getStandardDeviation()",
+        "public void setStandardDeviation(double sd)",
+        "public double cumulativeProbability(double x) throws MathException",
+        "public double inverseCumulativeProbability(final double p) throws MathException",
+        "protected double getDomainLowerBound(double p)",
+        "protected double getDomainUpperBound(double p)",
+        "protected double getInitialDomain(double p)"
+      ],
+      "fixed_signatures": [
+        "public NormalDistributionImpl()",
+        "public double getMean()",
+        "public void setMean(double mean)",
+        "public double getStandardDeviation()",
+        "public void setStandardDeviation(double sd)",
+        "public double cumulativeProbability(double x) throws MathException",
+        "public double inverseCumulativeProbability(final double p) throws MathException",
+        "protected double getDomainLowerBound(double p)",
+        "protected double getDomainUpperBound(double p)",
+        "protected double getInitialDomain(double p)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public double cumulativeProbability(double x) throws MathException {\n  return 0.5 * (1.0 + Erf.erf((x - mean) /\n  (standardDeviation * Math.sqrt(2.0))));\n  }",
+          "fixed_method": "  public double cumulativeProbability(double x) throws MathException {\n  try {\n  return 0.5 * (1.0 + Erf.erf((x - mean) /\n  (standardDeviation * Math.sqrt(2.0))));\n  } catch (MaxIterationsExceededException ex) {\n  if (x < (mean - 20 * standardDeviation)) { \n  return 0.0d;\n  } else if (x > (mean + 20 * standardDeviation)) {\n  return 1.0d;\n  } else {\n  throw ex;\n  }\n  }\n  }",
+          "diff": [
+            "@@ -106,8 +106,18 @@",
+            "      * convergence exception is caught and 0 or 1 is returned.\n",
+            "      */\n",
+            "     public double cumulativeProbability(double x) throws MathException {\n",
+            "+        try {\n",
+            "             return 0.5 * (1.0 + Erf.erf((x - mean) /\n",
+            "                     (standardDeviation * Math.sqrt(2.0))));\n",
+            "+        } catch (MaxIterationsExceededException ex) {\n",
+            "+            if (x < (mean - 20 * standardDeviation)) { // JDK 1.5 blows at 38\n",
+            "+                return 0.0d;\n",
+            "+            } else if (x > (mean + 20 * standardDeviation)) {\n",
+            "+                return 1.0d;\n",
+            "+            } else {\n",
+            "+                throw ex;\n",
+            "+            }\n",
+            "+        }\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 10
+        }
+      ]
+    }
+  ]
+}

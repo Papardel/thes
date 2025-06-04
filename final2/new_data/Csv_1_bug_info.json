@@ -1,0 +1,52 @@
+{
+  "bug_id": "1",
+  "failed_tests": {
+    "org.apache.commons.csv.CSVParserTest": [
+      {
+        "methodName": "testGetLineNumberWithCR",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1> but was:<0>",
+        "fail_line": "        assertEquals(1, parser.getLineNumber());",
+        "test_source": "  public void testGetLineNumberWithCR() throws Exception {\n  CSVParser parser = new CSVParser(\"a\\rb\\rc\", CSVFormat.DEFAULT.withLineSeparator(\"\\r\"));\n  \n  assertEquals(0, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(1, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(2, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(2, parser.getLineNumber());\n  assertNull(parser.getRecord());\n  }",
+        "stack": [
+          "CSVParserTest.testGetLineNumberWithCR line 510"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/csv/ExtendedBufferedReader.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.csv;\n\nimport java.io.BufferedReader;\nimport java.io.IOException;\nimport java.io.Reader;\n\n\nclass ExtendedBufferedReader extends BufferedReader {\n\n    \n    static final int END_OF_STREAM = -1; static final int UNDEFINED = -2; private int lastChar = UNDEFINED; private int lineCounter = 0; ExtendedBufferedReader(Reader r) {\n        super(r);\n    }\n\n    @Override\n    public int read() throws IOException {\n        int current = super.read();\n        if (current == '\\n') {\n            lineCounter++;\n        }\n        lastChar = current;\n        return lastChar;\n    }\n\n    \n    int readAgain() {\n        return lastChar;\n    }\n\n    @Override\n    public int read(char[] buf, int offset, int length) throws IOException {\n        if (length == 0) {\n            return 0;\n        }\n        \n        int len = super.read(buf, offset, length);\n        \n        if (len > 0) {\n\n            for (int i = offset; i < offset + len; i++) {\n                char ch = buf[i];\n                if (ch == '\\n') {\n                    if ('\\r' != (i > 0 ? buf[i-1]: lastChar)) {\n                        lineCounter++;                        \n                    }\n                } else if (ch == '\\r') {\n                    lineCounter++;\n                }\n            }\n\n            lastChar = buf[offset + len - 1];\n\n        } else if (len == -1) {\n            lastChar = END_OF_STREAM;\n        }\n        \n        return len;\n    }\n\n    \n    @Override\n    public String readLine() throws IOException {\n        String line = super.readLine();\n\n        if (line != null) {\n            if (line.length() > 0) {\n                lastChar = line.charAt(line.length() - 1);\n            }\n            lineCounter++;\n        } else {\n            lastChar = END_OF_STREAM;\n        }\n\n        return line;\n    }\n\n    \n    int lookAhead() throws IOException {\n        super.mark(1);\n        int c = super.read();\n        super.reset();\n\n        return c;\n    }\n\n    \n    int getLineNumber() {\n        return lineCounter;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.csv;\n\nimport java.io.BufferedReader;\nimport java.io.IOException;\nimport java.io.Reader;\n\n\nclass ExtendedBufferedReader extends BufferedReader {\n\n    \n    static final int END_OF_STREAM = -1; static final int UNDEFINED = -2; private int lastChar = UNDEFINED; private int lineCounter = 0; ExtendedBufferedReader(Reader r) {\n        super(r);\n    }\n\n    @Override\n    public int read() throws IOException {\n        int current = super.read();\n        if (current == '\\r' || (current == '\\n' && lastChar != '\\r')) {\n            lineCounter++;\n        }\n        lastChar = current;\n        return lastChar;\n    }\n\n    \n    int readAgain() {\n        return lastChar;\n    }\n\n    @Override\n    public int read(char[] buf, int offset, int length) throws IOException {\n        if (length == 0) {\n            return 0;\n        }\n        \n        int len = super.read(buf, offset, length);\n        \n        if (len > 0) {\n\n            for (int i = offset; i < offset + len; i++) {\n                char ch = buf[i];\n                if (ch == '\\n') {\n                    if ('\\r' != (i > 0 ? buf[i-1]: lastChar)) {\n                        lineCounter++;                        \n                    }\n                } else if (ch == '\\r') {\n                    lineCounter++;\n                }\n            }\n\n            lastChar = buf[offset + len - 1];\n\n        } else if (len == -1) {\n            lastChar = END_OF_STREAM;\n        }\n        \n        return len;\n    }\n\n    \n    @Override\n    public String readLine() throws IOException {\n        String line = super.readLine();\n\n        if (line != null) {\n            if (line.length() > 0) {\n                lastChar = line.charAt(line.length() - 1);\n            }\n            lineCounter++;\n        } else {\n            lastChar = END_OF_STREAM;\n        }\n\n        return line;\n    }\n\n    \n    int lookAhead() throws IOException {\n        super.mark(1);\n        int c = super.read();\n        super.reset();\n\n        return c;\n    }\n\n    \n    int getLineNumber() {\n        return lineCounter;\n    }\n}\n",
+      "buggy_signatures": [
+        "public int read() throws IOException",
+        "public int read(char[] buf, int offset, int length) throws IOException",
+        "public String readLine() throws IOException"
+      ],
+      "fixed_signatures": [
+        "public int read() throws IOException",
+        "public int read(char[] buf, int offset, int length) throws IOException",
+        "public String readLine() throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int read() throws IOException {\n  int current = super.read();\n  if (current == '\\n') {\n  lineCounter++;\n  }\n  lastChar = current;\n  return lastChar;\n  }",
+          "fixed_method": "  public int read() throws IOException {\n  int current = super.read();\n  if (current == '\\r' || (current == '\\n' && lastChar != '\\r')) {\n  lineCounter++;\n  }\n  lastChar = current;\n  return lastChar;\n  }",
+          "diff": [
+            "@@ -55,7 +55,7 @@",
+            "     @Override\n",
+            "     public int read() throws IOException {\n",
+            "         int current = super.read();\n",
+            "-        if (current == '\\n') {\n",
+            "+        if (current == '\\r' || (current == '\\n' && lastChar != '\\r')) {\n",
+            "             lineCounter++;\n",
+            "         }\n",
+            "         lastChar = current;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

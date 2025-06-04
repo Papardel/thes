@@ -1,0 +1,10 @@
+{
+  "bug_id": "Codec_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 5\n Chosen Methods\n\n### Method 1\nSignature: org.apache.commons.codec.binary.Base64.private void resizeBuffer()\n```java\nprivate void resizeBuffer() {\n        if (buffer == null) {\n            buffer = new byte[DEFAULT_BUFFER_SIZE];\n            pos = 0;\n            readPos = 0;\n        } else {\n            byte[] b = new byte[buffer.length * DEFAULT_BUFFER_RESIZE_FACTOR];\n            System.arraycopy(buffer, 0, b, 0, buffer.length);\n            buffer = b;\n        }\n    }\n```\n\n### Method 2\nSignature: org.apache.commons.codec.binary.Base64.public static String encodeBase64URLSafeString(byte[] binaryData)\n```java\npublic static String encodeBase64URLSafeString(byte[] binaryData) {\n        return StringUtils.newStringUtf8(encodeBase64(binaryData, false, true));\n    }\n```\n\n### Method 3\nSignature: org.apache.commons.codec.binary.Base64.private static boolean isWhiteSpace(byte byteToCheck)\n```java\nprivate static boolean isWhiteSpace(byte byteToCheck) {\n        switch (byteToCheck) {\n            case ' ' :\n            case '\\n' :\n            case '\\r' :\n            case '\\t' :\n                return true;\n            default :\n                return false;\n        }\n    }\n```\n\n### Method 4\nSignature: org.apache.commons.codec.binary.Base64.public Base64()\n```java\npublic Base64() {\n        this(0);\n    }\n```\n\n### Method 5\nSignature: org.apache.commons.codec.binary.Base64.public Base64(int lineLength)\n```java\npublic Base64(int lineLength) {\n        this(lineLength, CHUNK_SEPARATOR);\n    }\n```\nAnalyse the candidate methods above and determine the one most likely to cause the bug.\nReply exactly:\nRESPONSE: <fully-qualified-signature>\n",
+      "response": "```java\norg.apache.commons.codec.binary.Base64.public Base64(int lineLength)\n```"
+    }
+  ]
+}

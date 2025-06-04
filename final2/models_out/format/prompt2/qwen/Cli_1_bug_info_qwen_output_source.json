@@ -1,0 +1,10 @@
+{
+  "bug_id": "Cli_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE:\n<signature-1>\n<signature-2>\n<signature-3>\n<signature-4>\n<signature-5>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\n--------------------\nSource:\npublic void testCLI13()\n  throws ParseException\n  {\n  final String debugOpt = \"debug\";\n  Option debug = OptionBuilder\n  .withArgName( debugOpt )\n  .withDescription( \"turn on debugging\" )\n  .withLongOpt( debugOpt )\n  .hasArg()\n  .create( 'd' );\n  Options options = new Options();\n  options.addOption( debug );\n  CommandLine commandLine = new PosixParser().parse( options, new String[]{\"-d\", \"true\"} );\n\n  assertEquals(\"true\", commandLine.getOptionValue( debugOpt ));\n  assertEquals(\"true\", commandLine.getOptionValue( 'd' ));\n  assertTrue(commandLine.hasOption( 'd'));\n  assertTrue(commandLine.hasOption( debugOpt));\n  }\nStack:\nBugCLI13Test.testCLI13 line 50\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.apache.commons.cli.CommandLine\n    - List args = new LinkedList()\n    - Map options = new HashMap()\n    - Map names = new HashMap()\n    - Map hashcodeMap = new HashMap()\n    - boolean hasOption(String opt)\n    - boolean hasOption(char opt)\n    - Object getOptionObject(String opt)\n    - Object getOptionObject(char opt)\n    - String getOptionValue(String opt)\n    - String getOptionValue(char opt)\n    - String[] getOptionValues(String opt)\n    - String[] getOptionValues(char opt)\n    - String getOptionValue(String opt, String defaultValue)\n    - String getOptionValue(char opt, String defaultValue)\n    - String[] getArgs()\n    - List getArgList()\n    - Iterator iterator()\n    - Option[] getOptions()\n\nYour task:\nList the FIVE most suspicious method (or constructor)",
+      "response": "calls in the given source code snippet. Provide their method signatures.\n **\n\n\n\n\n\n\n\n\n\ns"
+    }
+  ]
+}

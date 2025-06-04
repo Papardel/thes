@@ -1,0 +1,130 @@
+{
+  "bug_id": "36",
+  "failed_tests": {
+    "org.apache.commons.cli.bug.BugCLI266Test": [
+      {
+        "methodName": "testOptionComparatorInsertedOrder",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[p]> but was:<[x]>",
+        "fail_line": "            Assert.assertEquals(o.getOpt(), insertedOrder.get(i));",
+        "test_source": "  public void testOptionComparatorInsertedOrder() throws ParseException {\n  Collection<Option> options = getOptions().getOptions();\n  int i = 0;\n  for(Option o: options) {\n  Assert.assertEquals(o.getOpt(), insertedOrder.get(i));\n  i++;\n  }\n  }",
+        "stack": [
+          "BugCLI266Test.testOptionComparatorInsertedOrder line 39"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/OptionGroup.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.Map;\n\n\npublic class OptionGroup implements Serializable { private static final long serialVersionUID = 1L; private final Map<String, Option> optionMap = new HashMap<String, Option>(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n        \n        \n        optionMap.put(option.getKey(), option);\n\n        return this;\n    }\n\n    \n    public Collection<String> getNames() {\n        \n        return optionMap.keySet();\n    }\n\n    \n    public Collection<Option> getOptions() {\n        \n        return optionMap.values();\n    }\n\n    \n    public void setSelected(Option option) throws AlreadySelectedException {\n        if (option == null)\n        {\n            \n            selected = null;\n            return;\n        }\n        \n        \n        \n        \n        if (selected == null || selected.equals(option.getKey()))\n        {\n            selected = option.getKey();\n        }\n        else\n        {\n            throw new AlreadySelectedException(this, option);\n        }\n    }\n\n    \n    public String getSelected() {\n        return selected;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder buff = new StringBuilder();\n        \n        Iterator<Option> iter = getOptions().iterator();\n\n        buff.append(\"[\");\n\n        while (iter.hasNext())\n        {\n            Option option = iter.next();\n\n            if (option.getOpt() != null)\n            {\n                buff.append(\"-\");\n                buff.append(option.getOpt());\n            }\n            else\n            {\n                buff.append(\"--\");\n                buff.append(option.getLongOpt());\n            }\n            \n            if (option.getDescription() != null)\n            {\n                buff.append(\" \");\n                buff.append(option.getDescription());\n            }\n            \n            if (iter.hasNext())\n            {\n                buff.append(\", \");\n            }\n        }\n\n        buff.append(\"]\");\n\n        return buff.toString();\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.Collection;\nimport java.util.Iterator;\nimport java.util.LinkedHashMap;\nimport java.util.Map;\n\n\npublic class OptionGroup implements Serializable { private static final long serialVersionUID = 1L; private final Map<String, Option> optionMap = new LinkedHashMap<String, Option>(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n        \n        \n        optionMap.put(option.getKey(), option);\n\n        return this;\n    }\n\n    \n    public Collection<String> getNames() {\n        \n        return optionMap.keySet();\n    }\n\n    \n    public Collection<Option> getOptions() {\n        \n        return optionMap.values();\n    }\n\n    \n    public void setSelected(Option option) throws AlreadySelectedException {\n        if (option == null)\n        {\n            \n            selected = null;\n            return;\n        }\n        \n        \n        \n        \n        if (selected == null || selected.equals(option.getKey()))\n        {\n            selected = option.getKey();\n        }\n        else\n        {\n            throw new AlreadySelectedException(this, option);\n        }\n    }\n\n    \n    public String getSelected() {\n        return selected;\n    }\n\n    \n    public void setRequired(boolean required) {\n        this.required = required;\n    }\n\n    \n    public boolean isRequired() {\n        return required;\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder buff = new StringBuilder();\n        \n        Iterator<Option> iter = getOptions().iterator();\n\n        buff.append(\"[\");\n\n        while (iter.hasNext())\n        {\n            Option option = iter.next();\n\n            if (option.getOpt() != null)\n            {\n                buff.append(\"-\");\n                buff.append(option.getOpt());\n            }\n            else\n            {\n                buff.append(\"--\");\n                buff.append(option.getLongOpt());\n            }\n            \n            if (option.getDescription() != null)\n            {\n                buff.append(\" \");\n                buff.append(option.getDescription());\n            }\n            \n            if (iter.hasNext())\n            {\n                buff.append(\", \");\n            }\n        }\n\n        buff.append(\"]\");\n\n        return buff.toString();\n    }\n}\n",
+      "buggy_signatures": [
+        "public Collection<String> getNames()",
+        "public Collection<Option> getOptions()",
+        "public void setSelected(Option option) throws AlreadySelectedException",
+        "public String getSelected()",
+        "public void setRequired(boolean required)",
+        "public boolean isRequired()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public Collection<String> getNames()",
+        "public Collection<Option> getOptions()",
+        "public void setSelected(Option option) throws AlreadySelectedException",
+        "public String getSelected()",
+        "public void setRequired(boolean required)",
+        "public boolean isRequired()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -19,8 +19,8 @@",
+            " \n",
+            " import java.io.Serializable;\n",
+            " import java.util.Collection;\n",
+            "-import java.util.HashMap;\n",
+            " import java.util.Iterator;\n",
+            "+import java.util.LinkedHashMap;\n",
+            " import java.util.Map;\n",
+            " \n",
+            " /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  private final Map<String, Option> optionMap = new HashMap<String, Option>(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n  \n  \n  optionMap.put(option.getKey(), option);\n\n  return this;\n  }",
+          "fixed_method": "  private final Map<String, Option> optionMap = new LinkedHashMap<String, Option>(); private String selected; private boolean required; public OptionGroup addOption(Option option) {\n  \n  \n  optionMap.put(option.getKey(), option);\n\n  return this;\n  }",
+          "diff": [
+            "@@ -34,7 +34,7 @@",
+            "     private static final long serialVersionUID = 1L;\n",
+            "     \n",
+            "     /** hold the options */\n",
+            "-    private final Map<String, Option> optionMap = new HashMap<String, Option>();\n",
+            "+    private final Map<String, Option> optionMap = new LinkedHashMap<String, Option>();\n",
+            " \n",
+            "     /** the name of the selected option */\n",
+            "     private String selected;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    },
+    {
+      "name": "org/apache/commons/cli/Options.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.HashSet;\nimport java.util.LinkedHashMap;\nimport java.util.List;\nimport java.util.Map;\n\n\npublic class Options implements Serializable { private static final long serialVersionUID = 1L; private final Map<String, Option> shortOpts = new LinkedHashMap<String, Option>(); private final Map<String, Option> longOpts = new LinkedHashMap<String, Option>(); private final List<Object> requiredOpts = new ArrayList<Object>(); private final Map<String, OptionGroup> optionGroups = new java.util.HashMap<String, OptionGroup>(); public Options addOptionGroup(OptionGroup group) {\n        if (group.isRequired())\n        {\n            requiredOpts.add(group);\n        }\n\n        for (Option option : group.getOptions())\n        {\n            \n            \n            \n            option.setRequired(false);\n            addOption(option);\n\n            optionGroups.put(option.getKey(), group);\n        }\n\n        return this;\n    }\n\n    \n    Collection<OptionGroup> getOptionGroups()\n    {\n        return new HashSet<OptionGroup>(optionGroups.values());\n    }\n\n    \n    public Options addOption(String opt, String description) {\n        addOption(opt, null, false, description);\n        return this;\n    }\n\n    \n    public Options addOption(String opt, boolean hasArg, String description) {\n        addOption(opt, null, hasArg, description);\n        return this;\n    }\n\n    \n    public Options addOption(String opt, String longOpt, boolean hasArg, String description) {\n        addOption(new Option(opt, longOpt, hasArg, description));\n        return this;\n    }\n\n    \n    public Options addOption(Option opt) {\n        String key = opt.getKey();\n\n        \n        if (opt.hasLongOpt())\n        {\n            longOpts.put(opt.getLongOpt(), opt);\n        }\n\n        \n        if (opt.isRequired())\n        {\n            if (requiredOpts.contains(key))\n            {\n                requiredOpts.remove(requiredOpts.indexOf(key));\n            }\n            requiredOpts.add(key);\n        }\n\n        shortOpts.put(key, opt);\n\n        return this;\n    }\n\n    \n    public Collection<Option> getOptions() {\n        return Collections.unmodifiableCollection(helpOptions());\n    }\n\n    \n    List<Option> helpOptions()\n    {\n        return new ArrayList<Option>(shortOpts.values());\n    }\n\n    \n    public List getRequiredOptions() {\n        return Collections.unmodifiableList(requiredOpts);\n    }\n\n    \n    public Option getOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        if (shortOpts.containsKey(opt))\n        {\n            return shortOpts.get(opt);\n        }\n\n        return longOpts.get(opt);\n    }\n\n    \n    public List<String> getMatchingOptions(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n        \n        List<String> matchingOpts = new ArrayList<String>();\n\n        \n        if (longOpts.keySet().contains(opt))\n        {\n            return Collections.singletonList(opt);\n        }\n\n        for (String longOpt : longOpts.keySet())\n        {\n            if (longOpt.startsWith(opt))\n            {\n                matchingOpts.add(longOpt);\n            }\n        }\n        \n        return matchingOpts;\n    }\n\n    \n    public boolean hasOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return shortOpts.containsKey(opt) || longOpts.containsKey(opt);\n    }\n\n    \n    public boolean hasLongOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return longOpts.containsKey(opt);\n    }\n\n    \n    public boolean hasShortOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return shortOpts.containsKey(opt);\n    }\n\n    \n    public OptionGroup getOptionGroup(Option opt) {\n        return optionGroups.get(opt.getKey());\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder buf = new StringBuilder();\n\n        buf.append(\"[ Options: [ short \");\n        buf.append(shortOpts.toString());\n        buf.append(\" ] [ long \");\n        buf.append(longOpts);\n        buf.append(\" ]\");\n\n        return buf.toString();\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.Collections;\nimport java.util.HashSet;\nimport java.util.LinkedHashMap;\nimport java.util.List;\nimport java.util.Map;\n\n\npublic class Options implements Serializable { private static final long serialVersionUID = 1L; private final Map<String, Option> shortOpts = new LinkedHashMap<String, Option>(); private final Map<String, Option> longOpts = new LinkedHashMap<String, Option>(); private final List<Object> requiredOpts = new ArrayList<Object>(); private final Map<String, OptionGroup> optionGroups = new LinkedHashMap<String, OptionGroup>(); public Options addOptionGroup(OptionGroup group) {\n        if (group.isRequired())\n        {\n            requiredOpts.add(group);\n        }\n\n        for (Option option : group.getOptions())\n        {\n            \n            \n            \n            option.setRequired(false);\n            addOption(option);\n\n            optionGroups.put(option.getKey(), group);\n        }\n\n        return this;\n    }\n\n    \n    Collection<OptionGroup> getOptionGroups()\n    {\n        return new HashSet<OptionGroup>(optionGroups.values());\n    }\n\n    \n    public Options addOption(String opt, String description) {\n        addOption(opt, null, false, description);\n        return this;\n    }\n\n    \n    public Options addOption(String opt, boolean hasArg, String description) {\n        addOption(opt, null, hasArg, description);\n        return this;\n    }\n\n    \n    public Options addOption(String opt, String longOpt, boolean hasArg, String description) {\n        addOption(new Option(opt, longOpt, hasArg, description));\n        return this;\n    }\n\n    \n    public Options addOption(Option opt) {\n        String key = opt.getKey();\n\n        \n        if (opt.hasLongOpt())\n        {\n            longOpts.put(opt.getLongOpt(), opt);\n        }\n\n        \n        if (opt.isRequired())\n        {\n            if (requiredOpts.contains(key))\n            {\n                requiredOpts.remove(requiredOpts.indexOf(key));\n            }\n            requiredOpts.add(key);\n        }\n\n        shortOpts.put(key, opt);\n\n        return this;\n    }\n\n    \n    public Collection<Option> getOptions() {\n        return Collections.unmodifiableCollection(helpOptions());\n    }\n\n    \n    List<Option> helpOptions()\n    {\n        return new ArrayList<Option>(shortOpts.values());\n    }\n\n    \n    public List getRequiredOptions() {\n        return Collections.unmodifiableList(requiredOpts);\n    }\n\n    \n    public Option getOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        if (shortOpts.containsKey(opt))\n        {\n            return shortOpts.get(opt);\n        }\n\n        return longOpts.get(opt);\n    }\n\n    \n    public List<String> getMatchingOptions(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n        \n        List<String> matchingOpts = new ArrayList<String>();\n\n        \n        if (longOpts.keySet().contains(opt))\n        {\n            return Collections.singletonList(opt);\n        }\n\n        for (String longOpt : longOpts.keySet())\n        {\n            if (longOpt.startsWith(opt))\n            {\n                matchingOpts.add(longOpt);\n            }\n        }\n        \n        return matchingOpts;\n    }\n\n    \n    public boolean hasOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return shortOpts.containsKey(opt) || longOpts.containsKey(opt);\n    }\n\n    \n    public boolean hasLongOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return longOpts.containsKey(opt);\n    }\n\n    \n    public boolean hasShortOption(String opt) {\n        opt = Util.stripLeadingHyphens(opt);\n\n        return shortOpts.containsKey(opt);\n    }\n\n    \n    public OptionGroup getOptionGroup(Option opt) {\n        return optionGroups.get(opt.getKey());\n    }\n\n    \n    @Override\n    public String toString() {\n        StringBuilder buf = new StringBuilder();\n\n        buf.append(\"[ Options: [ short \");\n        buf.append(shortOpts.toString());\n        buf.append(\" ] [ long \");\n        buf.append(longOpts);\n        buf.append(\" ]\");\n\n        return buf.toString();\n    }\n}\n",
+      "buggy_signatures": [
+        "public Options addOption(String opt, String description)",
+        "public Options addOption(String opt, boolean hasArg, String description)",
+        "public Options addOption(String opt, String longOpt, boolean hasArg, String description)",
+        "public Options addOption(Option opt)",
+        "public Collection<Option> getOptions()",
+        "public List getRequiredOptions()",
+        "public Option getOption(String opt)",
+        "public List<String> getMatchingOptions(String opt)",
+        "public boolean hasOption(String opt)",
+        "public boolean hasLongOption(String opt)",
+        "public boolean hasShortOption(String opt)",
+        "public OptionGroup getOptionGroup(Option opt)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public Options addOption(String opt, String description)",
+        "public Options addOption(String opt, boolean hasArg, String description)",
+        "public Options addOption(String opt, String longOpt, boolean hasArg, String description)",
+        "public Options addOption(Option opt)",
+        "public Collection<Option> getOptions()",
+        "public List getRequiredOptions()",
+        "public Option getOption(String opt)",
+        "public List<String> getMatchingOptions(String opt)",
+        "public boolean hasOption(String opt)",
+        "public boolean hasLongOption(String opt)",
+        "public boolean hasShortOption(String opt)",
+        "public OptionGroup getOptionGroup(Option opt)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private final Map<String, OptionGroup> optionGroups = new java.util.HashMap<String, OptionGroup>(); public Options addOptionGroup(OptionGroup group) {\n  if (group.isRequired())\n  {\n  requiredOpts.add(group);\n  }\n\n  for (Option option : group.getOptions())\n  {\n  \n  \n  \n  option.setRequired(false);\n  addOption(option);\n\n  optionGroups.put(option.getKey(), group);\n  }\n\n  return this;\n  }",
+          "fixed_method": "  private final Map<String, OptionGroup> optionGroups = new LinkedHashMap<String, OptionGroup>(); public Options addOptionGroup(OptionGroup group) {\n  if (group.isRequired())\n  {\n  requiredOpts.add(group);\n  }\n\n  for (Option option : group.getOptions())\n  {\n  \n  \n  \n  option.setRequired(false);\n  addOption(option);\n\n  optionGroups.put(option.getKey(), group);\n  }\n\n  return this;\n  }",
+          "diff": [
+            "@@ -57,7 +57,7 @@",
+            "     private final List<Object> requiredOpts = new ArrayList<Object>();\n",
+            " \n",
+            "     /** a map of the option groups */\n",
+            "-    private final Map<String, OptionGroup> optionGroups = new java.util.HashMap<String, OptionGroup>();\n",
+            "+    private final Map<String, OptionGroup> optionGroups = new LinkedHashMap<String, OptionGroup>();\n",
+            " \n",
+            "     /**\n",
+            "      * Add the specified option group.\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

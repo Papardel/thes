@@ -1,0 +1,33 @@
+IMPORTANT: You must reply _exactly_ in this form: 
+RESPONSE: <fully-qualified-class-name>
+ -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1
+Test Class: org.jfree.chart.renderer.category.junit.AbstractCategoryItemRendererTests
+Method: test2947660
+Error: junit.framework.AssertionFailedError
+Message: expected:<1> but was:<0>
+Failing Line:         assertEquals(1, lic.getItemCount());
+Test Source:
+public void test2947660() {
+  AbstractCategoryItemRenderer r = new LineAndShapeRenderer();
+  assertNotNull(r.getLegendItems());
+  assertEquals(0, r.getLegendItems().getItemCount());
+
+  DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+  CategoryPlot plot = new CategoryPlot();
+  plot.setDataset(dataset);
+  plot.setRenderer(r);
+  assertEquals(0, r.getLegendItems().getItemCount());
+
+  dataset.addValue(1.0, "S1", "C1");
+  LegendItemCollection lic = r.getLegendItems();
+  assertEquals(1, lic.getItemCount());
+  assertEquals("S1", lic.get(0).getLabel());
+  }
+Stack Trace:
+AbstractCategoryItemRendererTests.test2947660 line 409
+
+Return **only** the fully-qualified Java *source* class that contains the bug.
+Do **not** return:
+- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),
+- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,
+- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.

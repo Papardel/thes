@@ -1,0 +1,52 @@
+{
+  "bug_id": "34",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.jsonschema.NewSchemaTest": [
+      {
+        "methodName": "testSimpleNumbers",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<...dec([numberType=BIG_[DECIMAL]])][optProp bigInt([...> but was:<...dec([numberType=BIG_[INTEGER]])][optProp bigInt([...>",
+        "fail_line": "        assertEquals(\"[optProp dec([numberType=BIG_DECIMAL])][optProp bigInt([numberType=BIG_INTEGER])]\",",
+        "test_source": "  public void testSimpleNumbers() throws Exception {\n  final StringBuilder sb = new StringBuilder();\n  \n  MAPPER.acceptJsonFormatVisitor(Numbers.class,\n  new JsonFormatVisitorWrapper.Base() {\n  @Override\n  public JsonObjectFormatVisitor expectObjectFormat(final JavaType type) {\n  return new JsonObjectFormatVisitor.Base(getProvider()) {\n  @Override\n  public void optionalProperty(BeanProperty prop) throws JsonMappingException {\n  sb.append(\"[optProp \").append(prop.getName()).append(\"(\");\n  JsonSerializer<Object> ser = null;\n  if (prop instanceof BeanPropertyWriter) {\n  BeanPropertyWriter bpw = (BeanPropertyWriter) prop;\n  ser = bpw.getSerializer();\n  }\n  final SerializerProvider prov = getProvider();\n  if (ser == null) {\n  ser = prov.findValueSerializer(prop.getType(), prop);\n  }\n  ser.acceptJsonFormatVisitor(new JsonFormatVisitorWrapper.Base() {\n  @Override\n  public JsonNumberFormatVisitor expectNumberFormat( JavaType type) throws JsonMappingException {\n  return new JsonNumberFormatVisitor() {\n  @Override\n  public void format(JsonValueFormat format) {\n  sb.append(\"[numberFormat=\").append(format).append(\"]\");\n  }\n\n  @Override\n  public void enumTypes(Set<String> enums) { }\n\n  @Override\n  public void numberType(NumberType numberType) {\n  sb.append(\"[numberType=\").append(numberType).append(\"]\");\n  }\n  };\n  }\n\n  @Override\n  public JsonIntegerFormatVisitor expectIntegerFormat(JavaType type) throws JsonMappingException {\n  return new JsonIntegerFormatVisitor() {\n  @Override\n  public void format(JsonValueFormat format) {\n  sb.append(\"[integerFormat=\").append(format).append(\"]\");\n  }\n\n  @Override\n  public void enumTypes(Set<String> enums) { }\n\n  @Override\n  public void numberType(NumberType numberType) {\n  sb.append(\"[numberType=\").append(numberType).append(\"]\");\n  }\n  };\n  }\n  }, prop.getType());\n\n  sb.append(\")]\");\n  }\n  };\n  }\n  });\n  assertEquals(\"[optProp dec([numberType=BIG_DECIMAL])][optProp bigInt([numberType=BIG_INTEGER])]\",\n  sb.toString());\n  }",
+        "stack": [
+          "NewSchemaTest.testSimpleNumbers line 204"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/ser/std/NumberSerializer.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.math.BigDecimal;\nimport java.math.BigInteger;\n\nimport com.fasterxml.jackson.core.JsonGenerator;\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\n\n\n@JacksonStdImpl\n@SuppressWarnings(\"serial\")\npublic class NumberSerializer extends StdScalarSerializer<Number> { public final static NumberSerializer instance = new NumberSerializer(Number.class); protected final boolean _isInt; public NumberSerializer(Class<? extends Number> rawType) {\n        super(rawType, false);\n        \n        _isInt = (rawType == BigInteger.class);\n    }\n\n    @Override\n    public void serialize(Number value, JsonGenerator g, SerializerProvider provider) throws IOException {\n        \n        if (value instanceof BigDecimal) {\n            g.writeNumber((BigDecimal) value);\n        } else if (value instanceof BigInteger) {\n            g.writeNumber((BigInteger) value);\n            \n        \n        } else if (value instanceof Integer) {\n            g.writeNumber(value.intValue());\n        } else if (value instanceof Long) {\n            g.writeNumber(value.longValue());\n        } else if (value instanceof Double) {\n            g.writeNumber(value.doubleValue());\n        } else if (value instanceof Float) {\n            g.writeNumber(value.floatValue());\n        } else if ((value instanceof Byte) || (value instanceof Short)) {\n            g.writeNumber(value.intValue()); \n        } else {\n            \n            g.writeNumber(value.toString());\n        }\n    }\n\n    @Override\n    public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n        return createSchemaNode(_isInt ? \"integer\" : \"number\", true);\n    }\n\n    @Override\n    public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n        if (_isInt) {\n            visitIntFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n        } else {\n            Class<?> h = handledType();\n            if (h == BigDecimal.class) {\n                visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n            } else {\n                \n                 visitor.expectNumberFormat(typeHint);\n            }\n        }\n    }\n}",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.math.BigDecimal;\nimport java.math.BigInteger;\n\nimport com.fasterxml.jackson.core.JsonGenerator;\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\n\n\n@JacksonStdImpl\n@SuppressWarnings(\"serial\")\npublic class NumberSerializer extends StdScalarSerializer<Number> { public final static NumberSerializer instance = new NumberSerializer(Number.class); protected final boolean _isInt; public NumberSerializer(Class<? extends Number> rawType) {\n        super(rawType, false);\n        \n        _isInt = (rawType == BigInteger.class);\n    }\n\n    @Override\n    public void serialize(Number value, JsonGenerator g, SerializerProvider provider) throws IOException {\n        \n        if (value instanceof BigDecimal) {\n            g.writeNumber((BigDecimal) value);\n        } else if (value instanceof BigInteger) {\n            g.writeNumber((BigInteger) value);\n            \n        \n        } else if (value instanceof Integer) {\n            g.writeNumber(value.intValue());\n        } else if (value instanceof Long) {\n            g.writeNumber(value.longValue());\n        } else if (value instanceof Double) {\n            g.writeNumber(value.doubleValue());\n        } else if (value instanceof Float) {\n            g.writeNumber(value.floatValue());\n        } else if ((value instanceof Byte) || (value instanceof Short)) {\n            g.writeNumber(value.intValue()); \n        } else {\n            \n            g.writeNumber(value.toString());\n        }\n    }\n\n    @Override\n    public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n        return createSchemaNode(_isInt ? \"integer\" : \"number\", true);\n    }\n\n    @Override\n    public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n        if (_isInt) {\n            visitIntFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n        } else {\n            Class<?> h = handledType();\n            if (h == BigDecimal.class) {\n                visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_DECIMAL);\n            } else {\n                \n                 visitor.expectNumberFormat(typeHint);\n            }\n        }\n    }\n}",
+      "buggy_signatures": [
+        "public void serialize(Number value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException"
+      ],
+      "fixed_signatures": [
+        "public void serialize(Number value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n  if (_isInt) {\n  visitIntFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n  } else {\n  Class<?> h = handledType();\n  if (h == BigDecimal.class) {\n  visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n  } else {\n  \n  visitor.expectNumberFormat(typeHint);\n  }\n  }\n  }",
+          "fixed_method": "  public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n  if (_isInt) {\n  visitIntFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n  } else {\n  Class<?> h = handledType();\n  if (h == BigDecimal.class) {\n  visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_DECIMAL);\n  } else {\n  \n  visitor.expectNumberFormat(typeHint);\n  }\n  }\n  }",
+          "diff": [
+            "@@ -78,7 +78,7 @@",
+            "         } else {\n",
+            "             Class<?> h = handledType();\n",
+            "             if (h == BigDecimal.class) {\n",
+            "-                visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_INTEGER);\n",
+            "+                visitFloatFormat(visitor, typeHint, JsonParser.NumberType.BIG_DECIMAL);\n",
+            "             } else {\n",
+            "                 // otherwise bit unclear what to call... but let's try:\n",
+            "                 /*JsonNumberFormatVisitor v2 =*/ visitor.expectNumberFormat(typeHint);\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

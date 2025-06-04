@@ -1,0 +1,10 @@
+{
+  "bug_id": "Math_3_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 3\nTest Class: org.apache.commons.math3.util.MathArraysTest\nMethod: testLinearCombinationWithSingleElementArray\nError: java.lang.ArrayIndexOutOfBoundsException\nMessage: Index 1 out of bounds for length 1\nFailing Line:         Assert.assertEquals(a[0] * b[0], MathArrays.linearCombination(a, b), 0d);\nTest Source:\npublic void testLinearCombinationWithSingleElementArray() {\n  final double[] a = { 1.23456789 };\n  final double[] b = { 98765432.1 };\n\n  Assert.assertEquals(a[0] * b[0], MathArrays.linearCombination(a, b), 0d);\n  }\nStack Trace:\nMathArrays.linearCombination line 846, MathArraysTest.testLinearCombinationWithSingleElementArray line 591\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any utility class not located in a package named `test`, `tests`, `util`, or `utils`.\nRESPONSE: org.apache.commons.math3.util.MathArrays"
+    }
+  ]
+}

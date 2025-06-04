@@ -1,0 +1,88 @@
+{
+  "bug_id": "105",
+  "failed_tests": {
+    "org.apache.commons.math.stat.regression.SimpleRegressionTest": [
+      {
+        "methodName": "testSSENonNegative",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(reg.getSumSquaredErrors() >= 0.0);",
+        "test_source": "  public void testSSENonNegative() {\n  double[] y = { 8915.102, 8919.302, 8923.502 };\n  double[] x = { 1.107178495E2, 1.107264895E2, 1.107351295E2 };\n  SimpleRegression reg = new SimpleRegression();\n  for (int i = 0; i < x.length; i++) {\n  reg.addData(x[i], y[i]);\n  }\n  assertTrue(reg.getSumSquaredErrors() >= 0.0);\n  } ",
+        "stack": [
+          "SimpleRegressionTest.testSSENonNegative line 275"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/stat/regression/SimpleRegression.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.math.stat.regression;\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.distribution.DistributionFactory;\nimport org.apache.commons.math.distribution.TDistribution;\n\n\npublic class SimpleRegression implements Serializable { private static final long serialVersionUID = -3004689053607543335L; private double sumX = 0d; private double sumXX = 0d; private double sumY = 0d; private double sumYY = 0d; private double sumXY = 0d; private long n = 0; private double xbar = 0; private double ybar = 0; public SimpleRegression() {\n        super();\n    }\n    \n    \n    public void addData(double x, double y) {\n        if (n == 0) {\n            xbar = x;\n            ybar = y;\n        } else {\n            double dx = x - xbar;\n            double dy = y - ybar;\n            sumXX += dx * dx * (double) n / (double) (n + 1.0);\n            sumYY += dy * dy * (double) n / (double) (n + 1.0);\n            sumXY += dx * dy * (double) n / (double) (n + 1.0);\n            xbar += dx / (double) (n + 1.0);\n            ybar += dy / (double) (n + 1.0);\n        }\n        sumX += x;\n        sumY += y;\n        n++;\n    }\n\n    \n    public void addData(double[][] data) {\n        for (int i = 0; i < data.length; i++) {\n            addData(data[i][0], data[i][1]);\n        }\n    }\n\n    \n    public void clear() {\n        sumX = 0d;\n        sumXX = 0d;\n        sumY = 0d;\n        sumYY = 0d;\n        sumXY = 0d;\n        n = 0;\n    }\n\n    \n    public long getN() {\n        return n;\n    }\n\n    \n    public double predict(double x) {\n        double b1 = getSlope();\n        return getIntercept(b1) + b1 * x;\n    }\n\n    \n    public double getIntercept() {\n        return getIntercept(getSlope());\n    }\n\n    \n    public double getSlope() {\n        if (n < 2) {\n            return Double.NaN; \n        }\n        if (Math.abs(sumXX) < 10 * Double.MIN_VALUE) {\n            return Double.NaN; \n        }\n        return sumXY / sumXX;\n    }\n\n    \n    public double getSumSquaredErrors() {\n        return sumYY - sumXY * sumXY / sumXX;\n    }\n\n    \n    public double getTotalSumSquares() {\n        if (n < 2) {\n            return Double.NaN;\n        }\n        return sumYY;\n    }\n\n    \n    public double getRegressionSumSquares() {\n        return getRegressionSumSquares(getSlope());\n    }\n\n    \n    public double getMeanSquareError() {\n        if (n < 3) {\n            return Double.NaN;\n        }\n        return getSumSquaredErrors() / (double) (n - 2);\n    }\n\n    \n    public double getR() {\n        double b1 = getSlope();\n        double result = Math.sqrt(getRSquare());\n        if (b1 < 0) {\n            result = -result;\n        }\n        return result;\n    }\n\n    \n    public double getRSquare() {\n        double ssto = getTotalSumSquares();\n        return (ssto - getSumSquaredErrors()) / ssto;\n    }\n\n    \n    public double getInterceptStdErr() {\n        return Math.sqrt(\n            getMeanSquareError() * ((1d / (double) n) + (xbar * xbar) / sumXX));\n    }\n\n    \n    public double getSlopeStdErr() {\n        return Math.sqrt(getMeanSquareError() / sumXX);\n    }\n\n    \n    public double getSlopeConfidenceInterval() throws MathException {\n        return getSlopeConfidenceInterval(0.05d);\n    }\n\n    \n    public double getSlopeConfidenceInterval(double alpha) throws MathException {\n        if (alpha >= 1 || alpha <= 0) {\n            throw new IllegalArgumentException();\n        }\n        return getSlopeStdErr() *\n            getTDistribution().inverseCumulativeProbability(1d - alpha / 2d);\n    }\n\n    \n    public double getSignificance() throws MathException {\n        return 2d* (1.0 - getTDistribution().cumulativeProbability(\n                    Math.abs(getSlope()) / getSlopeStdErr()));\n    }\n\n    \n\n    \n    private double getIntercept(double slope) {\n        return (sumY - slope * sumX) / ((double) n);\n    }\n\n    \n    private double getRegressionSumSquares(double slope) {\n        return slope * slope * sumXX;\n    }\n\n    \n    private TDistribution getTDistribution() {\n        return DistributionFactory.newInstance().createTDistribution(n - 2);\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.math.stat.regression;\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.distribution.DistributionFactory;\nimport org.apache.commons.math.distribution.TDistribution;\n\n\npublic class SimpleRegression implements Serializable { private static final long serialVersionUID = -3004689053607543335L; private double sumX = 0d; private double sumXX = 0d; private double sumY = 0d; private double sumYY = 0d; private double sumXY = 0d; private long n = 0; private double xbar = 0; private double ybar = 0; public SimpleRegression() {\n        super();\n    }\n    \n    \n    public void addData(double x, double y) {\n        if (n == 0) {\n            xbar = x;\n            ybar = y;\n        } else {\n            double dx = x - xbar;\n            double dy = y - ybar;\n            sumXX += dx * dx * (double) n / (double) (n + 1.0);\n            sumYY += dy * dy * (double) n / (double) (n + 1.0);\n            sumXY += dx * dy * (double) n / (double) (n + 1.0);\n            xbar += dx / (double) (n + 1.0);\n            ybar += dy / (double) (n + 1.0);\n        }\n        sumX += x;\n        sumY += y;\n        n++;\n    }\n\n    \n    public void addData(double[][] data) {\n        for (int i = 0; i < data.length; i++) {\n            addData(data[i][0], data[i][1]);\n        }\n    }\n\n    \n    public void clear() {\n        sumX = 0d;\n        sumXX = 0d;\n        sumY = 0d;\n        sumYY = 0d;\n        sumXY = 0d;\n        n = 0;\n    }\n\n    \n    public long getN() {\n        return n;\n    }\n\n    \n    public double predict(double x) {\n        double b1 = getSlope();\n        return getIntercept(b1) + b1 * x;\n    }\n\n    \n    public double getIntercept() {\n        return getIntercept(getSlope());\n    }\n\n    \n    public double getSlope() {\n        if (n < 2) {\n            return Double.NaN; \n        }\n        if (Math.abs(sumXX) < 10 * Double.MIN_VALUE) {\n            return Double.NaN; \n        }\n        return sumXY / sumXX;\n    }\n\n    \n    public double getSumSquaredErrors() {\n        return Math.max(0d, sumYY - sumXY * sumXY / sumXX);\n    }\n\n    \n    public double getTotalSumSquares() {\n        if (n < 2) {\n            return Double.NaN;\n        }\n        return sumYY;\n    }\n\n    \n    public double getRegressionSumSquares() {\n        return getRegressionSumSquares(getSlope());\n    }\n\n    \n    public double getMeanSquareError() {\n        if (n < 3) {\n            return Double.NaN;\n        }\n        return getSumSquaredErrors() / (double) (n - 2);\n    }\n\n    \n    public double getR() {\n        double b1 = getSlope();\n        double result = Math.sqrt(getRSquare());\n        if (b1 < 0) {\n            result = -result;\n        }\n        return result;\n    }\n\n    \n    public double getRSquare() {\n        double ssto = getTotalSumSquares();\n        return (ssto - getSumSquaredErrors()) / ssto;\n    }\n\n    \n    public double getInterceptStdErr() {\n        return Math.sqrt(\n            getMeanSquareError() * ((1d / (double) n) + (xbar * xbar) / sumXX));\n    }\n\n    \n    public double getSlopeStdErr() {\n        return Math.sqrt(getMeanSquareError() / sumXX);\n    }\n\n    \n    public double getSlopeConfidenceInterval() throws MathException {\n        return getSlopeConfidenceInterval(0.05d);\n    }\n\n    \n    public double getSlopeConfidenceInterval(double alpha) throws MathException {\n        if (alpha >= 1 || alpha <= 0) {\n            throw new IllegalArgumentException();\n        }\n        return getSlopeStdErr() *\n            getTDistribution().inverseCumulativeProbability(1d - alpha / 2d);\n    }\n\n    \n    public double getSignificance() throws MathException {\n        return 2d* (1.0 - getTDistribution().cumulativeProbability(\n                    Math.abs(getSlope()) / getSlopeStdErr()));\n    }\n\n    \n\n    \n    private double getIntercept(double slope) {\n        return (sumY - slope * sumX) / ((double) n);\n    }\n\n    \n    private double getRegressionSumSquares(double slope) {\n        return slope * slope * sumXX;\n    }\n\n    \n    private TDistribution getTDistribution() {\n        return DistributionFactory.newInstance().createTDistribution(n - 2);\n    }\n}\n",
+      "buggy_signatures": [
+        "public void addData(double x, double y)",
+        "public void addData(double[][] data)",
+        "public void clear()",
+        "public long getN()",
+        "public double predict(double x)",
+        "public double getIntercept()",
+        "public double getSlope()",
+        "public double getSumSquaredErrors()",
+        "public double getTotalSumSquares()",
+        "public double getRegressionSumSquares()",
+        "public double getMeanSquareError()",
+        "public double getR()",
+        "public double getRSquare()",
+        "public double getInterceptStdErr()",
+        "public double getSlopeStdErr()",
+        "public double getSlopeConfidenceInterval() throws MathException",
+        "public double getSlopeConfidenceInterval(double alpha) throws MathException",
+        "public double getSignificance() throws MathException",
+        "private double getIntercept(double slope)",
+        "private double getRegressionSumSquares(double slope)",
+        "private TDistribution getTDistribution()"
+      ],
+      "fixed_signatures": [
+        "public void addData(double x, double y)",
+        "public void addData(double[][] data)",
+        "public void clear()",
+        "public long getN()",
+        "public double predict(double x)",
+        "public double getIntercept()",
+        "public double getSlope()",
+        "public double getSumSquaredErrors()",
+        "public double getTotalSumSquares()",
+        "public double getRegressionSumSquares()",
+        "public double getMeanSquareError()",
+        "public double getR()",
+        "public double getRSquare()",
+        "public double getInterceptStdErr()",
+        "public double getSlopeStdErr()",
+        "public double getSlopeConfidenceInterval() throws MathException",
+        "public double getSlopeConfidenceInterval(double alpha) throws MathException",
+        "public double getSignificance() throws MathException",
+        "private double getIntercept(double slope)",
+        "private double getRegressionSumSquares(double slope)",
+        "private TDistribution getTDistribution()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public double getSumSquaredErrors() {\n  return sumYY - sumXY * sumXY / sumXX;\n  }",
+          "fixed_method": "  public double getSumSquaredErrors() {\n  return Math.max(0d, sumYY - sumXY * sumXY / sumXX);\n  }",
+          "diff": [
+            "@@ -261,7 +261,7 @@",
+            "      * @return sum of squared errors associated with the regression model\n",
+            "      */\n",
+            "     public double getSumSquaredErrors() {\n",
+            "-        return sumYY - sumXY * sumXY / sumXX;\n",
+            "+        return Math.max(0d, sumYY - sumXY * sumXY / sumXX);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

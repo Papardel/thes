@@ -1,0 +1,91 @@
+{
+  "bug_id": "12",
+  "failed_tests": {
+    "org.apache.commons.lang3.RandomStringUtilsTest": [
+      {
+        "methodName": "testExceptions",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 1688624035 out of bounds for length 0",
+        "fail_line": "            RandomStringUtils.random(1, new char[0]); // must not provide empty array => IAE",
+        "test_source": "  public void testExceptions() {\n  final char[] DUMMY = new char[]{'a'}; // valid char array\n  try {\n  RandomStringUtils.random(-1);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, true, true);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, DUMMY);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(1, new char[0]); // must not provide empty array => IAE\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, \"\");\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, (String)null);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, 'a', 'z', false, false);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, 'a', 'z', false, false, DUMMY);\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  try {\n  RandomStringUtils.random(-1, 'a', 'z', false, false, DUMMY, new Random());\n  fail();\n  } catch (IllegalArgumentException ex) {}\n  }",
+        "stack": [
+          "RandomStringUtils.random line 248, RandomStringUtils.random line 321, RandomStringUtilsTest.testExceptions line 148"
+        ]
+      },
+      {
+        "methodName": "testLANG805",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 622136658 out of bounds for length 1",
+        "fail_line": "        assertEquals(\"aaa\", RandomStringUtils.random(3,0,0,false,false,new char[]{'a'},new Random(seed)));",
+        "test_source": "  public void testLANG805() {\n  long seed = System.currentTimeMillis();\n  assertEquals(\"aaa\", RandomStringUtils.random(3,0,0,false,false,new char[]{'a'},new Random(seed)));\n  }",
+        "stack": [
+          "RandomStringUtils.random line 248, RandomStringUtilsTest.testLANG805 line 130"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/RandomStringUtils.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang3;\n\nimport java.util.Random;\n\n\npublic class RandomStringUtils { private static final Random RANDOM = new Random(); public RandomStringUtils() {\n      super();\n    }\n\n    \n    \n    \n    public static String random(int count) {\n        return random(count, false, false);\n    }\n\n    \n    public static String randomAscii(int count) {\n        return random(count, 32, 127, false, false);\n    }\n    \n    \n    public static String randomAlphabetic(int count) {\n        return random(count, true, false);\n    }\n    \n    \n    public static String randomAlphanumeric(int count) {\n        return random(count, true, true);\n    }\n    \n    \n    public static String randomNumeric(int count) {\n        return random(count, false, true);\n    }\n\n    \n    public static String random(int count, boolean letters, boolean numbers) {\n        return random(count, 0, 0, letters, numbers);\n    }\n    \n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers) {\n        return random(count, start, end, letters, numbers, null, RANDOM);\n    }\n\n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers, char... chars) {\n        return random(count, start, end, letters, numbers, chars, RANDOM);\n    }\n\n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random) {\n        if (count == 0) {\n            return \"\";\n        } else if (count < 0) {\n            throw new IllegalArgumentException(\"Requested random string length \" + count + \" is less than 0.\");\n        }\n\n        if (start == 0 && end == 0) {\n                if (!letters && !numbers) {\n                    end = Integer.MAX_VALUE;\n                } else {\n                    end = 'z' + 1;\n                    start = ' ';                \n                }\n        }\n\n        char[] buffer = new char[count];\n        int gap = end - start;\n\n        while (count-- != 0) {\n            char ch;\n            if (chars == null) {\n                ch = (char) (random.nextInt(gap) + start);\n            } else {\n                ch = chars[random.nextInt(gap) + start];\n            }\n            if (letters && Character.isLetter(ch)\n                    || numbers && Character.isDigit(ch)\n                    || !letters && !numbers) {\n                if(ch >= 56320 && ch <= 57343) {\n                    if(count == 0) {\n                        count++;\n                    } else {\n                        \n                        buffer[count] = ch;\n                        count--;\n                        buffer[count] = (char) (55296 + random.nextInt(128));\n                    }\n                } else if(ch >= 55296 && ch <= 56191) {\n                    if(count == 0) {\n                        count++;\n                    } else {\n                        \n                        buffer[count] = (char) (56320 + random.nextInt(128));\n                        count--;\n                        buffer[count] = ch;\n                    }\n                } else if(ch >= 56192 && ch <= 56319) {\n                    \n                    count++;\n                } else {\n                    buffer[count] = ch;\n                }\n            } else {\n                count++;\n            }\n        }\n        return new String(buffer);\n    }\n\n    \n    public static String random(int count, String chars) {\n        if (chars == null) {\n            return random(count, 0, 0, false, false, null, RANDOM);\n        }\n        return random(count, chars.toCharArray());\n    }\n\n    \n    public static String random(int count, char... chars) {\n        if (chars == null) {\n            return random(count, 0, 0, false, false, null, RANDOM);\n        }\n        return random(count, 0, chars.length, false, false, chars, RANDOM);\n    }\n    \n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang3;\n\nimport java.util.Random;\n\n\npublic class RandomStringUtils { private static final Random RANDOM = new Random(); public RandomStringUtils() {\n      super();\n    }\n\n    \n    \n    \n    public static String random(int count) {\n        return random(count, false, false);\n    }\n\n    \n    public static String randomAscii(int count) {\n        return random(count, 32, 127, false, false);\n    }\n    \n    \n    public static String randomAlphabetic(int count) {\n        return random(count, true, false);\n    }\n    \n    \n    public static String randomAlphanumeric(int count) {\n        return random(count, true, true);\n    }\n    \n    \n    public static String randomNumeric(int count) {\n        return random(count, false, true);\n    }\n\n    \n    public static String random(int count, boolean letters, boolean numbers) {\n        return random(count, 0, 0, letters, numbers);\n    }\n    \n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers) {\n        return random(count, start, end, letters, numbers, null, RANDOM);\n    }\n\n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers, char... chars) {\n        return random(count, start, end, letters, numbers, chars, RANDOM);\n    }\n\n    \n    public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random) {\n        if (count == 0) {\n            return \"\";\n        } else if (count < 0) {\n            throw new IllegalArgumentException(\"Requested random string length \" + count + \" is less than 0.\");\n        }\n        if (chars != null && chars.length == 0) {\n            throw new IllegalArgumentException(\"The chars array must not be empty\");\n        }\n\n        if (start == 0 && end == 0) {\n            if (chars != null) {\n                end = chars.length;\n            } else {\n                if (!letters && !numbers) {\n                    end = Integer.MAX_VALUE;\n                } else {\n                    end = 'z' + 1;\n                    start = ' ';                \n                }\n            }\n        }\n\n        char[] buffer = new char[count];\n        int gap = end - start;\n\n        while (count-- != 0) {\n            char ch;\n            if (chars == null) {\n                ch = (char) (random.nextInt(gap) + start);\n            } else {\n                ch = chars[random.nextInt(gap) + start];\n            }\n            if (letters && Character.isLetter(ch)\n                    || numbers && Character.isDigit(ch)\n                    || !letters && !numbers) {\n                if(ch >= 56320 && ch <= 57343) {\n                    if(count == 0) {\n                        count++;\n                    } else {\n                        \n                        buffer[count] = ch;\n                        count--;\n                        buffer[count] = (char) (55296 + random.nextInt(128));\n                    }\n                } else if(ch >= 55296 && ch <= 56191) {\n                    if(count == 0) {\n                        count++;\n                    } else {\n                        \n                        buffer[count] = (char) (56320 + random.nextInt(128));\n                        count--;\n                        buffer[count] = ch;\n                    }\n                } else if(ch >= 56192 && ch <= 56319) {\n                    \n                    count++;\n                } else {\n                    buffer[count] = ch;\n                }\n            } else {\n                count++;\n            }\n        }\n        return new String(buffer);\n    }\n\n    \n    public static String random(int count, String chars) {\n        if (chars == null) {\n            return random(count, 0, 0, false, false, null, RANDOM);\n        }\n        return random(count, chars.toCharArray());\n    }\n\n    \n    public static String random(int count, char... chars) {\n        if (chars == null) {\n            return random(count, 0, 0, false, false, null, RANDOM);\n        }\n        return random(count, 0, chars.length, false, false, chars, RANDOM);\n    }\n    \n}\n",
+      "buggy_signatures": [
+        "public static String random(int count)",
+        "public static String randomAscii(int count)",
+        "public static String randomAlphabetic(int count)",
+        "public static String randomAlphanumeric(int count)",
+        "public static String randomNumeric(int count)",
+        "public static String random(int count, boolean letters, boolean numbers)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers, char... chars)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random)",
+        "public static String random(int count, String chars)",
+        "public static String random(int count, char... chars)"
+      ],
+      "fixed_signatures": [
+        "public static String random(int count)",
+        "public static String randomAscii(int count)",
+        "public static String randomAlphabetic(int count)",
+        "public static String randomAlphanumeric(int count)",
+        "public static String randomNumeric(int count)",
+        "public static String random(int count, boolean letters, boolean numbers)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers, char... chars)",
+        "public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random)",
+        "public static String random(int count, String chars)",
+        "public static String random(int count, char... chars)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random) {\n  if (count == 0) {\n  return \"\";\n  } else if (count < 0) {\n  throw new IllegalArgumentException(\"Requested random string length \" + count + \" is less than 0.\");\n  }\n\n  if (start == 0 && end == 0) {\n  if (!letters && !numbers) {\n  end = Integer.MAX_VALUE;\n  } else {\n  end = 'z' + 1;\n  start = ' ';  \n  }\n  }\n\n  char[] buffer = new char[count];\n  int gap = end - start;\n\n  while (count-- != 0) {\n  char ch;\n  if (chars == null) {\n  ch = (char) (random.nextInt(gap) + start);\n  } else {\n  ch = chars[random.nextInt(gap) + start];\n  }\n  if (letters && Character.isLetter(ch)\n  || numbers && Character.isDigit(ch)\n  || !letters && !numbers) {\n  if(ch >= 56320 && ch <= 57343) {\n  if(count == 0) {\n  count++;\n  } else {\n  \n  buffer[count] = ch;\n  count--;\n  buffer[count] = (char) (55296 + random.nextInt(128));\n  }\n  } else if(ch >= 55296 && ch <= 56191) {\n  if(count == 0) {\n  count++;\n  } else {\n  \n  buffer[count] = (char) (56320 + random.nextInt(128));\n  count--;\n  buffer[count] = ch;\n  }\n  } else if(ch >= 56192 && ch <= 56319) {\n  \n  count++;\n  } else {\n  buffer[count] = ch;\n  }\n  } else {\n  count++;\n  }\n  }\n  return new String(buffer);\n  }",
+          "fixed_method": "  public static String random(int count, int start, int end, boolean letters, boolean numbers, char[] chars, Random random) {\n  if (count == 0) {\n  return \"\";\n  } else if (count < 0) {\n  throw new IllegalArgumentException(\"Requested random string length \" + count + \" is less than 0.\");\n  }\n  if (chars != null && chars.length == 0) {\n  throw new IllegalArgumentException(\"The chars array must not be empty\");\n  }\n\n  if (start == 0 && end == 0) {\n  if (chars != null) {\n  end = chars.length;\n  } else {\n  if (!letters && !numbers) {\n  end = Integer.MAX_VALUE;\n  } else {\n  end = 'z' + 1;\n  start = ' ';  \n  }\n  }\n  }\n\n  char[] buffer = new char[count];\n  int gap = end - start;\n\n  while (count-- != 0) {\n  char ch;\n  if (chars == null) {\n  ch = (char) (random.nextInt(gap) + start);\n  } else {\n  ch = chars[random.nextInt(gap) + start];\n  }\n  if (letters && Character.isLetter(ch)\n  || numbers && Character.isDigit(ch)\n  || !letters && !numbers) {\n  if(ch >= 56320 && ch <= 57343) {\n  if(count == 0) {\n  count++;\n  } else {\n  \n  buffer[count] = ch;\n  count--;\n  buffer[count] = (char) (55296 + random.nextInt(128));\n  }\n  } else if(ch >= 55296 && ch <= 56191) {\n  if(count == 0) {\n  count++;\n  } else {\n  \n  buffer[count] = (char) (56320 + random.nextInt(128));\n  count--;\n  buffer[count] = ch;\n  }\n  } else if(ch >= 56192 && ch <= 56319) {\n  \n  count++;\n  } else {\n  buffer[count] = ch;\n  }\n  } else {\n  count++;\n  }\n  }\n  return new String(buffer);\n  }",
+          "diff": [
+            "@@ -227,14 +227,21 @@",
+            "         } else if (count < 0) {\n",
+            "             throw new IllegalArgumentException(\"Requested random string length \" + count + \" is less than 0.\");\n",
+            "         }\n",
+            "+        if (chars != null && chars.length == 0) {\n",
+            "+            throw new IllegalArgumentException(\"The chars array must not be empty\");\n",
+            "+        }\n",
+            " \n",
+            "         if (start == 0 && end == 0) {\n",
+            "+            if (chars != null) {\n",
+            "+                end = chars.length;\n",
+            "+            } else {\n",
+            "                 if (!letters && !numbers) {\n",
+            "                     end = Integer.MAX_VALUE;\n",
+            "                 } else {\n",
+            "                     end = 'z' + 1;\n",
+            "                     start = ' ';                \n",
+            "                 }\n",
+            "+            }\n",
+            "         }\n",
+            " \n",
+            "         char[] buffer = new char[count];\n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

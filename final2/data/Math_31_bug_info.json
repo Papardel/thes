@@ -1,0 +1,126 @@
+{
+  "bug_id": "31",
+  "failed_tests": {
+    "org.apache.commons.math3.distribution.BinomialDistributionTest": [
+      {
+        "methodName": "testMath718",
+        "error": "org.apache.commons.math3.exception.ConvergenceException",
+        "message": "illegal state: Continued fraction diverged to NaN for value 0.5",
+        "fail_line": "            int p = dist.inverseCumulativeProbability(0.5);",
+        "test_source": "  public void testMath718() {\n  // for large trials the evaluation of ContinuedFraction was inaccurate\n  // do a sweep over several large trials to test if the current implementation is\n  // numerically stable.\n\n  for (int trials = 500000; trials < 20000000; trials += 100000) {\n  BinomialDistribution dist = new BinomialDistribution(trials, 0.5);\n  int p = dist.inverseCumulativeProbability(0.5);\n  Assert.assertEquals(trials / 2, p);\n  }\n\n  }",
+        "stack": [
+          "ContinuedFraction.evaluate line 178, Beta.regularizedBeta line 156, Beta.regularizedBeta line 129, Beta.regularizedBeta line 50, BinomialDistribution.cumulativeProbability line 101, AbstractIntegerDistribution.checkedCumulativeProbability line 201, AbstractIntegerDistribution.solveInverseCumulativeProbability line 143, AbstractIntegerDistribution.inverseCumulativeProbability line 116, BinomialDistributionTest.testMath718 line 140"
+        ]
+      }
+    ],
+    "org.apache.commons.math3.distribution.FDistributionTest": [
+      {
+        "methodName": "testMath785",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Failing to calculate inverse cumulative probability",
+        "fail_line": "            Assert.fail(\"Failing to calculate inverse cumulative probability\");",
+        "test_source": "  public void testMath785() {\n  // this test was failing due to inaccurate results from ContinuedFraction.\n\n  try {\n  double prob = 0.01;\n  FDistribution f = new FDistribution(200000, 200000);\n  double result = f.inverseCumulativeProbability(prob);\n  Assert.assertTrue(result < 1.0);\n  } catch (Exception e) {\n  Assert.fail(\"Failing to calculate inverse cumulative probability\");\n  }\n  }",
+        "stack": [
+          "FDistributionTest.testMath785 line 156"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/util/ContinuedFraction.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.util;\n\nimport org.apache.commons.math3.exception.ConvergenceException;\nimport org.apache.commons.math3.exception.MaxCountExceededException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\n\n\npublic abstract class ContinuedFraction { private static final double DEFAULT_EPSILON = 10e-9; protected ContinuedFraction() {\n        super();\n    }\n\n    \n    protected abstract double getA(int n, double x); protected abstract double getB(int n, double x); public double evaluate(double x) {\n        return evaluate(x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n\n    \n    public double evaluate(double x, double epsilon) {\n        return evaluate(x, epsilon, Integer.MAX_VALUE);\n    }\n\n    \n    public double evaluate(double x, int maxIterations) {\n        return evaluate(x, DEFAULT_EPSILON, maxIterations);\n    }\n\n    \n    public double evaluate(double x, double epsilon, int maxIterations) {\n        final double small = 1e-50;\n        double hPrev = getA(0, x);\n\n        \n        if (Precision.equals(hPrev, 0.0, small)) {\n            hPrev = small;\n        }\n\n        int n = 1;\n        double dPrev = 0.0;\n        double p0 = 1.0;\n        double q1 = 1.0;\n        double cPrev = hPrev;\n        double hN = hPrev;\n\n        while (n < maxIterations) {\n            final double a = getA(n, x);\n            final double b = getB(n, x);\n\n            double cN = a * hPrev + b * p0;\n            double q2 = a * q1 + b * dPrev;\n            if (Double.isInfinite(cN) || Double.isInfinite(q2)) {\n                double scaleFactor = 1d;\n                double lastScaleFactor = 1d;\n                final int maxPower = 5;\n                final double scale = FastMath.max(a,b);\n                if (scale <= 0) {  \n                    throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE, x);\n                }\n                for (int i = 0; i < maxPower; i++) {\n                    lastScaleFactor = scaleFactor;\n                    scaleFactor *= scale;\n                    if (a != 0.0 && a > b) {\n                        cN = hPrev / lastScaleFactor + (b / scaleFactor * p0);\n                        q2 = q1 / lastScaleFactor + (b / scaleFactor * dPrev);\n                    } else if (b != 0) {\n                        cN = (a / scaleFactor * hPrev) + p0 / lastScaleFactor;\n                        q2 = (a / scaleFactor * q1) + dPrev / lastScaleFactor;\n                    }\n                    if (!(Double.isInfinite(cN) || Double.isInfinite(q2))) {\n                        break;\n                    }\n                }\n            }\n\n            final double deltaN = cN / q2 / cPrev;\n            hN = cPrev * deltaN;\n\n            if (Double.isInfinite(hN)) {\n                throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n                                               x);\n            }\n            if (Double.isNaN(hN)) {\n                throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_NAN_DIVERGENCE,\n                                               x);\n            }\n\n            if (FastMath.abs(deltaN - 1.0) < epsilon) {\n                break;\n            }\n\n            dPrev = q1;\n            cPrev = cN / q2;\n            p0 = hPrev;\n            hPrev = cN;\n            q1 = q2;\n            n++;\n        }\n\n        if (n >= maxIterations) {\n            throw new MaxCountExceededException(LocalizedFormats.NON_CONVERGENT_CONTINUED_FRACTION,\n                                                maxIterations, x);\n        }\n\n        return hN;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.util;\n\nimport org.apache.commons.math3.exception.ConvergenceException;\nimport org.apache.commons.math3.exception.MaxCountExceededException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\n\n\npublic abstract class ContinuedFraction { private static final double DEFAULT_EPSILON = 10e-9; protected ContinuedFraction() {\n        super();\n    }\n\n    \n    protected abstract double getA(int n, double x); protected abstract double getB(int n, double x); public double evaluate(double x) {\n        return evaluate(x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n\n    \n    public double evaluate(double x, double epsilon) {\n        return evaluate(x, epsilon, Integer.MAX_VALUE);\n    }\n\n    \n    public double evaluate(double x, int maxIterations) {\n        return evaluate(x, DEFAULT_EPSILON, maxIterations);\n    }\n\n    \n    public double evaluate(double x, double epsilon, int maxIterations) {\n        final double small = 1e-50;\n        double hPrev = getA(0, x);\n\n        \n        if (Precision.equals(hPrev, 0.0, small)) {\n            hPrev = small;\n        }\n\n        int n = 1;\n        double dPrev = 0.0;\n        double cPrev = hPrev;\n        double hN = hPrev;\n\n        while (n < maxIterations) {\n            final double a = getA(n, x);\n            final double b = getB(n, x);\n\n            double dN = a + b * dPrev;\n            if (Precision.equals(dN, 0.0, small)) {\n                dN = small;\n            }\n            double cN = a + b / cPrev;\n            if (Precision.equals(cN, 0.0, small)) {\n                cN = small;\n            }\n\n            dN = 1 / dN;\n            final double deltaN = cN * dN;\n            hN = hPrev * deltaN;\n\n            if (Double.isInfinite(hN)) {\n                throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n                                               x);\n            }\n            if (Double.isNaN(hN)) {\n                throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_NAN_DIVERGENCE,\n                                               x);\n            }\n\n            if (FastMath.abs(deltaN - 1.0) < epsilon) {\n                break;\n            }\n\n            dPrev = dN;\n            cPrev = cN;\n            hPrev = hN;\n            n++;\n        }\n\n        if (n >= maxIterations) {\n            throw new MaxCountExceededException(LocalizedFormats.NON_CONVERGENT_CONTINUED_FRACTION,\n                                                maxIterations, x);\n        }\n\n        return hN;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "protected abstract double getA(int n, double x); protected abstract double getB(int n, double x); public double evaluate(double x)",
+        "public double evaluate(double x, double epsilon)",
+        "public double evaluate(double x, int maxIterations)",
+        "public double evaluate(double x, double epsilon, int maxIterations)"
+      ],
+      "fixed_signatures": [
+        "protected abstract double getA(int n, double x); protected abstract double getB(int n, double x); public double evaluate(double x)",
+        "public double evaluate(double x, double epsilon)",
+        "public double evaluate(double x, int maxIterations)",
+        "public double evaluate(double x, double epsilon, int maxIterations)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public double evaluate(double x, double epsilon, int maxIterations) {\n  final double small = 1e-50;\n  double hPrev = getA(0, x);\n\n  \n  if (Precision.equals(hPrev, 0.0, small)) {\n  hPrev = small;\n  }\n\n  int n = 1;\n  double dPrev = 0.0;\n  double p0 = 1.0;\n  double q1 = 1.0;\n  double cPrev = hPrev;\n  double hN = hPrev;\n\n  while (n < maxIterations) {\n  final double a = getA(n, x);\n  final double b = getB(n, x);\n\n  double cN = a * hPrev + b * p0;\n  double q2 = a * q1 + b * dPrev;\n  if (Double.isInfinite(cN) || Double.isInfinite(q2)) {\n  double scaleFactor = 1d;\n  double lastScaleFactor = 1d;\n  final int maxPower = 5;\n  final double scale = FastMath.max(a,b);\n  if (scale <= 0) {  \n  throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE, x);\n  }\n  for (int i = 0; i < maxPower; i++) {\n  lastScaleFactor = scaleFactor;\n  scaleFactor *= scale;\n  if (a != 0.0 && a > b) {\n  cN = hPrev / lastScaleFactor + (b / scaleFactor * p0);\n  q2 = q1 / lastScaleFactor + (b / scaleFactor * dPrev);\n  } else if (b != 0) {\n  cN = (a / scaleFactor * hPrev) + p0 / lastScaleFactor;\n  q2 = (a / scaleFactor * q1) + dPrev / lastScaleFactor;\n  }\n  if (!(Double.isInfinite(cN) || Double.isInfinite(q2))) {\n  break;\n  }\n  }\n  }\n\n  final double deltaN = cN / q2 / cPrev;\n  hN = cPrev * deltaN;\n\n  if (Double.isInfinite(hN)) {\n  throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n  x);\n  }\n  if (Double.isNaN(hN)) {\n  throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_NAN_DIVERGENCE,\n  x);\n  }\n\n  if (FastMath.abs(deltaN - 1.0) < epsilon) {\n  break;\n  }\n\n  dPrev = q1;\n  cPrev = cN / q2;\n  p0 = hPrev;\n  hPrev = cN;\n  q1 = q2;\n  n++;\n  }\n\n  if (n >= maxIterations) {\n  throw new MaxCountExceededException(LocalizedFormats.NON_CONVERGENT_CONTINUED_FRACTION,\n  maxIterations, x);\n  }\n\n  return hN;\n  }",
+          "fixed_method": "  public double evaluate(double x, double epsilon, int maxIterations) {\n  final double small = 1e-50;\n  double hPrev = getA(0, x);\n\n  \n  if (Precision.equals(hPrev, 0.0, small)) {\n  hPrev = small;\n  }\n\n  int n = 1;\n  double dPrev = 0.0;\n  double cPrev = hPrev;\n  double hN = hPrev;\n\n  while (n < maxIterations) {\n  final double a = getA(n, x);\n  final double b = getB(n, x);\n\n  double dN = a + b * dPrev;\n  if (Precision.equals(dN, 0.0, small)) {\n  dN = small;\n  }\n  double cN = a + b / cPrev;\n  if (Precision.equals(cN, 0.0, small)) {\n  cN = small;\n  }\n\n  dN = 1 / dN;\n  final double deltaN = cN * dN;\n  hN = hPrev * deltaN;\n\n  if (Double.isInfinite(hN)) {\n  throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n  x);\n  }\n  if (Double.isNaN(hN)) {\n  throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_NAN_DIVERGENCE,\n  x);\n  }\n\n  if (FastMath.abs(deltaN - 1.0) < epsilon) {\n  break;\n  }\n\n  dPrev = dN;\n  cPrev = cN;\n  hPrev = hN;\n  n++;\n  }\n\n  if (n >= maxIterations) {\n  throw new MaxCountExceededException(LocalizedFormats.NON_CONVERGENT_CONTINUED_FRACTION,\n  maxIterations, x);\n  }\n\n  return hN;\n  }",
+          "diff": [
+            "@@ -131,8 +131,6 @@",
+            " \n",
+            "         int n = 1;\n",
+            "         double dPrev = 0.0;\n",
+            "-        double p0 = 1.0;\n",
+            "-        double q1 = 1.0;\n",
+            "         double cPrev = hPrev;\n",
+            "         double hN = hPrev;\n",
+            " \n",
+            "@@ -140,34 +138,18 @@",
+            "             final double a = getA(n, x);\n",
+            "             final double b = getB(n, x);\n",
+            " \n",
+            "-            double cN = a * hPrev + b * p0;\n",
+            "-            double q2 = a * q1 + b * dPrev;\n",
+            "-            if (Double.isInfinite(cN) || Double.isInfinite(q2)) {\n",
+            "-                double scaleFactor = 1d;\n",
+            "-                double lastScaleFactor = 1d;\n",
+            "-                final int maxPower = 5;\n",
+            "-                final double scale = FastMath.max(a,b);\n",
+            "-                if (scale <= 0) {  // Can't scale\n",
+            "-                    throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE, x);\n",
+            "-                }\n",
+            "-                for (int i = 0; i < maxPower; i++) {\n",
+            "-                    lastScaleFactor = scaleFactor;\n",
+            "-                    scaleFactor *= scale;\n",
+            "-                    if (a != 0.0 && a > b) {\n",
+            "-                        cN = hPrev / lastScaleFactor + (b / scaleFactor * p0);\n",
+            "-                        q2 = q1 / lastScaleFactor + (b / scaleFactor * dPrev);\n",
+            "-                    } else if (b != 0) {\n",
+            "-                        cN = (a / scaleFactor * hPrev) + p0 / lastScaleFactor;\n",
+            "-                        q2 = (a / scaleFactor * q1) + dPrev / lastScaleFactor;\n",
+            "-                    }\n",
+            "-                    if (!(Double.isInfinite(cN) || Double.isInfinite(q2))) {\n",
+            "-                        break;\n",
+            "-                    }\n",
+            "-                }\n",
+            "+            double dN = a + b * dPrev;\n",
+            "+            if (Precision.equals(dN, 0.0, small)) {\n",
+            "+                dN = small;\n",
+            "+            }\n",
+            "+            double cN = a + b / cPrev;\n",
+            "+            if (Precision.equals(cN, 0.0, small)) {\n",
+            "+                cN = small;\n",
+            "             }\n",
+            " \n",
+            "-            final double deltaN = cN / q2 / cPrev;\n",
+            "-            hN = cPrev * deltaN;\n",
+            "+            dN = 1 / dN;\n",
+            "+            final double deltaN = cN * dN;\n",
+            "+            hN = hPrev * deltaN;\n",
+            " \n",
+            "             if (Double.isInfinite(hN)) {\n",
+            "                 throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n",
+            "@@ -182,11 +164,9 @@",
+            "                 break;\n",
+            "             }\n",
+            " \n",
+            "-            dPrev = q1;\n",
+            "-            cPrev = cN / q2;\n",
+            "-            p0 = hPrev;\n",
+            "-            hPrev = cN;\n",
+            "-            q1 = q2;\n",
+            "+            dPrev = dN;\n",
+            "+            cPrev = cN;\n",
+            "+            hPrev = hN;\n",
+            "             n++;\n",
+            "         }\n",
+            " \n"
+          ],
+          "changed_lines": 46
+        }
+      ]
+    }
+  ]
+}

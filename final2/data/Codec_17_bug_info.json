@@ -1,0 +1,86 @@
+{
+  "bug_id": "17",
+  "failed_tests": {
+    "org.apache.commons.codec.binary.StringUtilsTest": [
+      {
+        "methodName": "testNewStringNullInput_CODEC229",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        Assert.assertNull(StringUtils.newStringIso8859_1(null));",
+        "test_source": "  public void testNewStringNullInput_CODEC229() {\n  Assert.assertNull(StringUtils.newStringUtf8(null));\n  Assert.assertNull(StringUtils.newStringIso8859_1(null));\n  Assert.assertNull(StringUtils.newStringUsAscii(null));\n  Assert.assertNull(StringUtils.newStringUtf16(null));\n  Assert.assertNull(StringUtils.newStringUtf16Be(null));\n  Assert.assertNull(StringUtils.newStringUtf16Le(null));\n  }",
+        "stack": [
+          "StringUtils.newStringIso8859_1 line 339, StringUtilsTest.testNewStringNullInput_CODEC229 line 151"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/codec/binary/StringUtils.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.codec.binary;\n\nimport java.io.UnsupportedEncodingException;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\n\nimport org.apache.commons.codec.CharEncoding;\nimport org.apache.commons.codec.Charsets;\n\n\npublic class StringUtils { public static boolean equals(final CharSequence cs1, final CharSequence cs2) {\n        if (cs1 == cs2) {\n            return true;\n        }\n        if (cs1 == null || cs2 == null) {\n            return false;\n        }\n        if (cs1 instanceof String && cs2 instanceof String) {\n            return cs1.equals(cs2);\n        }\n        return CharSequenceUtils.regionMatches(cs1, false, 0, cs2, 0, Math.max(cs1.length(), cs2.length()));\n    }\n\n    \n    private static byte[] getBytes(final String string, final Charset charset) {\n        if (string == null) {\n            return null;\n        }\n        return string.getBytes(charset);\n    }\n\n    \n    private static ByteBuffer getByteBuffer(final String string, final Charset charset) {\n        if (string == null) {\n            return null;\n        }\n        return ByteBuffer.wrap(string.getBytes(charset));\n    }\n\n    \n    public static ByteBuffer getByteBufferUtf8(final String string) {\n        return getByteBuffer(string, Charsets.UTF_8);\n    }\n\n    \n    public static byte[] getBytesIso8859_1(final String string) {\n        return getBytes(string, Charsets.ISO_8859_1);\n    }\n\n\n    \n    public static byte[] getBytesUnchecked(final String string, final String charsetName) {\n        if (string == null) {\n            return null;\n        }\n        try {\n            return string.getBytes(charsetName);\n        } catch (final UnsupportedEncodingException e) {\n            throw StringUtils.newIllegalStateException(charsetName, e);\n        }\n    }\n\n    \n    public static byte[] getBytesUsAscii(final String string) {\n        return getBytes(string, Charsets.US_ASCII);\n    }\n\n    \n    public static byte[] getBytesUtf16(final String string) {\n        return getBytes(string, Charsets.UTF_16);\n    }\n\n    \n    public static byte[] getBytesUtf16Be(final String string) {\n        return getBytes(string, Charsets.UTF_16BE);\n    }\n\n    \n    public static byte[] getBytesUtf16Le(final String string) {\n        return getBytes(string, Charsets.UTF_16LE);\n    }\n\n    \n    public static byte[] getBytesUtf8(final String string) {\n        return getBytes(string, Charsets.UTF_8);\n    }\n\n    private static IllegalStateException newIllegalStateException(final String charsetName, final UnsupportedEncodingException e) {\n        return new IllegalStateException(charsetName + \": \" + e);\n    }\n\n    \n    private static String newString(final byte[] bytes, final Charset charset) {\n        return bytes == null ? null : new String(bytes, charset);\n    }\n\n    \n    public static String newString(final byte[] bytes, final String charsetName) {\n        if (bytes == null) {\n            return null;\n        }\n        try {\n            return new String(bytes, charsetName);\n        } catch (final UnsupportedEncodingException e) {\n            throw StringUtils.newIllegalStateException(charsetName, e);\n        }\n    }\n\n    \n    public static String newStringIso8859_1(final byte[] bytes) {\n        return new String(bytes, Charsets.ISO_8859_1);\n    }\n\n    \n    public static String newStringUsAscii(final byte[] bytes) {\n        return newString(bytes, Charsets.US_ASCII);\n    }\n\n    \n    public static String newStringUtf16(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16);\n    }\n\n    \n    public static String newStringUtf16Be(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16BE);\n    }\n\n    \n    public static String newStringUtf16Le(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16LE);\n    }\n\n    \n    public static String newStringUtf8(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_8);\n    }\n\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.codec.binary;\n\nimport java.io.UnsupportedEncodingException;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\n\nimport org.apache.commons.codec.CharEncoding;\nimport org.apache.commons.codec.Charsets;\n\n\npublic class StringUtils { public static boolean equals(final CharSequence cs1, final CharSequence cs2) {\n        if (cs1 == cs2) {\n            return true;\n        }\n        if (cs1 == null || cs2 == null) {\n            return false;\n        }\n        if (cs1 instanceof String && cs2 instanceof String) {\n            return cs1.equals(cs2);\n        }\n        return CharSequenceUtils.regionMatches(cs1, false, 0, cs2, 0, Math.max(cs1.length(), cs2.length()));\n    }\n\n    \n    private static byte[] getBytes(final String string, final Charset charset) {\n        if (string == null) {\n            return null;\n        }\n        return string.getBytes(charset);\n    }\n\n    \n    private static ByteBuffer getByteBuffer(final String string, final Charset charset) {\n        if (string == null) {\n            return null;\n        }\n        return ByteBuffer.wrap(string.getBytes(charset));\n    }\n\n    \n    public static ByteBuffer getByteBufferUtf8(final String string) {\n        return getByteBuffer(string, Charsets.UTF_8);\n    }\n\n    \n    public static byte[] getBytesIso8859_1(final String string) {\n        return getBytes(string, Charsets.ISO_8859_1);\n    }\n\n\n    \n    public static byte[] getBytesUnchecked(final String string, final String charsetName) {\n        if (string == null) {\n            return null;\n        }\n        try {\n            return string.getBytes(charsetName);\n        } catch (final UnsupportedEncodingException e) {\n            throw StringUtils.newIllegalStateException(charsetName, e);\n        }\n    }\n\n    \n    public static byte[] getBytesUsAscii(final String string) {\n        return getBytes(string, Charsets.US_ASCII);\n    }\n\n    \n    public static byte[] getBytesUtf16(final String string) {\n        return getBytes(string, Charsets.UTF_16);\n    }\n\n    \n    public static byte[] getBytesUtf16Be(final String string) {\n        return getBytes(string, Charsets.UTF_16BE);\n    }\n\n    \n    public static byte[] getBytesUtf16Le(final String string) {\n        return getBytes(string, Charsets.UTF_16LE);\n    }\n\n    \n    public static byte[] getBytesUtf8(final String string) {\n        return getBytes(string, Charsets.UTF_8);\n    }\n\n    private static IllegalStateException newIllegalStateException(final String charsetName, final UnsupportedEncodingException e) {\n        return new IllegalStateException(charsetName + \": \" + e);\n    }\n\n    \n    private static String newString(final byte[] bytes, final Charset charset) {\n        return bytes == null ? null : new String(bytes, charset);\n    }\n\n    \n    public static String newString(final byte[] bytes, final String charsetName) {\n        if (bytes == null) {\n            return null;\n        }\n        try {\n            return new String(bytes, charsetName);\n        } catch (final UnsupportedEncodingException e) {\n            throw StringUtils.newIllegalStateException(charsetName, e);\n        }\n    }\n\n    \n    public static String newStringIso8859_1(final byte[] bytes) {\n        return newString(bytes, Charsets.ISO_8859_1);\n    }\n\n    \n    public static String newStringUsAscii(final byte[] bytes) {\n        return newString(bytes, Charsets.US_ASCII);\n    }\n\n    \n    public static String newStringUtf16(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16);\n    }\n\n    \n    public static String newStringUtf16Be(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16BE);\n    }\n\n    \n    public static String newStringUtf16Le(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_16LE);\n    }\n\n    \n    public static String newStringUtf8(final byte[] bytes) {\n        return newString(bytes, Charsets.UTF_8);\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class StringUtils { public static boolean equals(final CharSequence cs1, final CharSequence cs2)",
+        "private static byte[] getBytes(final String string, final Charset charset)",
+        "private static ByteBuffer getByteBuffer(final String string, final Charset charset)",
+        "public static ByteBuffer getByteBufferUtf8(final String string)",
+        "public static byte[] getBytesIso8859_1(final String string)",
+        "public static byte[] getBytesUnchecked(final String string, final String charsetName)",
+        "public static byte[] getBytesUsAscii(final String string)",
+        "public static byte[] getBytesUtf16(final String string)",
+        "public static byte[] getBytesUtf16Be(final String string)",
+        "public static byte[] getBytesUtf16Le(final String string)",
+        "public static byte[] getBytesUtf8(final String string)",
+        "private static IllegalStateException newIllegalStateException(final String charsetName, final UnsupportedEncodingException e)",
+        "private static String newString(final byte[] bytes, final Charset charset)",
+        "public static String newString(final byte[] bytes, final String charsetName)",
+        "public static String newStringIso8859_1(final byte[] bytes)",
+        "public static String newStringUsAscii(final byte[] bytes)",
+        "public static String newStringUtf16(final byte[] bytes)",
+        "public static String newStringUtf16Be(final byte[] bytes)",
+        "public static String newStringUtf16Le(final byte[] bytes)",
+        "public static String newStringUtf8(final byte[] bytes)"
+      ],
+      "fixed_signatures": [
+        "public class StringUtils { public static boolean equals(final CharSequence cs1, final CharSequence cs2)",
+        "private static byte[] getBytes(final String string, final Charset charset)",
+        "private static ByteBuffer getByteBuffer(final String string, final Charset charset)",
+        "public static ByteBuffer getByteBufferUtf8(final String string)",
+        "public static byte[] getBytesIso8859_1(final String string)",
+        "public static byte[] getBytesUnchecked(final String string, final String charsetName)",
+        "public static byte[] getBytesUsAscii(final String string)",
+        "public static byte[] getBytesUtf16(final String string)",
+        "public static byte[] getBytesUtf16Be(final String string)",
+        "public static byte[] getBytesUtf16Le(final String string)",
+        "public static byte[] getBytesUtf8(final String string)",
+        "private static IllegalStateException newIllegalStateException(final String charsetName, final UnsupportedEncodingException e)",
+        "private static String newString(final byte[] bytes, final Charset charset)",
+        "public static String newString(final byte[] bytes, final String charsetName)",
+        "public static String newStringIso8859_1(final byte[] bytes)",
+        "public static String newStringUsAscii(final byte[] bytes)",
+        "public static String newStringUtf16(final byte[] bytes)",
+        "public static String newStringUtf16Be(final byte[] bytes)",
+        "public static String newStringUtf16Le(final byte[] bytes)",
+        "public static String newStringUtf8(final byte[] bytes)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static String newStringIso8859_1(final byte[] bytes) {\n  return new String(bytes, Charsets.ISO_8859_1);\n  }",
+          "fixed_method": "  public static String newStringIso8859_1(final byte[] bytes) {\n  return newString(bytes, Charsets.ISO_8859_1);\n  }",
+          "diff": [
+            "@@ -336,7 +336,7 @@",
+            "      * @since As of 1.7, throws {@link NullPointerException} instead of UnsupportedEncodingException\n",
+            "      */\n",
+            "     public static String newStringIso8859_1(final byte[] bytes) {\n",
+            "-        return new String(bytes, Charsets.ISO_8859_1);\n",
+            "+        return newString(bytes, Charsets.ISO_8859_1);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

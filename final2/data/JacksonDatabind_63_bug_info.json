@@ -1,0 +1,164 @@
+{
+  "bug_id": "63",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.deser.exc.ExceptionPathTest": [
+      {
+        "methodName": "testReferenceChainForInnerClass",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<....databind.deser.exc.[ExceptionPathTest$]Outer[\"inner\"]> but was:<....databind.deser.exc.[]Outer[\"inner\"]>",
+        "fail_line": "            assertEquals(getClass().getName()+\"$Outer[\\\"inner\\\"]\",",
+        "test_source": "  public void testReferenceChainForInnerClass() throws Exception {\n  String json = MAPPER.writeValueAsString(new Outer());\n  try {\n  MAPPER.readValue(json, Outer.class);\n  fail(\"Should not pass\");\n  } catch (JsonMappingException e) {\n  JsonMappingException.Reference reference = e.getPath().get(0);\n  assertEquals(getClass().getName()+\"$Outer[\\\"inner\\\"]\",\n  reference.toString());\n  }\n  }",
+        "stack": [
+          "ExceptionPathTest.testReferenceChainForInnerClass line 37"
+        ]
+      }
+    ],
+    "com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithDefaultDeserialization": [
+      {
+        "methodName": "testShouldThrowJsonMappingExceptionWithPathReference",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<....databind.deser.exc.[TestExceptionHandlingWithDefaultDeserialization$Foo[\"bar\"]->com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithDefaultDeserialization$]Bar[\"baz\"]> but was:<....databind.deser.exc.[Foo[\"bar\"]->com.fasterxml.jackson.databind.deser.exc.]Bar[\"baz\"]>",
+        "fail_line": "            assertEquals(THIS+\"$Foo[\\\"bar\\\"]->\"+THIS+\"$Bar[\\\"baz\\\"]\",",
+        "test_source": "  public void testShouldThrowJsonMappingExceptionWithPathReference() throws IOException {\n  // given\n  ObjectMapper mapper = new ObjectMapper();\n  String input = \"{\\\"bar\\\":{\\\"baz\\\":{qux:\\\"quxValue\\\"))}\";\n  final String THIS = getClass().getName();\n\n  // when\n  try {\n  mapper.readValue(input, Foo.class);\n  fail(\"Upsss! Exception has not been thrown.\");\n  } catch (JsonMappingException ex) {\n  // then\n  assertEquals(THIS+\"$Foo[\\\"bar\\\"]->\"+THIS+\"$Bar[\\\"baz\\\"]\",\n  ex.getPathReference());\n  }\n  }\n}",
+        "stack": [
+          "TestExceptionHandlingWithDefaultDeserialization.testShouldThrowJsonMappingExceptionWithPathReference line 53"
+        ]
+      }
+    ],
+    "com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithJsonCreatorDeserialization": [
+      {
+        "methodName": "testShouldThrowJsonMappingExceptionWithPathReference",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<....databind.deser.exc.[TestExceptionHandlingWithJsonCreatorDeserialization$Foo[\"bar\"]->com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithJsonCreatorDeserialization$]Bar[\"baz\"]> but was:<....databind.deser.exc.[Foo[\"bar\"]->com.fasterxml.jackson.databind.deser.exc.]Bar[\"baz\"]>",
+        "fail_line": "            assertEquals(THIS+\"$Foo[\\\"bar\\\"]->\"+THIS+\"$Bar[\\\"baz\\\"]\",",
+        "test_source": "  public void testShouldThrowJsonMappingExceptionWithPathReference() throws IOException {\n  // given\n  ObjectMapper mapper = new ObjectMapper();\n  String input = \"{\\\"bar\\\":{\\\"baz\\\":{qux:\\\"quxValue\\\"))}\";\n  final String THIS = getClass().getName();\n\n  // when\n  try {\n  mapper.readValue(input, Foo.class);\n  fail(\"Upsss! Exception has not been thrown.\");\n  } catch (JsonMappingException ex) {\n  // then\n  assertEquals(THIS+\"$Foo[\\\"bar\\\"]->\"+THIS+\"$Bar[\\\"baz\\\"]\",\n  ex.getPathReference());\n  }\n  }\n}",
+        "stack": [
+          "TestExceptionHandlingWithJsonCreatorDeserialization.testShouldThrowJsonMappingExceptionWithPathReference line 64"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/JsonMappingException.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind;\n\nimport java.io.Closeable;\nimport java.io.IOException;\nimport java.io.Serializable;\nimport java.util.*;\n\nimport com.fasterxml.jackson.annotation.JsonIgnore;\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonMappingException extends JsonProcessingException { private static final long serialVersionUID = 1L; final static int MAX_REFS_TO_LIST = 1000; public static class Reference implements Serializable { private static final long serialVersionUID = 2L; protected transient Object _from; protected String _fieldName; protected int _index = -1; protected String _desc; protected Reference() { }\n\n        public Reference(Object from) { _from = from; }\n\n        public Reference(Object from, String fieldName) {\n            _from = from;\n            if (fieldName == null) {\n                throw new NullPointerException(\"Can not pass null fieldName\");\n            }\n            _fieldName = fieldName;\n        }\n\n        public Reference(Object from, int index) {\n            _from = from;\n            _index = index;\n        }\n\n        \n        void setFieldName(String n) { _fieldName = n; }\n        void setIndex(int ix) { _index = ix; }\n        void setDescription(String d) { _desc = d; }\n\n        \n        @JsonIgnore\n        public Object getFrom() { return _from; }\n\n        public String getFieldName() { return _fieldName; }\n        public int getIndex() { return _index; }\n        public String getDescription() {\n            if (_desc == null) {\n                StringBuilder sb = new StringBuilder();\n\n                if (_from == null) { \n                    sb.append(\"UNKNOWN\");\n                } else {\n                    Class<?> cls = (_from instanceof Class<?>) ? (Class<?>)_from : _from.getClass();\n                    \n                    \n                    \n                    \n                    String pkgName = com.fasterxml.jackson.databind.util.ClassUtil.getPackageName(cls);\n                    if (pkgName != null) {\n                        sb.append(pkgName);\n                        sb.append('.');\n                    }\n                    sb.append(cls.getSimpleName());\n                }\n                sb.append('[');\n                if (_fieldName != null) {\n                    sb.append('\"');\n                    sb.append(_fieldName);\n                    sb.append('\"');\n                } else if (_index >= 0) {\n                    sb.append(_index);\n                } else {\n                    sb.append('?');\n                }\n                sb.append(']');\n                _desc = sb.toString();\n            }\n            return _desc;\n        }\n\n        @Override\n        public String toString() {\n            return getDescription();\n        }\n\n        \n        Object writeReplace() {\n            \n            \n            getDescription();\n            return this;\n        }\n    }\n\n    \n\n    \n    protected LinkedList<Reference> _path; protected transient Closeable _processor; @Deprecated public JsonMappingException(String msg) { super(msg); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, Throwable rootCause) { super(msg, rootCause); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, JsonLocation loc) { super(msg, loc); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, JsonLocation loc, Throwable rootCause) { super(msg, loc, rootCause); }\n\n    \n    public JsonMappingException(Closeable processor, String msg) {\n        super(msg);\n        _processor = processor;\n        if (processor instanceof JsonParser) {\n            \n            \n            \n            _location = ((JsonParser) processor).getTokenLocation();\n        }\n    }\n\n    \n    public JsonMappingException(Closeable processor, String msg, Throwable problem) {\n        super(msg, problem);\n        _processor = processor;\n        if (processor instanceof JsonParser) {\n            _location = ((JsonParser) processor).getTokenLocation();\n        }\n    }\n\n    \n    public JsonMappingException(Closeable processor, String msg, JsonLocation loc) {\n        super(msg, loc);\n        _processor = processor;\n    }\n\n    \n    public static JsonMappingException from(JsonParser p, String msg) {\n        return new JsonMappingException(p, msg);\n    }\n\n    \n    public static JsonMappingException from(JsonParser p, String msg, Throwable problem) {\n        return new JsonMappingException(p, msg, problem);\n    }\n\n    \n    public static JsonMappingException from(JsonGenerator g, String msg) {\n        return new JsonMappingException(g, msg, (Throwable) null);\n    }\n\n    \n    public static JsonMappingException from(JsonGenerator g, String msg, Throwable problem) {\n        return new JsonMappingException(g, msg, problem);\n    }\n\n    \n    public static JsonMappingException from(DeserializationContext ctxt, String msg) {\n        return new JsonMappingException(ctxt.getParser(), msg);\n    }\n\n    \n    public static JsonMappingException from(DeserializationContext ctxt, String msg, Throwable t) {\n        return new JsonMappingException(ctxt.getParser(), msg, t);\n    }\n\n    \n    public static JsonMappingException from(SerializerProvider ctxt, String msg) {\n        return new JsonMappingException(ctxt.getGenerator(), msg);\n    }\n\n    \n    public static JsonMappingException from(SerializerProvider ctxt, String msg, Throwable problem) {\n        \n        return new JsonMappingException(ctxt.getGenerator(), msg, problem);\n    }\n    \n    \n    public static JsonMappingException fromUnexpectedIOE(IOException src) {\n        return new JsonMappingException(null,\n                String.format(\"Unexpected IOException (of type %s): %s\",\n                        src.getClass().getName(), src.getMessage()));\n    }\n\n    \n    public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, String refFieldName) {\n        return wrapWithPath(src, new Reference(refFrom, refFieldName));\n    }\n\n    \n    public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, int index) {\n        return wrapWithPath(src, new Reference(refFrom, index));\n    }\n\n    \n    @SuppressWarnings(\"resource\")\n    public static JsonMappingException wrapWithPath(Throwable src, Reference ref) {\n        JsonMappingException jme;\n        if (src instanceof JsonMappingException) {\n            jme = (JsonMappingException) src;\n        } else {\n            String msg = src.getMessage();\n            \n            if (msg == null || msg.length() == 0) {\n                msg = \"(was \"+src.getClass().getName()+\")\";\n            }\n            \n            Closeable proc = null;\n            if (src instanceof JsonProcessingException) {\n                Object proc0 = ((JsonProcessingException) src).getProcessor();\n                if (proc0 instanceof Closeable) {\n                    proc = (Closeable) proc0;\n                }\n            }\n            jme = new JsonMappingException(proc, msg, src);\n        }\n        jme.prependPath(ref);\n        return jme;\n    }\n\n    \n\n    \n    public List<Reference> getPath() {\n        if (_path == null) {\n            return Collections.emptyList();\n        }\n        return Collections.unmodifiableList(_path);\n    }\n\n    \n    public String getPathReference() {\n        return getPathReference(new StringBuilder()).toString();\n    }\n\n    public StringBuilder getPathReference(StringBuilder sb) {\n        _appendPathDesc(sb);\n        return sb;\n    }\n    \n    \n    public void prependPath(Object referrer, String fieldName) {\n        Reference ref = new Reference(referrer, fieldName);\n        prependPath(ref);\n    }\n    \n    public void prependPath(Object referrer, int index) {\n        Reference ref = new Reference(referrer, index);\n        prependPath(ref);\n    }\n\n    public void prependPath(Reference r) {\n        if (_path == null) {\n            _path = new LinkedList<Reference>();\n        }\n        \n        if (_path.size() < MAX_REFS_TO_LIST) {\n            _path.addFirst(r);\n        }\n    }\n    \n    \n\n    @Override \n    @JsonIgnore \n    public Object getProcessor() { return _processor; }\n\n    @Override\n    public String getLocalizedMessage() {\n        return _buildMessage();\n    }\n    \n    \n    @Override\n    public String getMessage() {\n        return _buildMessage();\n    }\n\n    protected String _buildMessage() {\n        \n        String msg = super.getMessage();\n        if (_path == null) {\n            return msg;\n        }\n        StringBuilder sb = (msg == null) ? new StringBuilder() : new StringBuilder(msg);\n        \n        sb.append(\" (through reference chain: \");\n        sb = getPathReference(sb);\n        sb.append(')');\n        return sb.toString();\n    }\n\n    @Override\n    public String toString() {\n        return getClass().getName()+\": \"+getMessage();\n    }\n\n    \n\n    protected void _appendPathDesc(StringBuilder sb) {\n        if (_path == null) {\n            return;\n        }\n        Iterator<Reference> it = _path.iterator();\n        while (it.hasNext()) {\n            sb.append(it.next().toString());\n            if (it.hasNext()) {\n                sb.append(\"->\");\n            }\n        }\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind;\n\nimport java.io.Closeable;\nimport java.io.IOException;\nimport java.io.Serializable;\nimport java.util.*;\n\nimport com.fasterxml.jackson.annotation.JsonIgnore;\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonMappingException extends JsonProcessingException { private static final long serialVersionUID = 1L; final static int MAX_REFS_TO_LIST = 1000; public static class Reference implements Serializable { private static final long serialVersionUID = 2L; protected transient Object _from; protected String _fieldName; protected int _index = -1; protected String _desc; protected Reference() { }\n\n        public Reference(Object from) { _from = from; }\n\n        public Reference(Object from, String fieldName) {\n            _from = from;\n            if (fieldName == null) {\n                throw new NullPointerException(\"Can not pass null fieldName\");\n            }\n            _fieldName = fieldName;\n        }\n\n        public Reference(Object from, int index) {\n            _from = from;\n            _index = index;\n        }\n\n        \n        void setFieldName(String n) { _fieldName = n; }\n        void setIndex(int ix) { _index = ix; }\n        void setDescription(String d) { _desc = d; }\n\n        \n        @JsonIgnore\n        public Object getFrom() { return _from; }\n\n        public String getFieldName() { return _fieldName; }\n        public int getIndex() { return _index; }\n        public String getDescription() {\n            if (_desc == null) {\n                StringBuilder sb = new StringBuilder();\n\n                if (_from == null) { \n                    sb.append(\"UNKNOWN\");\n                } else {\n                    Class<?> cls = (_from instanceof Class<?>) ? (Class<?>)_from : _from.getClass();\n                    \n                    \n                    \n                    \n                    int arrays = 0;\n                    while (cls.isArray()) {\n                        cls = cls.getComponentType();\n                        ++arrays;\n                    }\n                    sb.append(cls.getName());\n                    while (--arrays >= 0) {\n                        sb.append(\"[]\");\n                    }\n                    \n                }\n                sb.append('[');\n                if (_fieldName != null) {\n                    sb.append('\"');\n                    sb.append(_fieldName);\n                    sb.append('\"');\n                } else if (_index >= 0) {\n                    sb.append(_index);\n                } else {\n                    sb.append('?');\n                }\n                sb.append(']');\n                _desc = sb.toString();\n            }\n            return _desc;\n        }\n\n        @Override\n        public String toString() {\n            return getDescription();\n        }\n\n        \n        Object writeReplace() {\n            \n            \n            getDescription();\n            return this;\n        }\n    }\n\n    \n\n    \n    protected LinkedList<Reference> _path; protected transient Closeable _processor; @Deprecated public JsonMappingException(String msg) { super(msg); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, Throwable rootCause) { super(msg, rootCause); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, JsonLocation loc) { super(msg, loc); }\n\n    \n    @Deprecated \n    public JsonMappingException(String msg, JsonLocation loc, Throwable rootCause) { super(msg, loc, rootCause); }\n\n    \n    public JsonMappingException(Closeable processor, String msg) {\n        super(msg);\n        _processor = processor;\n        if (processor instanceof JsonParser) {\n            \n            \n            \n            _location = ((JsonParser) processor).getTokenLocation();\n        }\n    }\n\n    \n    public JsonMappingException(Closeable processor, String msg, Throwable problem) {\n        super(msg, problem);\n        _processor = processor;\n        if (processor instanceof JsonParser) {\n            _location = ((JsonParser) processor).getTokenLocation();\n        }\n    }\n\n    \n    public JsonMappingException(Closeable processor, String msg, JsonLocation loc) {\n        super(msg, loc);\n        _processor = processor;\n    }\n\n    \n    public static JsonMappingException from(JsonParser p, String msg) {\n        return new JsonMappingException(p, msg);\n    }\n\n    \n    public static JsonMappingException from(JsonParser p, String msg, Throwable problem) {\n        return new JsonMappingException(p, msg, problem);\n    }\n\n    \n    public static JsonMappingException from(JsonGenerator g, String msg) {\n        return new JsonMappingException(g, msg, (Throwable) null);\n    }\n\n    \n    public static JsonMappingException from(JsonGenerator g, String msg, Throwable problem) {\n        return new JsonMappingException(g, msg, problem);\n    }\n\n    \n    public static JsonMappingException from(DeserializationContext ctxt, String msg) {\n        return new JsonMappingException(ctxt.getParser(), msg);\n    }\n\n    \n    public static JsonMappingException from(DeserializationContext ctxt, String msg, Throwable t) {\n        return new JsonMappingException(ctxt.getParser(), msg, t);\n    }\n\n    \n    public static JsonMappingException from(SerializerProvider ctxt, String msg) {\n        return new JsonMappingException(ctxt.getGenerator(), msg);\n    }\n\n    \n    public static JsonMappingException from(SerializerProvider ctxt, String msg, Throwable problem) {\n        \n        return new JsonMappingException(ctxt.getGenerator(), msg, problem);\n    }\n    \n    \n    public static JsonMappingException fromUnexpectedIOE(IOException src) {\n        return new JsonMappingException(null,\n                String.format(\"Unexpected IOException (of type %s): %s\",\n                        src.getClass().getName(), src.getMessage()));\n    }\n\n    \n    public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, String refFieldName) {\n        return wrapWithPath(src, new Reference(refFrom, refFieldName));\n    }\n\n    \n    public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, int index) {\n        return wrapWithPath(src, new Reference(refFrom, index));\n    }\n\n    \n    @SuppressWarnings(\"resource\")\n    public static JsonMappingException wrapWithPath(Throwable src, Reference ref) {\n        JsonMappingException jme;\n        if (src instanceof JsonMappingException) {\n            jme = (JsonMappingException) src;\n        } else {\n            String msg = src.getMessage();\n            \n            if (msg == null || msg.length() == 0) {\n                msg = \"(was \"+src.getClass().getName()+\")\";\n            }\n            \n            Closeable proc = null;\n            if (src instanceof JsonProcessingException) {\n                Object proc0 = ((JsonProcessingException) src).getProcessor();\n                if (proc0 instanceof Closeable) {\n                    proc = (Closeable) proc0;\n                }\n            }\n            jme = new JsonMappingException(proc, msg, src);\n        }\n        jme.prependPath(ref);\n        return jme;\n    }\n\n    \n\n    \n    public List<Reference> getPath() {\n        if (_path == null) {\n            return Collections.emptyList();\n        }\n        return Collections.unmodifiableList(_path);\n    }\n\n    \n    public String getPathReference() {\n        return getPathReference(new StringBuilder()).toString();\n    }\n\n    public StringBuilder getPathReference(StringBuilder sb) {\n        _appendPathDesc(sb);\n        return sb;\n    }\n    \n    \n    public void prependPath(Object referrer, String fieldName) {\n        Reference ref = new Reference(referrer, fieldName);\n        prependPath(ref);\n    }\n    \n    public void prependPath(Object referrer, int index) {\n        Reference ref = new Reference(referrer, index);\n        prependPath(ref);\n    }\n\n    public void prependPath(Reference r) {\n        if (_path == null) {\n            _path = new LinkedList<Reference>();\n        }\n        \n        if (_path.size() < MAX_REFS_TO_LIST) {\n            _path.addFirst(r);\n        }\n    }\n    \n    \n\n    @Override \n    @JsonIgnore \n    public Object getProcessor() { return _processor; }\n\n    @Override\n    public String getLocalizedMessage() {\n        return _buildMessage();\n    }\n    \n    \n    @Override\n    public String getMessage() {\n        return _buildMessage();\n    }\n\n    protected String _buildMessage() {\n        \n        String msg = super.getMessage();\n        if (_path == null) {\n            return msg;\n        }\n        StringBuilder sb = (msg == null) ? new StringBuilder() : new StringBuilder(msg);\n        \n        sb.append(\" (through reference chain: \");\n        sb = getPathReference(sb);\n        sb.append(')');\n        return sb.toString();\n    }\n\n    @Override\n    public String toString() {\n        return getClass().getName()+\": \"+getMessage();\n    }\n\n    \n\n    protected void _appendPathDesc(StringBuilder sb) {\n        if (_path == null) {\n            return;\n        }\n        Iterator<Reference> it = _path.iterator();\n        while (it.hasNext()) {\n            sb.append(it.next().toString());\n            if (it.hasNext()) {\n                sb.append(\"->\");\n            }\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public Reference(Object from)",
+        "public Reference(Object from, String fieldName)",
+        "public Reference(Object from, int index)",
+        "public Object getFrom()",
+        "public String getFieldName()",
+        "public int getIndex()",
+        "public String getDescription()",
+        "public String toString()",
+        "protected LinkedList<Reference> _path; protected transient Closeable _processor; @Deprecated public JsonMappingException(String msg)",
+        "public JsonMappingException(String msg, Throwable rootCause)",
+        "public JsonMappingException(String msg, JsonLocation loc)",
+        "public JsonMappingException(String msg, JsonLocation loc, Throwable rootCause)",
+        "public JsonMappingException(Closeable processor, String msg)",
+        "public JsonMappingException(Closeable processor, String msg, Throwable problem)",
+        "public JsonMappingException(Closeable processor, String msg, JsonLocation loc)",
+        "public static JsonMappingException from(JsonParser p, String msg)",
+        "public static JsonMappingException from(JsonParser p, String msg, Throwable problem)",
+        "public static JsonMappingException from(JsonGenerator g, String msg)",
+        "public static JsonMappingException from(JsonGenerator g, String msg, Throwable problem)",
+        "public static JsonMappingException from(DeserializationContext ctxt, String msg)",
+        "public static JsonMappingException from(DeserializationContext ctxt, String msg, Throwable t)",
+        "public static JsonMappingException from(SerializerProvider ctxt, String msg)",
+        "public static JsonMappingException from(SerializerProvider ctxt, String msg, Throwable problem)",
+        "public static JsonMappingException fromUnexpectedIOE(IOException src)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, String refFieldName)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, int index)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Reference ref)",
+        "public List<Reference> getPath()",
+        "public String getPathReference()",
+        "public StringBuilder getPathReference(StringBuilder sb)",
+        "public void prependPath(Object referrer, String fieldName)",
+        "public void prependPath(Object referrer, int index)",
+        "public void prependPath(Reference r)",
+        "public Object getProcessor()",
+        "public String getLocalizedMessage()",
+        "public String getMessage()",
+        "protected String _buildMessage()",
+        "public String toString()",
+        "protected void _appendPathDesc(StringBuilder sb)"
+      ],
+      "fixed_signatures": [
+        "public Reference(Object from)",
+        "public Reference(Object from, String fieldName)",
+        "public Reference(Object from, int index)",
+        "public Object getFrom()",
+        "public String getFieldName()",
+        "public int getIndex()",
+        "public String getDescription()",
+        "public String toString()",
+        "protected LinkedList<Reference> _path; protected transient Closeable _processor; @Deprecated public JsonMappingException(String msg)",
+        "public JsonMappingException(String msg, Throwable rootCause)",
+        "public JsonMappingException(String msg, JsonLocation loc)",
+        "public JsonMappingException(String msg, JsonLocation loc, Throwable rootCause)",
+        "public JsonMappingException(Closeable processor, String msg)",
+        "public JsonMappingException(Closeable processor, String msg, Throwable problem)",
+        "public JsonMappingException(Closeable processor, String msg, JsonLocation loc)",
+        "public static JsonMappingException from(JsonParser p, String msg)",
+        "public static JsonMappingException from(JsonParser p, String msg, Throwable problem)",
+        "public static JsonMappingException from(JsonGenerator g, String msg)",
+        "public static JsonMappingException from(JsonGenerator g, String msg, Throwable problem)",
+        "public static JsonMappingException from(DeserializationContext ctxt, String msg)",
+        "public static JsonMappingException from(DeserializationContext ctxt, String msg, Throwable t)",
+        "public static JsonMappingException from(SerializerProvider ctxt, String msg)",
+        "public static JsonMappingException from(SerializerProvider ctxt, String msg, Throwable problem)",
+        "public static JsonMappingException fromUnexpectedIOE(IOException src)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, String refFieldName)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Object refFrom, int index)",
+        "public static JsonMappingException wrapWithPath(Throwable src, Reference ref)",
+        "public List<Reference> getPath()",
+        "public String getPathReference()",
+        "public StringBuilder getPathReference(StringBuilder sb)",
+        "public void prependPath(Object referrer, String fieldName)",
+        "public void prependPath(Object referrer, int index)",
+        "public void prependPath(Reference r)",
+        "public Object getProcessor()",
+        "public String getLocalizedMessage()",
+        "public String getMessage()",
+        "protected String _buildMessage()",
+        "public String toString()",
+        "protected void _appendPathDesc(StringBuilder sb)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public String getDescription() {\n  if (_desc == null) {\n  StringBuilder sb = new StringBuilder();\n\n  if (_from == null) { \n  sb.append(\"UNKNOWN\");\n  } else {\n  Class<?> cls = (_from instanceof Class<?>) ? (Class<?>)_from : _from.getClass();\n  \n  \n  \n  \n  String pkgName = com.fasterxml.jackson.databind.util.ClassUtil.getPackageName(cls);\n  if (pkgName != null) {\n  sb.append(pkgName);\n  sb.append('.');\n  }\n  sb.append(cls.getSimpleName());\n  }\n  sb.append('[');\n  if (_fieldName != null) {\n  sb.append('\"');\n  sb.append(_fieldName);\n  sb.append('\"');\n  } else if (_index >= 0) {\n  sb.append(_index);\n  } else {\n  sb.append('?');\n  }\n  sb.append(']');\n  _desc = sb.toString();\n  }\n  return _desc;\n  }",
+          "fixed_method": "  public String getDescription() {\n  if (_desc == null) {\n  StringBuilder sb = new StringBuilder();\n\n  if (_from == null) { \n  sb.append(\"UNKNOWN\");\n  } else {\n  Class<?> cls = (_from instanceof Class<?>) ? (Class<?>)_from : _from.getClass();\n  \n  \n  \n  \n  int arrays = 0;\n  while (cls.isArray()) {\n  cls = cls.getComponentType();\n  ++arrays;\n  }\n  sb.append(cls.getName());\n  while (--arrays >= 0) {\n  sb.append(\"[]\");\n  }\n  \n  }\n  sb.append('[');\n  if (_fieldName != null) {\n  sb.append('\"');\n  sb.append(_fieldName);\n  sb.append('\"');\n  } else if (_index >= 0) {\n  sb.append(_index);\n  } else {\n  sb.append('?');\n  }\n  sb.append(']');\n  _desc = sb.toString();\n  }\n  return _desc;\n  }",
+          "diff": [
+            "@@ -127,12 +127,22 @@",
+            "                     // butt-ugly for arrays.\n",
+            "                     // 06-Oct-2016, tatu: as per [databind#1403], `getSimpleName()` not so good\n",
+            "                     //   as it drops enclosing class. So let's try bit different approach\n",
+            "-                    String pkgName = com.fasterxml.jackson.databind.util.ClassUtil.getPackageName(cls);\n",
+            "+                    int arrays = 0;\n",
+            "+                    while (cls.isArray()) {\n",
+            "+                        cls = cls.getComponentType();\n",
+            "+                        ++arrays;\n",
+            "+                    }\n",
+            "+                    sb.append(cls.getName());\n",
+            "+                    while (--arrays >= 0) {\n",
+            "+                        sb.append(\"[]\");\n",
+            "+                    }\n",
+            "+                    /* was:\n",
+            "+                    String pkgName = ClassUtil.getPackageName(cls);\n",
+            "                     if (pkgName != null) {\n",
+            "                         sb.append(pkgName);\n",
+            "                         sb.append('.');\n",
+            "                     }\n",
+            "-                    sb.append(cls.getSimpleName());\n",
+            "+                    */\n",
+            "                 }\n",
+            "                 sb.append('[');\n",
+            "                 if (_fieldName != null) {\n"
+          ],
+          "changed_lines": 14
+        }
+      ]
+    }
+  ]
+}

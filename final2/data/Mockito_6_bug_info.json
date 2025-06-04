@@ -1,0 +1,518 @@
+{
+  "bug_id": "6",
+  "failed_tests": {
+    "org.mockitousage.matchers.AnyXMatchersAcceptNullsTest": [
+      {
+        "methodName": "shouldNotAcceptNullInAllAnyPrimitiveWrapperMatchers",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<0>",
+        "fail_line": "        assertEquals(null, mock.forInteger(null));",
+        "test_source": "  public void shouldNotAcceptNullInAllAnyPrimitiveWrapperMatchers() {\n  when(mock.forInteger(anyInt())).thenReturn(\"0\");\n  when(mock.forCharacter(anyChar())).thenReturn(\"1\");\n  when(mock.forShort(anyShort())).thenReturn(\"2\");\n  when(mock.forByte(anyByte())).thenReturn(\"3\");\n  when(mock.forBoolean(anyBoolean())).thenReturn(\"4\");\n  when(mock.forLong(anyLong())).thenReturn(\"5\");\n  when(mock.forFloat(anyFloat())).thenReturn(\"6\");\n  when(mock.forDouble(anyDouble())).thenReturn(\"7\");\n  \n  assertEquals(null, mock.forInteger(null));\n  assertEquals(null, mock.forCharacter(null));\n  assertEquals(null, mock.forShort(null));\n  assertEquals(null, mock.forByte(null));\n  assertEquals(null, mock.forBoolean(null));\n  assertEquals(null, mock.forLong(null));\n  assertEquals(null, mock.forFloat(null));\n  assertEquals(null, mock.forDouble(null));\n  }",
+        "stack": [
+          "AnyXMatchersAcceptNullsTest.shouldNotAcceptNullInAllAnyPrimitiveWrapperMatchers line 54"
+        ]
+      },
+      {
+        "methodName": "shouldNotAcceptNullInAnyXMatchers",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<0>",
+        "fail_line": "        assertEquals(null, mock.oneArg((Object) null));",
+        "test_source": "  public void shouldNotAcceptNullInAnyXMatchers() {\n  when(mock.oneArg(anyObject())).thenReturn(\"0\");\n  when(mock.oneArg(anyString())).thenReturn(\"1\");\n  when(mock.forList(anyList())).thenReturn(\"2\");\n  when(mock.forMap(anyMap())).thenReturn(\"3\");\n  when(mock.forCollection(anyCollection())).thenReturn(\"4\");\n  when(mock.forSet(anySet())).thenReturn(\"5\");\n  \n  assertEquals(null, mock.oneArg((Object) null));\n  assertEquals(null, mock.oneArg((String) null));\n  assertEquals(null, mock.forList(null));\n  assertEquals(null, mock.forMap(null));\n  assertEquals(null, mock.forCollection(null));\n  assertEquals(null, mock.forSet(null));\n  }",
+        "stack": [
+          "AnyXMatchersAcceptNullsTest.shouldNotAcceptNullInAnyXMatchers line 35"
+        ]
+      }
+    ],
+    "org.mockitousage.matchers.MatchersTest": [
+      {
+        "methodName": "anyStringMatcher",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<matched>",
+        "fail_line": "        assertEquals(null, mock.oneArg((String) null));",
+        "test_source": "  public void anyStringMatcher() {\n  when(mock.oneArg(anyString())).thenReturn(\"matched\");\n  \n  assertEquals(\"matched\", mock.oneArg(\"\"));\n  assertEquals(\"matched\", mock.oneArg(\"any string\"));\n  assertEquals(null, mock.oneArg((String) null));\n  }",
+        "stack": [
+          "MatchersTest.anyStringMatcher line 232"
+        ]
+      }
+    ],
+    "org.mockitousage.matchers.NewMatchersTest": [
+      {
+        "methodName": "shouldAllowAnyCollection",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<matched>",
+        "fail_line": "        assertEquals(null, mock.forCollection(null));",
+        "test_source": "  public void shouldAllowAnyCollection() {\n  when(mock.forCollection(anyCollection())).thenReturn(\"matched\");\n  \n  assertEquals(\"matched\", mock.forCollection(Arrays.asList(\"x\", \"y\")));\n  assertEquals(null, mock.forCollection(null));\n\n  verify(mock, times(1)).forCollection(anyCollection());\n  }",
+        "stack": [
+          "NewMatchersTest.shouldAllowAnyCollection line 45"
+        ]
+      },
+      {
+        "methodName": "shouldAllowAnyList",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<matched>",
+        "fail_line": "        assertEquals(null, mock.forList(null));",
+        "test_source": "  public void shouldAllowAnyList() {\n  when(mock.forList(anyList())).thenReturn(\"matched\");\n  \n  assertEquals(\"matched\", mock.forList(Arrays.asList(\"x\", \"y\")));\n  assertEquals(null, mock.forList(null));\n\n  verify(mock, times(1)).forList(anyList());\n  }",
+        "stack": [
+          "NewMatchersTest.shouldAllowAnyList line 35"
+        ]
+      },
+      {
+        "methodName": "shouldAllowAnyMap",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<matched>",
+        "fail_line": "        assertEquals(null, mock.forMap(null));",
+        "test_source": "  public void shouldAllowAnyMap() {\n  when(mock.forMap(anyMap())).thenReturn(\"matched\");\n  \n  assertEquals(\"matched\", mock.forMap(new HashMap<String, String>()));\n  assertEquals(null, mock.forMap(null));\n\n  verify(mock, times(1)).forMap(anyMap());\n  }",
+        "stack": [
+          "NewMatchersTest.shouldAllowAnyMap line 55"
+        ]
+      },
+      {
+        "methodName": "shouldAllowAnySet",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<null> but was:<matched>",
+        "fail_line": "        assertEquals(null, mock.forSet(null));",
+        "test_source": "  public void shouldAllowAnySet() {\n  when(mock.forSet(anySet())).thenReturn(\"matched\");\n  \n  assertEquals(\"matched\", mock.forSet(new HashSet<String>()));\n  assertEquals(null, mock.forSet(null));\n\n  verify(mock, times(1)).forSet(anySet());\n  }",
+        "stack": [
+          "NewMatchersTest.shouldAllowAnySet line 65"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/Matchers.java",
+      "buggy_full_code": "\npackage org.mockito;\n\nimport org.hamcrest.Matcher;\nimport org.hamcrest.core.IsNull;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.matchers.apachecommons.ReflectionEquals;\nimport org.mockito.internal.progress.HandyReturnValues;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\n\nimport java.util.Collection;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Matchers { private static final MockingProgress MOCKING_PROGRESS = new ThreadSafeMockingProgress(); public static boolean anyBoolean() {\n        return reportMatcher(Any.ANY).returnFalse();\n    }\n\n    \n    public static byte anyByte() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static char anyChar() {\n        return reportMatcher(Any.ANY).returnChar();\n    }\n\n    \n    public static int anyInt() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static long anyLong() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static float anyFloat() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static double anyDouble() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static short anyShort() {\n        return reportMatcher(Any.ANY).returnZero();\n    }\n\n    \n    public static <T> T anyObject() {\n        return (T) reportMatcher(Any.ANY).returnNull();\n    }\n\n    \n    public static <T> T anyVararg() {\n        return (T) reportMatcher(AnyVararg.ANY_VARARG).returnNull();\n    }\n    \n    \n    public static <T> T any(Class<T> clazz) {\n        return (T) reportMatcher(Any.ANY).returnFor(clazz);\n    }\n    \n    \n    public static <T> T any() {\n        return (T) anyObject();\n    }\n\n    \n    public static String anyString() {\n        return reportMatcher(Any.ANY).returnString();\n    }\n    \n    \n    public static List anyList() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> List<T> anyListOf(Class<T> clazz) {\n        return (List) reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static Set anySet() {\n        return reportMatcher(Any.ANY).returnSet();\n    }\n    \n    \n    public static <T> Set<T> anySetOf(Class<T> clazz) {\n        return (Set) reportMatcher(Any.ANY).returnSet();\n    }\n\n    \n    public static Map anyMap() {\n        return reportMatcher(Any.ANY).returnMap();\n    }\n\n    \n    public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz) {\n        return reportMatcher(Any.ANY).returnMap();\n    }\n    \n    \n    public static Collection anyCollection() {\n        return reportMatcher(Any.ANY).returnList();\n    }    \n    \n    \n    public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n        return (Collection) reportMatcher(Any.ANY).returnList();\n    }    \n\n    \n    public static <T> T isA(Class<T> clazz) {\n        return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);\n    }\n\n    \n    public static boolean eq(boolean value) {\n        return reportMatcher(new Equals(value)).returnFalse();\n    }\n\n    \n    public static byte eq(byte value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static char eq(char value) {\n        return reportMatcher(new Equals(value)).returnChar();\n    }\n\n    \n    public static double eq(double value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static float eq(float value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n    \n    \n    public static int eq(int value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static long eq(long value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static short eq(short value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static <T> T eq(T value) {\n        return (T) reportMatcher(new Equals(value)).<T>returnFor(value);\n    }\n\n    \n    public static <T> T refEq(T value, String... excludeFields) {\n        return reportMatcher(new ReflectionEquals(value, excludeFields)).<T>returnNull();\n    }\n    \n    \n    public static <T> T same(T value) {\n        return (T) reportMatcher(new Same(value)).<T>returnFor(value);\n    }\n\n    \n    public static Object isNull() {\n        return reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static <T> T isNull(Class<T> clazz) {\n        return (T) reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static Object notNull() {\n        return reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n\n    \n    public static <T> T notNull(Class<T> clazz) {\n        return (T) reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n    \n    \n    public static Object isNotNull() {\n        return notNull();\n    }\n\n    \n    public static <T> T isNotNull(Class<T> clazz) {\n        return notNull(clazz);\n    }\n\n    \n    public static String contains(String substring) {\n        return reportMatcher(new Contains(substring)).returnString();\n    }\n\n    \n    public static String matches(String regex) {\n        return reportMatcher(new Matches(regex)).returnString();\n    }\n\n    \n    public static String endsWith(String suffix) {\n        return reportMatcher(new EndsWith(suffix)).returnString();\n    }\n\n    \n    public static String startsWith(String prefix) {\n        return reportMatcher(new StartsWith(prefix)).returnString();\n    }\n\n    \n    public static <T> T argThat(Matcher<T> matcher) {\n        return reportMatcher(matcher).<T>returnNull();\n    }\n    \n    \n    public static char charThat(Matcher<Character> matcher) {\n        return reportMatcher(matcher).returnChar();\n    }\n    \n    \n    public static boolean booleanThat(Matcher<Boolean> matcher) {\n        return reportMatcher(matcher).returnFalse();\n    }\n    \n    \n    public static byte byteThat(Matcher<Byte> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static short shortThat(Matcher<Short> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static int intThat(Matcher<Integer> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    \n    public static long longThat(Matcher<Long> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static float floatThat(Matcher<Float> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static double doubleThat(Matcher<Double> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    private static HandyReturnValues reportMatcher(Matcher<?> matcher) {\n        return MOCKING_PROGRESS.getArgumentMatcherStorage().reportMatcher(matcher);\n    }\n}\n",
+      "fixed_full_code": "\npackage org.mockito;\n\nimport org.hamcrest.Matcher;\nimport org.hamcrest.core.IsNull;\nimport org.mockito.internal.matchers.*;\nimport org.mockito.internal.matchers.apachecommons.ReflectionEquals;\nimport org.mockito.internal.progress.HandyReturnValues;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\n\nimport java.util.Collection;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Matchers { private static final MockingProgress MOCKING_PROGRESS = new ThreadSafeMockingProgress(); public static boolean anyBoolean() {\n        return reportMatcher(new InstanceOf(Boolean.class)).returnFalse();\n    }\n\n    \n    public static byte anyByte() {\n        return reportMatcher(new InstanceOf(Byte.class)).returnZero();\n    }\n\n    \n    public static char anyChar() {\n        return reportMatcher(new InstanceOf(Character.class)).returnChar();\n    }\n\n    \n    public static int anyInt() {\n        return reportMatcher(new InstanceOf(Integer.class)).returnZero();\n    }\n\n    \n    public static long anyLong() {\n        return reportMatcher(new InstanceOf(Long.class)).returnZero();\n    }\n\n    \n    public static float anyFloat() {\n        return reportMatcher(new InstanceOf(Float.class)).returnZero();\n    }\n\n    \n    public static double anyDouble() {\n        return reportMatcher(new InstanceOf(Double.class)).returnZero();\n    }\n\n    \n    public static short anyShort() {\n        return reportMatcher(new InstanceOf(Short.class)).returnZero();\n    }\n\n    \n    public static <T> T anyObject() {\n        return (T) reportMatcher(new InstanceOf(Object.class)).returnNull();\n    }\n\n    \n    public static <T> T anyVararg() {\n        return (T) reportMatcher(AnyVararg.ANY_VARARG).returnNull();\n    }\n    \n    \n    public static <T> T any(Class<T> clazz) {\n        return (T) reportMatcher(new InstanceOf(clazz)).returnFor(clazz);\n    }\n    \n    \n    public static <T> T any() {\n        return (T) reportMatcher(Any.ANY).returnNull();\n    }\n\n    \n    public static String anyString() {\n        return reportMatcher(new InstanceOf(String.class)).returnString();\n    }\n    \n    \n    public static List anyList() {\n        return reportMatcher(new InstanceOf(List.class)).returnList();\n    }    \n    \n    \n    public static <T> List<T> anyListOf(Class<T> clazz) {\n        return anyList();\n    }    \n    \n    \n    public static Set anySet() {\n        return reportMatcher(new InstanceOf(Set.class)).returnSet();\n    }\n    \n    \n    public static <T> Set<T> anySetOf(Class<T> clazz) {\n        return anySet();\n    }\n\n    \n    public static Map anyMap() {\n        return reportMatcher(new InstanceOf(Map.class)).returnMap();\n    }\n\n    \n    public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz) {\n        return anyMap();\n    }\n    \n    \n    public static Collection anyCollection() {\n        return reportMatcher(new InstanceOf(Collection.class)).returnList();\n    }    \n    \n    \n    public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n        return anyCollection();\n    }    \n\n    \n    public static <T> T isA(Class<T> clazz) {\n        return reportMatcher(new InstanceOf(clazz)).<T>returnFor(clazz);\n    }\n\n    \n    public static boolean eq(boolean value) {\n        return reportMatcher(new Equals(value)).returnFalse();\n    }\n\n    \n    public static byte eq(byte value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static char eq(char value) {\n        return reportMatcher(new Equals(value)).returnChar();\n    }\n\n    \n    public static double eq(double value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static float eq(float value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n    \n    \n    public static int eq(int value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static long eq(long value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static short eq(short value) {\n        return reportMatcher(new Equals(value)).returnZero();\n    }\n\n    \n    public static <T> T eq(T value) {\n        return (T) reportMatcher(new Equals(value)).<T>returnFor(value);\n    }\n\n    \n    public static <T> T refEq(T value, String... excludeFields) {\n        return reportMatcher(new ReflectionEquals(value, excludeFields)).<T>returnNull();\n    }\n    \n    \n    public static <T> T same(T value) {\n        return (T) reportMatcher(new Same(value)).<T>returnFor(value);\n    }\n\n    \n    public static Object isNull() {\n        return reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static <T> T isNull(Class<T> clazz) {\n        return (T) reportMatcher(Null.NULL).returnNull();\n    }\n\n    \n    public static Object notNull() {\n        return reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n\n    \n    public static <T> T notNull(Class<T> clazz) {\n        return (T) reportMatcher(NotNull.NOT_NULL).returnNull();\n    }\n    \n    \n    public static Object isNotNull() {\n        return notNull();\n    }\n\n    \n    public static <T> T isNotNull(Class<T> clazz) {\n        return notNull(clazz);\n    }\n\n    \n    public static String contains(String substring) {\n        return reportMatcher(new Contains(substring)).returnString();\n    }\n\n    \n    public static String matches(String regex) {\n        return reportMatcher(new Matches(regex)).returnString();\n    }\n\n    \n    public static String endsWith(String suffix) {\n        return reportMatcher(new EndsWith(suffix)).returnString();\n    }\n\n    \n    public static String startsWith(String prefix) {\n        return reportMatcher(new StartsWith(prefix)).returnString();\n    }\n\n    \n    public static <T> T argThat(Matcher<T> matcher) {\n        return reportMatcher(matcher).<T>returnNull();\n    }\n    \n    \n    public static char charThat(Matcher<Character> matcher) {\n        return reportMatcher(matcher).returnChar();\n    }\n    \n    \n    public static boolean booleanThat(Matcher<Boolean> matcher) {\n        return reportMatcher(matcher).returnFalse();\n    }\n    \n    \n    public static byte byteThat(Matcher<Byte> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static short shortThat(Matcher<Short> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static int intThat(Matcher<Integer> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    \n    public static long longThat(Matcher<Long> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static float floatThat(Matcher<Float> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n    \n    \n    public static double doubleThat(Matcher<Double> matcher) {\n        return reportMatcher(matcher).returnZero();\n    }\n\n    private static HandyReturnValues reportMatcher(Matcher<?> matcher) {\n        return MOCKING_PROGRESS.getArgumentMatcherStorage().reportMatcher(matcher);\n    }\n}\n",
+      "buggy_signatures": [
+        "public static byte anyByte()",
+        "public static char anyChar()",
+        "public static int anyInt()",
+        "public static long anyLong()",
+        "public static float anyFloat()",
+        "public static double anyDouble()",
+        "public static short anyShort()",
+        "public static <T> T anyObject()",
+        "public static <T> T anyVararg()",
+        "public static <T> T any(Class<T> clazz)",
+        "public static <T> T any()",
+        "public static String anyString()",
+        "public static List anyList()",
+        "public static <T> List<T> anyListOf(Class<T> clazz)",
+        "public static Set anySet()",
+        "public static <T> Set<T> anySetOf(Class<T> clazz)",
+        "public static Map anyMap()",
+        "public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz)",
+        "public static Collection anyCollection()",
+        "public static <T> Collection<T> anyCollectionOf(Class<T> clazz)",
+        "public static <T> T isA(Class<T> clazz)",
+        "public static boolean eq(boolean value)",
+        "public static byte eq(byte value)",
+        "public static char eq(char value)",
+        "public static double eq(double value)",
+        "public static float eq(float value)",
+        "public static int eq(int value)",
+        "public static long eq(long value)",
+        "public static short eq(short value)",
+        "public static <T> T eq(T value)",
+        "public static <T> T refEq(T value, String... excludeFields)",
+        "public static <T> T same(T value)",
+        "public static Object isNull()",
+        "public static <T> T isNull(Class<T> clazz)",
+        "public static Object notNull()",
+        "public static <T> T notNull(Class<T> clazz)",
+        "public static Object isNotNull()",
+        "public static <T> T isNotNull(Class<T> clazz)",
+        "public static String contains(String substring)",
+        "public static String matches(String regex)",
+        "public static String endsWith(String suffix)",
+        "public static String startsWith(String prefix)",
+        "public static <T> T argThat(Matcher<T> matcher)",
+        "public static char charThat(Matcher<Character> matcher)",
+        "public static boolean booleanThat(Matcher<Boolean> matcher)",
+        "public static byte byteThat(Matcher<Byte> matcher)",
+        "public static short shortThat(Matcher<Short> matcher)",
+        "public static int intThat(Matcher<Integer> matcher)",
+        "public static long longThat(Matcher<Long> matcher)",
+        "public static float floatThat(Matcher<Float> matcher)",
+        "public static double doubleThat(Matcher<Double> matcher)",
+        "private static HandyReturnValues reportMatcher(Matcher<?> matcher)"
+      ],
+      "fixed_signatures": [
+        "public static byte anyByte()",
+        "public static char anyChar()",
+        "public static int anyInt()",
+        "public static long anyLong()",
+        "public static float anyFloat()",
+        "public static double anyDouble()",
+        "public static short anyShort()",
+        "public static <T> T anyObject()",
+        "public static <T> T anyVararg()",
+        "public static <T> T any(Class<T> clazz)",
+        "public static <T> T any()",
+        "public static String anyString()",
+        "public static List anyList()",
+        "public static <T> List<T> anyListOf(Class<T> clazz)",
+        "public static Set anySet()",
+        "public static <T> Set<T> anySetOf(Class<T> clazz)",
+        "public static Map anyMap()",
+        "public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz)",
+        "public static Collection anyCollection()",
+        "public static <T> Collection<T> anyCollectionOf(Class<T> clazz)",
+        "public static <T> T isA(Class<T> clazz)",
+        "public static boolean eq(boolean value)",
+        "public static byte eq(byte value)",
+        "public static char eq(char value)",
+        "public static double eq(double value)",
+        "public static float eq(float value)",
+        "public static int eq(int value)",
+        "public static long eq(long value)",
+        "public static short eq(short value)",
+        "public static <T> T eq(T value)",
+        "public static <T> T refEq(T value, String... excludeFields)",
+        "public static <T> T same(T value)",
+        "public static Object isNull()",
+        "public static <T> T isNull(Class<T> clazz)",
+        "public static Object notNull()",
+        "public static <T> T notNull(Class<T> clazz)",
+        "public static Object isNotNull()",
+        "public static <T> T isNotNull(Class<T> clazz)",
+        "public static String contains(String substring)",
+        "public static String matches(String regex)",
+        "public static String endsWith(String suffix)",
+        "public static String startsWith(String prefix)",
+        "public static <T> T argThat(Matcher<T> matcher)",
+        "public static char charThat(Matcher<Character> matcher)",
+        "public static boolean booleanThat(Matcher<Boolean> matcher)",
+        "public static byte byteThat(Matcher<Byte> matcher)",
+        "public static short shortThat(Matcher<Short> matcher)",
+        "public static int intThat(Matcher<Integer> matcher)",
+        "public static long longThat(Matcher<Long> matcher)",
+        "public static float floatThat(Matcher<Float> matcher)",
+        "public static double doubleThat(Matcher<Double> matcher)",
+        "private static HandyReturnValues reportMatcher(Matcher<?> matcher)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static boolean anyBoolean() {\n  return reportMatcher(Any.ANY).returnFalse();\n  }",
+          "fixed_method": "  public static boolean anyBoolean() {\n  return reportMatcher(new InstanceOf(Boolean.class)).returnFalse();\n  }",
+          "diff": [
+            "@@ -119,7 +119,7 @@",
+            "      * @return <code>false</code>.\n",
+            "      */\n",
+            "     public static boolean anyBoolean() {\n",
+            "-        return reportMatcher(Any.ANY).returnFalse();\n",
+            "+        return reportMatcher(new InstanceOf(Boolean.class)).returnFalse();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static byte anyByte() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static byte anyByte() {\n  return reportMatcher(new InstanceOf(Byte.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -134,7 +134,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static byte anyByte() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Byte.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static char anyChar() {\n  return reportMatcher(Any.ANY).returnChar();\n  }",
+          "fixed_method": "  public static char anyChar() {\n  return reportMatcher(new InstanceOf(Character.class)).returnChar();\n  }",
+          "diff": [
+            "@@ -149,7 +149,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static char anyChar() {\n",
+            "-        return reportMatcher(Any.ANY).returnChar();\n",
+            "+        return reportMatcher(new InstanceOf(Character.class)).returnChar();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static int anyInt() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static int anyInt() {\n  return reportMatcher(new InstanceOf(Integer.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -164,7 +164,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static int anyInt() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Integer.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static long anyLong() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static long anyLong() {\n  return reportMatcher(new InstanceOf(Long.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -179,7 +179,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static long anyLong() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Long.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static float anyFloat() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static float anyFloat() {\n  return reportMatcher(new InstanceOf(Float.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -194,7 +194,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static float anyFloat() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Float.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static double anyDouble() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static double anyDouble() {\n  return reportMatcher(new InstanceOf(Double.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -209,7 +209,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static double anyDouble() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Double.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static short anyShort() {\n  return reportMatcher(Any.ANY).returnZero();\n  }",
+          "fixed_method": "  public static short anyShort() {\n  return reportMatcher(new InstanceOf(Short.class)).returnZero();\n  }",
+          "diff": [
+            "@@ -224,7 +224,7 @@",
+            "      * @return <code>0</code>.\n",
+            "      */\n",
+            "     public static short anyShort() {\n",
+            "-        return reportMatcher(Any.ANY).returnZero();\n",
+            "+        return reportMatcher(new InstanceOf(Short.class)).returnZero();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T anyObject() {\n  return (T) reportMatcher(Any.ANY).returnNull();\n  }",
+          "fixed_method": "  public static <T> T anyObject() {\n  return (T) reportMatcher(new InstanceOf(Object.class)).returnNull();\n  }",
+          "diff": [
+            "@@ -241,7 +241,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T anyObject() {\n",
+            "-        return (T) reportMatcher(Any.ANY).returnNull();\n",
+            "+        return (T) reportMatcher(new InstanceOf(Object.class)).returnNull();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T any(Class<T> clazz) {\n  return (T) reportMatcher(Any.ANY).returnFor(clazz);\n  }",
+          "fixed_method": "  public static <T> T any(Class<T> clazz) {\n  return (T) reportMatcher(new InstanceOf(clazz)).returnFor(clazz);\n  }",
+          "diff": [
+            "@@ -289,7 +289,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T any(Class<T> clazz) {\n",
+            "-        return (T) reportMatcher(Any.ANY).returnFor(clazz);\n",
+            "+        return (T) reportMatcher(new InstanceOf(clazz)).returnFor(clazz);\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T any() {\n  return (T) anyObject();\n  }",
+          "fixed_method": "  public static <T> T any() {\n  return (T) reportMatcher(Any.ANY).returnNull();\n  }",
+          "diff": [
+            "@@ -306,7 +306,7 @@",
+            "      * @return <code>null</code>.\n",
+            "      */\n",
+            "     public static <T> T any() {\n",
+            "-        return (T) anyObject();\n",
+            "+        return (T) reportMatcher(Any.ANY).returnNull();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static String anyString() {\n  return reportMatcher(Any.ANY).returnString();\n  }",
+          "fixed_method": "  public static String anyString() {\n  return reportMatcher(new InstanceOf(String.class)).returnString();\n  }",
+          "diff": [
+            "@@ -321,7 +321,7 @@",
+            "      * @return empty String (\"\")\n",
+            "      */\n",
+            "     public static String anyString() {\n",
+            "-        return reportMatcher(Any.ANY).returnString();\n",
+            "+        return reportMatcher(new InstanceOf(String.class)).returnString();\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static List anyList() {\n  return reportMatcher(Any.ANY).returnList();\n  }  ",
+          "fixed_method": "  public static List anyList() {\n  return reportMatcher(new InstanceOf(List.class)).returnList();\n  }  ",
+          "diff": [
+            "@@ -336,7 +336,7 @@",
+            "      * @return empty List.\n",
+            "      */\n",
+            "     public static List anyList() {\n",
+            "-        return reportMatcher(Any.ANY).returnList();\n",
+            "+        return reportMatcher(new InstanceOf(List.class)).returnList();\n",
+            "     }    \n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> List<T> anyListOf(Class<T> clazz) {\n  return (List) reportMatcher(Any.ANY).returnList();\n  }  ",
+          "fixed_method": "  public static <T> List<T> anyListOf(Class<T> clazz) {\n  return anyList();\n  }  ",
+          "diff": [
+            "@@ -355,7 +355,7 @@",
+            "      * @return empty List.\n",
+            "      */\n",
+            "     public static <T> List<T> anyListOf(Class<T> clazz) {\n",
+            "-        return (List) reportMatcher(Any.ANY).returnList();\n",
+            "+        return anyList();\n",
+            "     }    \n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static Set anySet() {\n  return reportMatcher(Any.ANY).returnSet();\n  }",
+          "fixed_method": "  public static Set anySet() {\n  return reportMatcher(new InstanceOf(Set.class)).returnSet();\n  }",
+          "diff": [
+            "@@ -370,7 +370,7 @@",
+            "      * @return empty Set\n",
+            "      */\n",
+            "     public static Set anySet() {\n",
+            "-        return reportMatcher(Any.ANY).returnSet();\n",
+            "+        return reportMatcher(new InstanceOf(Set.class)).returnSet();\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> Set<T> anySetOf(Class<T> clazz) {\n  return (Set) reportMatcher(Any.ANY).returnSet();\n  }",
+          "fixed_method": "  public static <T> Set<T> anySetOf(Class<T> clazz) {\n  return anySet();\n  }",
+          "diff": [
+            "@@ -389,7 +389,7 @@",
+            "      * @return empty Set\n",
+            "      */\n",
+            "     public static <T> Set<T> anySetOf(Class<T> clazz) {\n",
+            "-        return (Set) reportMatcher(Any.ANY).returnSet();\n",
+            "+        return anySet();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static Map anyMap() {\n  return reportMatcher(Any.ANY).returnMap();\n  }",
+          "fixed_method": "  public static Map anyMap() {\n  return reportMatcher(new InstanceOf(Map.class)).returnMap();\n  }",
+          "diff": [
+            "@@ -404,7 +404,7 @@",
+            "      * @return empty Map.\n",
+            "      */\n",
+            "     public static Map anyMap() {\n",
+            "-        return reportMatcher(Any.ANY).returnMap();\n",
+            "+        return reportMatcher(new InstanceOf(Map.class)).returnMap();\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz) {\n  return reportMatcher(Any.ANY).returnMap();\n  }",
+          "fixed_method": "  public static <K, V> Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz) {\n  return anyMap();\n  }",
+          "diff": [
+            "@@ -424,7 +424,7 @@",
+            "      * @return empty Map.\n",
+            "      */\n",
+            "     public static <K, V>  Map<K, V> anyMapOf(Class<K> keyClazz, Class<V> valueClazz) {\n",
+            "-        return reportMatcher(Any.ANY).returnMap();\n",
+            "+        return anyMap();\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static Collection anyCollection() {\n  return reportMatcher(Any.ANY).returnList();\n  }  ",
+          "fixed_method": "  public static Collection anyCollection() {\n  return reportMatcher(new InstanceOf(Collection.class)).returnList();\n  }  ",
+          "diff": [
+            "@@ -439,7 +439,7 @@",
+            "      * @return empty Collection.\n",
+            "      */\n",
+            "     public static Collection anyCollection() {\n",
+            "-        return reportMatcher(Any.ANY).returnList();\n",
+            "+        return reportMatcher(new InstanceOf(Collection.class)).returnList();\n",
+            "     }    \n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n  return (Collection) reportMatcher(Any.ANY).returnList();\n  }  ",
+          "fixed_method": "  public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n  return anyCollection();\n  }  ",
+          "diff": [
+            "@@ -458,7 +458,7 @@",
+            "      * @return empty Collection.\n",
+            "      */\n",
+            "     public static <T> Collection<T> anyCollectionOf(Class<T> clazz) {\n",
+            "-        return (Collection) reportMatcher(Any.ANY).returnList();\n",
+            "+        return anyCollection();\n",
+            "     }    \n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

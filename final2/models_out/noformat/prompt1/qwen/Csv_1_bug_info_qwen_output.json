@@ -1,0 +1,13 @@
+{
+  "bug_id": "Csv_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 1\nTest Class: org.apache.commons.csv.CSVParserTest\nMethod: testGetLineNumberWithCR\nError: junit.framework.AssertionFailedError\nMessage: expected:<1> but was:<0>\nFailing Line:         assertEquals(1, parser.getLineNumber());\nTest Source:\npublic void testGetLineNumberWithCR() throws Exception {\n  CSVParser parser = new CSVParser(\"a\\rb\\rc\", CSVFormat.DEFAULT.withLineSeparator(\"\\r\"));\n  \n  assertEquals(0, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(1, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(2, parser.getLineNumber());\n  assertNotNull(parser.getRecord());\n  assertEquals(2, parser.getLineNumber());\n  assertNull(parser.getRecord());\n  }\nStack Trace:\nCSVParserTest.testGetLineNumberWithCR line 510\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": ":org.apache.commons.csv.CSVParser"
+    }
+  ],
+  "classes": [
+    "ExtendedBufferedReader"
+  ]
+}

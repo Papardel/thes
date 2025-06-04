@@ -1,0 +1,10 @@
+{
+  "bug_id": "Csv_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-signature> \n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\n Chosen Methods\n\n### Method 1\nSignature: org.apache.commons.csv.CSVRecord.public String get(final String name)\n```java\npublic String get(final String name) {\n        if (mapping == null) {\n            throw new IllegalStateException(\n                    \"No header mapping was specified, the record values can't be accessed by name\");\n        }\n        final Integer index = mapping.get(name);\n            return index != null ? values[index.intValue()] : null;\n    }\n```\n\n### Method 2\nSignature: org.apache.commons.csv.CSVRecord.public Iterator<String> iterator()\n```java\npublic Iterator<String> iterator() {\n        return Arrays.asList(values).iterator();\n    }\n```\n\n### Method 3\nSignature: org.apache.commons.csv.CSVRecord.public boolean isMapped(final String name)\n```java\npublic boolean isMapped(final String name) {\n        return mapping != null ? mapping.containsKey(name) : false;\n    }\n```\n\n### Method 4\nSignature: org.apache.commons.csv.CSVRecord.public String get(final int i)\n```java\npublic String get(final int i) {\n        return values[i];\n    }\n```\n\n### Method 5\nSignature: org.apache.commons.csv.CSVRecord.public String toString()\n```java\npublic String toString() {\n        return Arrays.toString(values);\n    }\n```\nAnalyse the candidate methods above and determine the one most likely to cause the bug.\n",
+      "response": "Bug ID: 2\nRESPONSE: `org.apache.commons.csv.CSVRecord` -get(final String name)"
+    }
+  ]
+}

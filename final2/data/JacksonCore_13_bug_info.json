@@ -1,0 +1,71 @@
+{
+  "bug_id": "13",
+  "failed_tests": {
+    "com.fasterxml.jackson.core.json.TestJsonGeneratorFeatures": [
+      {
+        "methodName": "testFieldNameQuotingEnabled",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{[foo]:1}> but was:<{[\"foo\"]:1}>",
+        "fail_line": "        _testFieldNameQuotingEnabled(JSON_F, true, false, \"{foo:1}\");",
+        "test_source": "  public void testFieldNameQuotingEnabled() throws IOException {\n  // // First, test with default factory, with quoting enabled by default\n  \n  // First, default, with quotes\n  _testFieldNameQuotingEnabled(JSON_F, true, true, \"{\\\"foo\\\":1}\");\n  _testFieldNameQuotingEnabled(JSON_F, false, true, \"{\\\"foo\\\":1}\");\n\n  // then without quotes\n  _testFieldNameQuotingEnabled(JSON_F, true, false, \"{foo:1}\");\n  _testFieldNameQuotingEnabled(JSON_F, false, false, \"{foo:1}\");\n\n  // // Then with alternatively configured factory\n\n  JsonFactory JF2 = new JsonFactory();\n  JF2.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);\n\n  _testFieldNameQuotingEnabled(JF2, true, true, \"{\\\"foo\\\":1}\");\n  _testFieldNameQuotingEnabled(JF2, false, true, \"{\\\"foo\\\":1}\");\n\n  // then without quotes\n  _testFieldNameQuotingEnabled(JF2, true, false, \"{foo:1}\");\n  _testFieldNameQuotingEnabled(JF2, false, false, \"{foo:1}\");\n  }",
+        "stack": [
+          "TestJsonGeneratorFeatures._testFieldNameQuotingEnabled line 174, TestJsonGeneratorFeatures.testFieldNameQuotingEnabled line 139"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/core/json/JsonGeneratorImpl.java",
+      "buggy_full_code": "package com.fasterxml.jackson.core.json;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.core.base.GeneratorBase;\nimport com.fasterxml.jackson.core.io.CharTypes;\nimport com.fasterxml.jackson.core.io.CharacterEscapes;\nimport com.fasterxml.jackson.core.io.IOContext;\nimport com.fasterxml.jackson.core.util.DefaultPrettyPrinter;\nimport com.fasterxml.jackson.core.util.VersionUtil;\n\n\npublic abstract class JsonGeneratorImpl extends GeneratorBase { protected final static int[] sOutputEscapes = CharTypes.get7BitOutputEscapes(); final protected IOContext _ioContext; protected int[] _outputEscapes = sOutputEscapes; protected int _maximumNonEscapedChar; protected CharacterEscapes _characterEscapes; protected SerializableString _rootValueSeparator = DefaultPrettyPrinter.DEFAULT_ROOT_VALUE_SEPARATOR; protected boolean _cfgUnqNames; public JsonGeneratorImpl(IOContext ctxt, int features, ObjectCodec codec) {\n        super(features, codec);\n        _ioContext = ctxt;\n        if (Feature.ESCAPE_NON_ASCII.enabledIn(features)) {\n            \n            _maximumNonEscapedChar = 127;\n        }\n        _cfgUnqNames = !Feature.QUOTE_FIELD_NAMES.enabledIn(features);\n    }\n\n    \n\n    @Override\n    public JsonGenerator enable(Feature f) {\n        super.enable(f);\n        if (f == Feature.QUOTE_FIELD_NAMES) {\n            _cfgUnqNames = false;\n        }\n        return this;\n    }\n\n\n    @Override\n    protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures) {\n        super._checkStdFeatureChanges(newFeatureFlags, changedFeatures);\n        _cfgUnqNames = !Feature.QUOTE_FIELD_NAMES.enabledIn(newFeatureFlags);\n    }\n\n    @Override\n    public JsonGenerator setHighestNonEscapedChar(int charCode) {\n        _maximumNonEscapedChar = (charCode < 0) ? 0 : charCode;\n        return this;\n    }\n\n    @Override\n    public int getHighestEscapedChar() {\n        return _maximumNonEscapedChar;\n    }\n\n    @Override\n    public JsonGenerator setCharacterEscapes(CharacterEscapes esc) {\n        _characterEscapes = esc;\n        if (esc == null) { \n            _outputEscapes = sOutputEscapes;\n        } else {\n            _outputEscapes = esc.getEscapeCodesForAscii();\n        }\n        return this;\n    }\n\n    \n    @Override\n    public CharacterEscapes getCharacterEscapes() {\n        return _characterEscapes;\n    }\n    \n    @Override\n    public JsonGenerator setRootValueSeparator(SerializableString sep) {\n        _rootValueSeparator = sep;\n        return this;\n    }\n    \n    \n\n    @Override\n    public Version version() {\n        return VersionUtil.versionFor(getClass());\n    }\n\n    \n\n    \n    \n    @Override\n    public final void writeStringField(String fieldName, String value) throws IOException {\n        writeFieldName(fieldName);\n        writeString(value);\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.core.json;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.core.base.GeneratorBase;\nimport com.fasterxml.jackson.core.io.CharTypes;\nimport com.fasterxml.jackson.core.io.CharacterEscapes;\nimport com.fasterxml.jackson.core.io.IOContext;\nimport com.fasterxml.jackson.core.util.DefaultPrettyPrinter;\nimport com.fasterxml.jackson.core.util.VersionUtil;\n\n\npublic abstract class JsonGeneratorImpl extends GeneratorBase { protected final static int[] sOutputEscapes = CharTypes.get7BitOutputEscapes(); final protected IOContext _ioContext; protected int[] _outputEscapes = sOutputEscapes; protected int _maximumNonEscapedChar; protected CharacterEscapes _characterEscapes; protected SerializableString _rootValueSeparator = DefaultPrettyPrinter.DEFAULT_ROOT_VALUE_SEPARATOR; protected boolean _cfgUnqNames; public JsonGeneratorImpl(IOContext ctxt, int features, ObjectCodec codec) {\n        super(features, codec);\n        _ioContext = ctxt;\n        if (Feature.ESCAPE_NON_ASCII.enabledIn(features)) {\n            \n            _maximumNonEscapedChar = 127;\n        }\n        _cfgUnqNames = !Feature.QUOTE_FIELD_NAMES.enabledIn(features);\n    }\n\n    \n\n    @Override\n    public JsonGenerator enable(Feature f) {\n        super.enable(f);\n        if (f == Feature.QUOTE_FIELD_NAMES) {\n            _cfgUnqNames = false;\n        }\n        return this;\n    }\n\n    @Override\n    public JsonGenerator disable(Feature f) {\n        super.disable(f);\n        if (f == Feature.QUOTE_FIELD_NAMES) {\n            _cfgUnqNames = true;\n        }\n        return this;\n    }\n\n    @Override\n    protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures) {\n        super._checkStdFeatureChanges(newFeatureFlags, changedFeatures);\n        _cfgUnqNames = !Feature.QUOTE_FIELD_NAMES.enabledIn(newFeatureFlags);\n    }\n\n    @Override\n    public JsonGenerator setHighestNonEscapedChar(int charCode) {\n        _maximumNonEscapedChar = (charCode < 0) ? 0 : charCode;\n        return this;\n    }\n\n    @Override\n    public int getHighestEscapedChar() {\n        return _maximumNonEscapedChar;\n    }\n\n    @Override\n    public JsonGenerator setCharacterEscapes(CharacterEscapes esc) {\n        _characterEscapes = esc;\n        if (esc == null) { \n            _outputEscapes = sOutputEscapes;\n        } else {\n            _outputEscapes = esc.getEscapeCodesForAscii();\n        }\n        return this;\n    }\n\n    \n    @Override\n    public CharacterEscapes getCharacterEscapes() {\n        return _characterEscapes;\n    }\n    \n    @Override\n    public JsonGenerator setRootValueSeparator(SerializableString sep) {\n        _rootValueSeparator = sep;\n        return this;\n    }\n    \n    \n\n    @Override\n    public Version version() {\n        return VersionUtil.versionFor(getClass());\n    }\n\n    \n\n    \n    \n    @Override\n    public final void writeStringField(String fieldName, String value) throws IOException {\n        writeFieldName(fieldName);\n        writeString(value);\n    }\n}\n",
+      "buggy_signatures": [
+        "public JsonGenerator enable(Feature f)",
+        "protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures)",
+        "public JsonGenerator setHighestNonEscapedChar(int charCode)",
+        "public int getHighestEscapedChar()",
+        "public JsonGenerator setCharacterEscapes(CharacterEscapes esc)",
+        "public CharacterEscapes getCharacterEscapes()",
+        "public JsonGenerator setRootValueSeparator(SerializableString sep)",
+        "public Version version()",
+        "public final void writeStringField(String fieldName, String value) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public JsonGenerator enable(Feature f)",
+        "public JsonGenerator disable(Feature f)",
+        "protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures)",
+        "public JsonGenerator setHighestNonEscapedChar(int charCode)",
+        "public int getHighestEscapedChar()",
+        "public JsonGenerator setCharacterEscapes(CharacterEscapes esc)",
+        "public CharacterEscapes getCharacterEscapes()",
+        "public JsonGenerator setRootValueSeparator(SerializableString sep)",
+        "public Version version()",
+        "public final void writeStringField(String fieldName, String value) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures) {\n  super._checkStdFeatureChanges(newFeatureFlags, changedFeatures);\n  _cfgUnqNames = !Feature.QUOTE_FIELD_NAMES.enabledIn(newFeatureFlags);\n  }",
+          "fixed_method": "  public JsonGenerator disable(Feature f) {\n  super.disable(f);\n  if (f == Feature.QUOTE_FIELD_NAMES) {\n  _cfgUnqNames = true;\n  }\n  return this;\n  }",
+          "diff": [
+            "@@ -124,6 +124,14 @@",
+            "         return this;\n",
+            "     }\n",
+            " \n",
+            "+    @Override\n",
+            "+    public JsonGenerator disable(Feature f) {\n",
+            "+        super.disable(f);\n",
+            "+        if (f == Feature.QUOTE_FIELD_NAMES) {\n",
+            "+            _cfgUnqNames = true;\n",
+            "+        }\n",
+            "+        return this;\n",
+            "+    }\n",
+            " \n",
+            "     @Override\n",
+            "     protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures) {\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

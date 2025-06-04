@@ -1,0 +1,15 @@
+{
+  "bug_id": "Codec_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\nTest Class: org.apache.commons.codec.binary.Base64InputStreamTest\nMethod: testBase64EmptyInputStream\nError: junit.framework.AssertionFailedError\nMessage: EOF expected:<-1> but was:<13>\nFailing Line:         testByteByByte(emptyEncoded, emptyDecoded, 76, CRLF);\nTest Source:\npublic void testBase64EmptyInputStream() throws Exception {\n  byte[] emptyEncoded = new byte[0];\n  byte[] emptyDecoded = new byte[0];\n  testByteByByte(emptyEncoded, emptyDecoded, 76, CRLF);\n  testByChunk(emptyEncoded, emptyDecoded, 76, CRLF);\n  }\nStack Trace:\nBase64InputStreamTest.testByteByByte line 142, Base64InputStreamTest.testBase64EmptyInputStream line 53\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "```java\norg.apache.commons.codec.binary.Base64InputStream\n```\nRESPONSE: org.apache.commons.codec.binary.Base64InputStream"
+    },
+    {
+      "prompt_index": 2,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\nTest Class: org.apache.commons.codec.binary.Base64OutputStreamTest\nMethod: testBase64EmptyOutputStream\nError: junit.framework.AssertionFailedError\nMessage: Streaming base64 encode\nFailing Line:         testByteByByte(emptyEncoded, emptyDecoded, 76, CRLF);\nTest Source:\npublic void testBase64EmptyOutputStream() throws Exception {\n  byte[] emptyEncoded = new byte[0];\n  byte[] emptyDecoded = new byte[0];\n  testByteByByte(emptyEncoded, emptyDecoded, 76, CRLF);\n  testByChunk(emptyEncoded, emptyDecoded, 76, CRLF);\n  }\nStack Trace:\nBase64OutputStreamTest.testByteByByte line 142, Base64OutputStreamTest.testBase64EmptyOutputStream line 53\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "RESPONSE: org.apache.commons.codec.binary.Base64OutputStream\n -and nothing else."
+    }
+  ]
+}

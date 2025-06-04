@@ -1,0 +1,73 @@
+{
+  "bug_id": "37",
+  "failed_tests": {
+    "org.mockito.internal.stubbing.answers.AnswersValidatorTest": [
+      {
+        "methodName": "shouldFailWhenCallingRealMethodOnIterface",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "            fail();",
+        "test_source": "  public void shouldFailWhenCallingRealMethodOnIterface() throws Throwable {\n  //given\n  Invocation inovcationOnIterface = new InvocationBuilder().method(\"simpleMethod\").toInvocation();\n  try {\n  //when\n  validator.validate(new CallsRealMethods(), inovcationOnIterface);\n  //then\n  fail();\n  } catch (MockitoException e) {}\n  }",
+        "stack": [
+          "AnswersValidatorTest.shouldFailWhenCallingRealMethodOnIterface line 99"
+        ]
+      }
+    ],
+    "org.mockitousage.spies.SpyingOnInterfacesTest": [
+      {
+        "methodName": "shouldFailFastWhenCallingRealMethodOnInterface",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "            fail();",
+        "test_source": "  public void shouldFailFastWhenCallingRealMethodOnInterface() throws Exception {\n  List list = mock(List.class);\n  try {\n  //when\n  when(list.get(0)).thenCallRealMethod();\n  //then\n  fail();\n  } catch (MockitoException e) {}\n  }",
+        "stack": [
+          "SpyingOnInterfacesTest.shouldFailFastWhenCallingRealMethodOnInterface line 28"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/stubbing/answers/AnswersValidator.java",
+      "buggy_full_code": "\npackage org.mockito.internal.stubbing.answers;\n\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.internal.invocation.Invocation;\nimport org.mockito.stubbing.Answer;\n\npublic class AnswersValidator { private Reporter reporter = new Reporter(); public void validate(Answer<?> answer, Invocation invocation) {\n        if (answer instanceof ThrowsException) {\n            validateException((ThrowsException) answer, invocation);\n        }\n        \n        if (answer instanceof Returns) {\n            validateReturnValue((Returns) answer, invocation);\n        }\n        \n        if (answer instanceof DoesNothing) {\n            validateDoNothing((DoesNothing) answer, invocation);\n        }\n        \n    }\n\n\n    private void validateDoNothing(DoesNothing answer, Invocation invocation) {\n        if (!invocation.isVoid()) {\n            reporter.onlyVoidMethodsCanBeSetToDoNothing();\n        }\n    }\n\n    private void validateReturnValue(Returns answer, Invocation invocation) {\n        if (invocation.isVoid()) {\n            reporter.cannotStubVoidMethodWithAReturnValue();\n        }\n        \n        if (answer.returnsNull() && invocation.returnsPrimitive()) {\n            reporter.wrongTypeOfReturnValue(invocation.printMethodReturnType(), \"null\", invocation.getMethodName());\n        } \n\n        if (!answer.returnsNull() && !invocation.isValidReturnType(answer.getReturnType())) {\n            reporter.wrongTypeOfReturnValue(invocation.printMethodReturnType(), answer.printReturnType(), invocation.getMethodName());\n        }\n    }\n\n    private void validateException(ThrowsException answer, Invocation invocation) {\n        Throwable throwable = answer.getThrowable();\n        if (throwable == null) {\n            reporter.cannotStubWithNullThrowable();\n        }\n        \n        if (throwable instanceof RuntimeException || throwable instanceof Error) {\n            return;\n        }\n        \n        if (!invocation.isValidException(throwable)) {\n            reporter.checkedExceptionInvalid(throwable);\n        }\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal.stubbing.answers;\n\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.internal.invocation.Invocation;\nimport org.mockito.stubbing.Answer;\n\npublic class AnswersValidator { private Reporter reporter = new Reporter(); public void validate(Answer<?> answer, Invocation invocation) {\n        if (answer instanceof ThrowsException) {\n            validateException((ThrowsException) answer, invocation);\n        }\n        \n        if (answer instanceof Returns) {\n            validateReturnValue((Returns) answer, invocation);\n        }\n        \n        if (answer instanceof DoesNothing) {\n            validateDoNothing((DoesNothing) answer, invocation);\n        }\n        \n        if (answer instanceof CallsRealMethods) {\n            validateMockingConcreteClass((CallsRealMethods) answer, invocation);\n        }\n    }\n\n    private void validateMockingConcreteClass(CallsRealMethods answer, Invocation invocation) {\n        if (invocation.getMethod().getDeclaringClass().isInterface()) {\n            reporter.cannotCallRealMethodOnInterface();\n        }\n    }\n\n    private void validateDoNothing(DoesNothing answer, Invocation invocation) {\n        if (!invocation.isVoid()) {\n            reporter.onlyVoidMethodsCanBeSetToDoNothing();\n        }\n    }\n\n    private void validateReturnValue(Returns answer, Invocation invocation) {\n        if (invocation.isVoid()) {\n            reporter.cannotStubVoidMethodWithAReturnValue();\n        }\n        \n        if (answer.returnsNull() && invocation.returnsPrimitive()) {\n            reporter.wrongTypeOfReturnValue(invocation.printMethodReturnType(), \"null\", invocation.getMethodName());\n        } \n\n        if (!answer.returnsNull() && !invocation.isValidReturnType(answer.getReturnType())) {\n            reporter.wrongTypeOfReturnValue(invocation.printMethodReturnType(), answer.printReturnType(), invocation.getMethodName());\n        }\n    }\n\n    private void validateException(ThrowsException answer, Invocation invocation) {\n        Throwable throwable = answer.getThrowable();\n        if (throwable == null) {\n            reporter.cannotStubWithNullThrowable();\n        }\n        \n        if (throwable instanceof RuntimeException || throwable instanceof Error) {\n            return;\n        }\n        \n        if (!invocation.isValidException(throwable)) {\n            reporter.checkedExceptionInvalid(throwable);\n        }\n    }\n}",
+      "buggy_signatures": [
+        "private void validateDoNothing(DoesNothing answer, Invocation invocation)",
+        "private void validateReturnValue(Returns answer, Invocation invocation)",
+        "private void validateException(ThrowsException answer, Invocation invocation)"
+      ],
+      "fixed_signatures": [
+        "private void validateMockingConcreteClass(CallsRealMethods answer, Invocation invocation)",
+        "private void validateDoNothing(DoesNothing answer, Invocation invocation)",
+        "private void validateReturnValue(Returns answer, Invocation invocation)",
+        "private void validateException(ThrowsException answer, Invocation invocation)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private void validateDoNothing(DoesNothing answer, Invocation invocation) {\n  if (!invocation.isVoid()) {\n  reporter.onlyVoidMethodsCanBeSetToDoNothing();\n  }\n  }",
+          "fixed_method": "  private void validateMockingConcreteClass(CallsRealMethods answer, Invocation invocation) {\n  if (invocation.getMethod().getDeclaringClass().isInterface()) {\n  reporter.cannotCallRealMethodOnInterface();\n  }\n  }",
+          "diff": [
+            "@@ -25,8 +25,16 @@",
+            "             validateDoNothing((DoesNothing) answer, invocation);\n",
+            "         }\n",
+            "         \n",
+            "+        if (answer instanceof CallsRealMethods) {\n",
+            "+            validateMockingConcreteClass((CallsRealMethods) answer, invocation);\n",
+            "+        }\n",
+            "     }\n",
+            " \n",
+            "+    private void validateMockingConcreteClass(CallsRealMethods answer, Invocation invocation) {\n",
+            "+        if (invocation.getMethod().getDeclaringClass().isInterface()) {\n",
+            "+            reporter.cannotCallRealMethodOnInterface();\n",
+            "+        }\n",
+            "+    }\n",
+            " \n",
+            "     private void validateDoNothing(DoesNothing answer, Invocation invocation) {\n",
+            "         if (!invocation.isVoid()) {\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

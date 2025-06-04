@@ -1,0 +1,81 @@
+{
+  "bug_id": "9",
+  "failed_tests": {
+    "org.apache.commons.math3.geometry.euclidean.threed.LineTest": [
+      {
+        "methodName": "testRevert",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "arrays first differed at element [0]; expected:<0.028581782127907646> but was:<0.028581782243293483>",
+        "fail_line": "        Assert.assertArrayEquals(expected.toArray(), reverted.getDirection().toArray(), 0);",
+        "test_source": "  public void testRevert() {\n  \n  // setup\n  Line line = new Line(new Vector3D(1653345.6696423641, 6170370.041579291, 90000),\n  new Vector3D(1650757.5050732433, 6160710.879908984, 0.9));\n  Vector3D expected = line.getDirection().negate();\n\n  // action\n  Line reverted = line.revert();\n\n  // verify\n  Assert.assertArrayEquals(expected.toArray(), reverted.getDirection().toArray(), 0);\n\n  }",
+        "stack": [
+          "LineTest.testRevert line 144"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/geometry/euclidean/threed/Line.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.geometry.euclidean.threed;\n\nimport org.apache.commons.math3.exception.MathIllegalArgumentException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.geometry.Vector;\nimport org.apache.commons.math3.geometry.euclidean.oned.Euclidean1D;\nimport org.apache.commons.math3.geometry.euclidean.oned.IntervalsSet;\nimport org.apache.commons.math3.geometry.euclidean.oned.Vector1D;\nimport org.apache.commons.math3.geometry.partitioning.Embedding;\nimport org.apache.commons.math3.util.FastMath;\nimport org.apache.commons.math3.util.Precision;\n\n\npublic class Line implements Embedding<Euclidean3D, Euclidean1D> { private Vector3D direction; private Vector3D zero; public Line(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException {\n        reset(p1, p2);\n    }\n\n    \n    public Line(final Line line) {\n        this.direction = line.direction;\n        this.zero      = line.zero;\n    }\n\n    \n    public void reset(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException {\n        final Vector3D delta = p2.subtract(p1);\n        final double norm2 = delta.getNormSq();\n        if (norm2 == 0.0) {\n            throw new MathIllegalArgumentException(LocalizedFormats.ZERO_NORM);\n        }\n        this.direction = new Vector3D(1.0 / FastMath.sqrt(norm2), delta);\n        zero = new Vector3D(1.0, p1, -p1.dotProduct(delta) / norm2, delta);\n    }\n\n    \n    public Line revert() {\n        final Line reverted = new Line(zero, zero.subtract(direction));\n        return reverted;\n    }\n\n    \n    public Vector3D getDirection() {\n        return direction;\n    }\n\n    \n    public Vector3D getOrigin() {\n        return zero;\n    }\n\n    \n    public double getAbscissa(final Vector3D point) {\n        return point.subtract(zero).dotProduct(direction);\n    }\n\n    \n    public Vector3D pointAt(final double abscissa) {\n        return new Vector3D(1.0, zero, abscissa, direction);\n    }\n\n    \n    public Vector1D toSubSpace(final Vector<Euclidean3D> point) {\n        return new Vector1D(getAbscissa((Vector3D) point));\n    }\n\n    \n    public Vector3D toSpace(final Vector<Euclidean1D> point) {\n        return pointAt(((Vector1D) point).getX());\n    }\n\n    \n    public boolean isSimilarTo(final Line line) {\n        final double angle = Vector3D.angle(direction, line.direction);\n        return ((angle < 1.0e-10) || (angle > (FastMath.PI - 1.0e-10))) && contains(line.zero);\n    }\n\n    \n    public boolean contains(final Vector3D p) {\n        return distance(p) < 1.0e-10;\n    }\n\n    \n    public double distance(final Vector3D p) {\n        final Vector3D d = p.subtract(zero);\n        final Vector3D n = new Vector3D(1.0, d, -d.dotProduct(direction), direction);\n        return n.getNorm();\n    }\n\n    \n    public double distance(final Line line) {\n\n        final Vector3D normal = Vector3D.crossProduct(direction, line.direction);\n        final double n = normal.getNorm();\n        if (n < Precision.SAFE_MIN) {\n            \n            return distance(line.zero);\n        }\n\n        \n        final double offset = line.zero.subtract(zero).dotProduct(normal) / n;\n\n        return FastMath.abs(offset);\n\n    }\n\n    \n    public Vector3D closestPoint(final Line line) {\n\n        final double cos = direction.dotProduct(line.direction);\n        final double n = 1 - cos * cos;\n        if (n < Precision.EPSILON) {\n            \n            return zero;\n        }\n\n        final Vector3D delta0 = line.zero.subtract(zero);\n        final double a        = delta0.dotProduct(direction);\n        final double b        = delta0.dotProduct(line.direction);\n\n        return new Vector3D(1, zero, (a - b * cos) / n, direction);\n\n    }\n\n    \n    public Vector3D intersection(final Line line) {\n        final Vector3D closest = closestPoint(line);\n        return line.contains(closest) ? closest : null;\n    }\n\n    \n    public SubLine wholeLine() {\n        return new SubLine(this, new IntervalsSet());\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.geometry.euclidean.threed;\n\nimport org.apache.commons.math3.exception.MathIllegalArgumentException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.geometry.Vector;\nimport org.apache.commons.math3.geometry.euclidean.oned.Euclidean1D;\nimport org.apache.commons.math3.geometry.euclidean.oned.IntervalsSet;\nimport org.apache.commons.math3.geometry.euclidean.oned.Vector1D;\nimport org.apache.commons.math3.geometry.partitioning.Embedding;\nimport org.apache.commons.math3.util.FastMath;\nimport org.apache.commons.math3.util.Precision;\n\n\npublic class Line implements Embedding<Euclidean3D, Euclidean1D> { private Vector3D direction; private Vector3D zero; public Line(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException {\n        reset(p1, p2);\n    }\n\n    \n    public Line(final Line line) {\n        this.direction = line.direction;\n        this.zero      = line.zero;\n    }\n\n    \n    public void reset(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException {\n        final Vector3D delta = p2.subtract(p1);\n        final double norm2 = delta.getNormSq();\n        if (norm2 == 0.0) {\n            throw new MathIllegalArgumentException(LocalizedFormats.ZERO_NORM);\n        }\n        this.direction = new Vector3D(1.0 / FastMath.sqrt(norm2), delta);\n        zero = new Vector3D(1.0, p1, -p1.dotProduct(delta) / norm2, delta);\n    }\n\n    \n    public Line revert() {\n        final Line reverted = new Line(this);\n        reverted.direction = reverted.direction.negate();\n        return reverted;\n    }\n\n    \n    public Vector3D getDirection() {\n        return direction;\n    }\n\n    \n    public Vector3D getOrigin() {\n        return zero;\n    }\n\n    \n    public double getAbscissa(final Vector3D point) {\n        return point.subtract(zero).dotProduct(direction);\n    }\n\n    \n    public Vector3D pointAt(final double abscissa) {\n        return new Vector3D(1.0, zero, abscissa, direction);\n    }\n\n    \n    public Vector1D toSubSpace(final Vector<Euclidean3D> point) {\n        return new Vector1D(getAbscissa((Vector3D) point));\n    }\n\n    \n    public Vector3D toSpace(final Vector<Euclidean1D> point) {\n        return pointAt(((Vector1D) point).getX());\n    }\n\n    \n    public boolean isSimilarTo(final Line line) {\n        final double angle = Vector3D.angle(direction, line.direction);\n        return ((angle < 1.0e-10) || (angle > (FastMath.PI - 1.0e-10))) && contains(line.zero);\n    }\n\n    \n    public boolean contains(final Vector3D p) {\n        return distance(p) < 1.0e-10;\n    }\n\n    \n    public double distance(final Vector3D p) {\n        final Vector3D d = p.subtract(zero);\n        final Vector3D n = new Vector3D(1.0, d, -d.dotProduct(direction), direction);\n        return n.getNorm();\n    }\n\n    \n    public double distance(final Line line) {\n\n        final Vector3D normal = Vector3D.crossProduct(direction, line.direction);\n        final double n = normal.getNorm();\n        if (n < Precision.SAFE_MIN) {\n            \n            return distance(line.zero);\n        }\n\n        \n        final double offset = line.zero.subtract(zero).dotProduct(normal) / n;\n\n        return FastMath.abs(offset);\n\n    }\n\n    \n    public Vector3D closestPoint(final Line line) {\n\n        final double cos = direction.dotProduct(line.direction);\n        final double n = 1 - cos * cos;\n        if (n < Precision.EPSILON) {\n            \n            return zero;\n        }\n\n        final Vector3D delta0 = line.zero.subtract(zero);\n        final double a        = delta0.dotProduct(direction);\n        final double b        = delta0.dotProduct(line.direction);\n\n        return new Vector3D(1, zero, (a - b * cos) / n, direction);\n\n    }\n\n    \n    public Vector3D intersection(final Line line) {\n        final Vector3D closest = closestPoint(line);\n        return line.contains(closest) ? closest : null;\n    }\n\n    \n    public SubLine wholeLine() {\n        return new SubLine(this, new IntervalsSet());\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class Line implements Embedding<Euclidean3D, Euclidean1D> { private Vector3D direction; private Vector3D zero; public Line(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException",
+        "public Line(final Line line)",
+        "public void reset(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException",
+        "public Line revert()",
+        "public Vector3D getDirection()",
+        "public Vector3D getOrigin()",
+        "public double getAbscissa(final Vector3D point)",
+        "public Vector3D pointAt(final double abscissa)",
+        "public Vector1D toSubSpace(final Vector<Euclidean3D> point)",
+        "public Vector3D toSpace(final Vector<Euclidean1D> point)",
+        "public boolean isSimilarTo(final Line line)",
+        "public boolean contains(final Vector3D p)",
+        "public double distance(final Vector3D p)",
+        "public double distance(final Line line)",
+        "public Vector3D closestPoint(final Line line)",
+        "public Vector3D intersection(final Line line)",
+        "public SubLine wholeLine()"
+      ],
+      "fixed_signatures": [
+        "public class Line implements Embedding<Euclidean3D, Euclidean1D> { private Vector3D direction; private Vector3D zero; public Line(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException",
+        "public Line(final Line line)",
+        "public void reset(final Vector3D p1, final Vector3D p2) throws MathIllegalArgumentException",
+        "public Line revert()",
+        "public Vector3D getDirection()",
+        "public Vector3D getOrigin()",
+        "public double getAbscissa(final Vector3D point)",
+        "public Vector3D pointAt(final double abscissa)",
+        "public Vector1D toSubSpace(final Vector<Euclidean3D> point)",
+        "public Vector3D toSpace(final Vector<Euclidean1D> point)",
+        "public boolean isSimilarTo(final Line line)",
+        "public boolean contains(final Vector3D p)",
+        "public double distance(final Vector3D p)",
+        "public double distance(final Line line)",
+        "public Vector3D closestPoint(final Line line)",
+        "public Vector3D intersection(final Line line)",
+        "public SubLine wholeLine()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Line revert() {\n  final Line reverted = new Line(zero, zero.subtract(direction));\n  return reverted;\n  }",
+          "fixed_method": "  public Line revert() {\n  final Line reverted = new Line(this);\n  reverted.direction = reverted.direction.negate();\n  return reverted;\n  }",
+          "diff": [
+            "@@ -84,7 +84,8 @@",
+            "      * @return a new instance, with reversed direction\n",
+            "      */\n",
+            "     public Line revert() {\n",
+            "-        final Line reverted = new Line(zero, zero.subtract(direction));\n",
+            "+        final Line reverted = new Line(this);\n",
+            "+        reverted.direction = reverted.direction.negate();\n",
+            "         return reverted;\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

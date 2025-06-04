@@ -1,0 +1,64 @@
+{
+  "bug_id": "5",
+  "failed_tests": {
+    "org.mockitointegration.NoJUnitDependenciesTest": [
+      {
+        "methodName": "pure_mockito_should_not_depend_JUnit",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "'org.mockito.internal.verification.VerificationOverTimeImpl' has some dependency to JUnit",
+        "fail_line": "            checkDependency(classLoader_without_JUnit, pureMockitoAPIClass);",
+        "test_source": "  public void pure_mockito_should_not_depend_JUnit() throws Exception {\n  ClassLoader classLoader_without_JUnit = ClassLoaders.excludingClassLoader()\n  .withCodeSourceUrlOf(\n  Mockito.class,\n  Matcher.class,\n  Enhancer.class,\n  Objenesis.class\n  )\n  .without(\"junit\", \"org.junit\")\n  .build();\n\n  Set<String> pureMockitoAPIClasses = ClassLoaders.in(classLoader_without_JUnit).omit(\"runners\", \"junit\", \"JUnit\").listOwnedClasses();\n\n  for (String pureMockitoAPIClass : pureMockitoAPIClasses) {\n  checkDependency(classLoader_without_JUnit, pureMockitoAPIClass);\n  }\n  }",
+        "stack": [
+          "NoJUnitDependenciesTest.checkDependency line 36, NoJUnitDependenciesTest.pure_mockito_should_not_depend_JUnit line 28"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/verification/VerificationOverTimeImpl.java",
+      "buggy_full_code": "\npackage org.mockito.internal.verification;\n\nimport org.mockito.exceptions.base.MockitoAssertionError;\nimport org.mockito.internal.util.Timer;\nimport org.mockito.internal.verification.api.VerificationData;\nimport org.mockito.verification.VerificationMode;\n\n\npublic class VerificationOverTimeImpl implements VerificationMode { private final long pollingPeriodMillis; private final long durationMillis; private final VerificationMode delegate; private final boolean returnOnSuccess; private final Timer timer; public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess) {\n        this(pollingPeriodMillis, durationMillis, delegate, returnOnSuccess, new Timer(durationMillis));\n    }\n\n    \n    public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess, Timer timer) {\n        this.pollingPeriodMillis = pollingPeriodMillis;\n        this.durationMillis = durationMillis;\n        this.delegate = delegate;\n        this.returnOnSuccess = returnOnSuccess;\n        this.timer = timer;\n    }\n\n    \n    public void verify(VerificationData data) {\n        AssertionError error = null;\n\n        timer.start();\n        while (timer.isCounting()) {\n            try {\n                delegate.verify(data);\n\n                if (returnOnSuccess) {\n                    return;\n                } else {\n                    error = null;\n                }\n            } catch (MockitoAssertionError e) {\n                error = handleVerifyException(e);\n            }\n            catch (org.mockito.exceptions.verification.junit.ArgumentsAreDifferent e) {\n                error = handleVerifyException(e);\n            }\n        }\n\n        if (error != null) {\n            throw error;\n        }\n    }\n\n    private AssertionError handleVerifyException(AssertionError e) {\n        if (canRecoverFromFailure(delegate)) {\n            sleep(pollingPeriodMillis);\n            return e;\n        } else {\n            throw e;\n        }\n    }\n\n    protected boolean canRecoverFromFailure(VerificationMode verificationMode) {\n        return !(verificationMode instanceof AtMost || verificationMode instanceof NoMoreInteractions);\n    }\n\n    private void sleep(long sleep) {\n        try {\n            Thread.sleep(sleep);\n        } catch (InterruptedException ie) {\n            \n        }\n    }\n\n    public long getPollingPeriod() {\n        return pollingPeriodMillis;\n    }\n\n    public long getDuration() {\n        return durationMillis;\n    }\n\n    public VerificationMode getDelegate() {\n        return delegate;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.mockito.internal.verification;\n\nimport org.mockito.exceptions.base.MockitoAssertionError;\nimport org.mockito.internal.util.Timer;\nimport org.mockito.internal.verification.api.VerificationData;\nimport org.mockito.verification.VerificationMode;\n\n\npublic class VerificationOverTimeImpl implements VerificationMode { private final long pollingPeriodMillis; private final long durationMillis; private final VerificationMode delegate; private final boolean returnOnSuccess; private final Timer timer; public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess) {\n        this(pollingPeriodMillis, durationMillis, delegate, returnOnSuccess, new Timer(durationMillis));\n    }\n\n    \n    public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess, Timer timer) {\n        this.pollingPeriodMillis = pollingPeriodMillis;\n        this.durationMillis = durationMillis;\n        this.delegate = delegate;\n        this.returnOnSuccess = returnOnSuccess;\n        this.timer = timer;\n    }\n\n    \n    public void verify(VerificationData data) {\n        AssertionError error = null;\n\n        timer.start();\n        while (timer.isCounting()) {\n            try {\n                delegate.verify(data);\n\n                if (returnOnSuccess) {\n                    return;\n                } else {\n                    error = null;\n                }\n            } catch (MockitoAssertionError e) {\n                error = handleVerifyException(e);\n            }\n            catch (AssertionError e) {\n                error = handleVerifyException(e);\n            }\n        }\n\n        if (error != null) {\n            throw error;\n        }\n    }\n\n    private AssertionError handleVerifyException(AssertionError e) {\n        if (canRecoverFromFailure(delegate)) {\n            sleep(pollingPeriodMillis);\n            return e;\n        } else {\n            throw e;\n        }\n    }\n\n    protected boolean canRecoverFromFailure(VerificationMode verificationMode) {\n        return !(verificationMode instanceof AtMost || verificationMode instanceof NoMoreInteractions);\n    }\n\n    private void sleep(long sleep) {\n        try {\n            Thread.sleep(sleep);\n        } catch (InterruptedException ie) {\n            \n        }\n    }\n\n    public long getPollingPeriod() {\n        return pollingPeriodMillis;\n    }\n\n    public long getDuration() {\n        return durationMillis;\n    }\n\n    public VerificationMode getDelegate() {\n        return delegate;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class VerificationOverTimeImpl implements VerificationMode { private final long pollingPeriodMillis; private final long durationMillis; private final VerificationMode delegate; private final boolean returnOnSuccess; private final Timer timer; public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess)",
+        "public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess, Timer timer)",
+        "public void verify(VerificationData data)",
+        "private AssertionError handleVerifyException(AssertionError e)",
+        "protected boolean canRecoverFromFailure(VerificationMode verificationMode)",
+        "private void sleep(long sleep)",
+        "public long getPollingPeriod()",
+        "public long getDuration()",
+        "public VerificationMode getDelegate()"
+      ],
+      "fixed_signatures": [
+        "public class VerificationOverTimeImpl implements VerificationMode { private final long pollingPeriodMillis; private final long durationMillis; private final VerificationMode delegate; private final boolean returnOnSuccess; private final Timer timer; public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess)",
+        "public VerificationOverTimeImpl(long pollingPeriodMillis, long durationMillis, VerificationMode delegate, boolean returnOnSuccess, Timer timer)",
+        "public void verify(VerificationData data)",
+        "private AssertionError handleVerifyException(AssertionError e)",
+        "protected boolean canRecoverFromFailure(VerificationMode verificationMode)",
+        "private void sleep(long sleep)",
+        "public long getPollingPeriod()",
+        "public long getDuration()",
+        "public VerificationMode getDelegate()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void verify(VerificationData data) {\n  AssertionError error = null;\n\n  timer.start();\n  while (timer.isCounting()) {\n  try {\n  delegate.verify(data);\n\n  if (returnOnSuccess) {\n  return;\n  } else {\n  error = null;\n  }\n  } catch (MockitoAssertionError e) {\n  error = handleVerifyException(e);\n  }\n  catch (org.mockito.exceptions.verification.junit.ArgumentsAreDifferent e) {\n  error = handleVerifyException(e);\n  }\n  }\n\n  if (error != null) {\n  throw error;\n  }\n  }",
+          "fixed_method": "  public void verify(VerificationData data) {\n  AssertionError error = null;\n\n  timer.start();\n  while (timer.isCounting()) {\n  try {\n  delegate.verify(data);\n\n  if (returnOnSuccess) {\n  return;\n  } else {\n  error = null;\n  }\n  } catch (MockitoAssertionError e) {\n  error = handleVerifyException(e);\n  }\n  catch (AssertionError e) {\n  error = handleVerifyException(e);\n  }\n  }\n\n  if (error != null) {\n  throw error;\n  }\n  }",
+          "diff": [
+            "@@ -88,7 +88,7 @@",
+            "             } catch (MockitoAssertionError e) {\n",
+            "                 error = handleVerifyException(e);\n",
+            "             }\n",
+            "-            catch (org.mockito.exceptions.verification.junit.ArgumentsAreDifferent e) {\n",
+            "+            catch (AssertionError e) {\n",
+            "                 error = handleVerifyException(e);\n",
+            "             }\n",
+            "         }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

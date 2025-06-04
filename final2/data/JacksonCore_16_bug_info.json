@@ -1,0 +1,109 @@
+{
+  "bug_id": "16",
+  "failed_tests": {
+    "com.fasterxml.jackson.core.json.ParserSequenceTest": [
+      {
+        "methodName": "testInitialized",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<2> but was:<3>",
+        "fail_line": "        assertEquals(2, seq.getIntValue());",
+        "test_source": "  public void testInitialized() throws Exception {\n  JsonParser p1 = JSON_FACTORY.createParser(\"1 2\");\n  JsonParser p2 = JSON_FACTORY.createParser(\"3 false\");\n  // consume '1', move to '2'\n  assertToken(JsonToken.VALUE_NUMBER_INT, p1.nextToken());\n  assertToken(JsonToken.VALUE_NUMBER_INT, p1.nextToken());\n\n  JsonParserSequence seq = JsonParserSequence.createFlattened(p1, p2);\n  assertToken(JsonToken.VALUE_NUMBER_INT, seq.nextToken());\n  assertEquals(2, seq.getIntValue());\n  assertToken(JsonToken.VALUE_NUMBER_INT, seq.nextToken());\n  assertEquals(3, seq.getIntValue());\n  seq.close();\n  }",
+        "stack": [
+          "ParserSequenceTest.testInitialized line 60"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/core/util/JsonParserSequence.java",
+      "buggy_full_code": "package com.fasterxml.jackson.core.util;\n\nimport java.io.IOException;\nimport java.util.*;\n\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonParserSequence extends JsonParserDelegate { protected final JsonParser[] _parsers; protected int _nextParser; protected JsonParserSequence(JsonParser[] parsers) {\n        super(parsers[0]);\n        _parsers = parsers;\n        _nextParser = 1;\n    }\n\n    \n    public static JsonParserSequence createFlattened(JsonParser first, JsonParser second) {\n        if (!(first instanceof JsonParserSequence || second instanceof JsonParserSequence)) {\n            \n            return new JsonParserSequence(new JsonParser[] { first, second });\n        }\n        ArrayList<JsonParser> p = new ArrayList<JsonParser>();\n        if (first instanceof JsonParserSequence) {\n            ((JsonParserSequence) first).addFlattenedActiveParsers(p);\n        } else {\n            p.add(first);\n        }\n        if (second instanceof JsonParserSequence) {\n            ((JsonParserSequence) second).addFlattenedActiveParsers(p);\n        } else {\n            p.add(second);\n        }\n        return new JsonParserSequence(p.toArray(new JsonParser[p.size()]));\n    }\n\n    @SuppressWarnings(\"resource\")\n    protected void addFlattenedActiveParsers(List<JsonParser> result) {\n        for (int i = _nextParser-1, len = _parsers.length; i < len; ++i) {\n            JsonParser p = _parsers[i];\n            if (p instanceof JsonParserSequence) {\n                ((JsonParserSequence) p).addFlattenedActiveParsers(result);\n            } else {\n                result.add(p);\n            }\n        }\n    }\n    \n    \n    \n    @Override\n    public void close() throws IOException {\n        do { delegate.close(); } while (switchToNext());\n    }\n\n    @Override\n    public JsonToken nextToken() throws IOException, JsonParseException {\n        JsonToken t = delegate.nextToken();\n        if (t != null) return t;\n        while (switchToNext()) {\n            t = delegate.nextToken();\n            if (t != null) return t;\n        }\n        return null;\n    }\n\n    \n\n    \n    public int containedParsersCount() {\n        return _parsers.length;\n    }\n    \n    \n\n    \n    protected boolean switchToNext() {\n        if (_nextParser >= _parsers.length) {\n            return false;\n        }\n        delegate = _parsers[_nextParser++];\n        return true;\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.core.util;\n\nimport java.io.IOException;\nimport java.util.*;\n\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonParserSequence extends JsonParserDelegate { protected final JsonParser[] _parsers; protected int _nextParser; protected boolean _suppressNextToken; protected JsonParserSequence(JsonParser[] parsers) {\n        super(parsers[0]);\n        _suppressNextToken = delegate.hasCurrentToken();\n        _parsers = parsers;\n        _nextParser = 1;\n    }\n\n    \n    public static JsonParserSequence createFlattened(JsonParser first, JsonParser second) {\n        if (!(first instanceof JsonParserSequence || second instanceof JsonParserSequence)) {\n            \n            return new JsonParserSequence(new JsonParser[] { first, second });\n        }\n        ArrayList<JsonParser> p = new ArrayList<JsonParser>();\n        if (first instanceof JsonParserSequence) {\n            ((JsonParserSequence) first).addFlattenedActiveParsers(p);\n        } else {\n            p.add(first);\n        }\n        if (second instanceof JsonParserSequence) {\n            ((JsonParserSequence) second).addFlattenedActiveParsers(p);\n        } else {\n            p.add(second);\n        }\n        return new JsonParserSequence(p.toArray(new JsonParser[p.size()]));\n    }\n\n    @SuppressWarnings(\"resource\")\n    protected void addFlattenedActiveParsers(List<JsonParser> result) {\n        for (int i = _nextParser-1, len = _parsers.length; i < len; ++i) {\n            JsonParser p = _parsers[i];\n            if (p instanceof JsonParserSequence) {\n                ((JsonParserSequence) p).addFlattenedActiveParsers(result);\n            } else {\n                result.add(p);\n            }\n        }\n    }\n    \n    \n    \n    @Override\n    public void close() throws IOException {\n        do { delegate.close(); } while (switchToNext());\n    }\n\n    @Override\n    public JsonToken nextToken() throws IOException {\n        if (delegate == null) {\n            return null;\n        }\n        if (_suppressNextToken) {\n            _suppressNextToken = false;\n            return delegate.currentToken();\n        }\n        JsonToken t = delegate.nextToken();\n        while ((t == null) && switchToNext()) {\n            t = delegate.hasCurrentToken()\n                    ? delegate.currentToken() : delegate.nextToken();\n        }\n        return t;\n    }\n\n    \n\n    \n    public int containedParsersCount() {\n        return _parsers.length;\n    }\n    \n    \n\n    \n    protected boolean switchToNext() {\n        if (_nextParser >= _parsers.length) {\n            return false;\n        }\n        delegate = _parsers[_nextParser++];\n        return true;\n    }\n}\n",
+      "buggy_signatures": [
+        "public class JsonParserSequence extends JsonParserDelegate { protected final JsonParser[] _parsers; protected int _nextParser; protected JsonParserSequence(JsonParser[] parsers)",
+        "public static JsonParserSequence createFlattened(JsonParser first, JsonParser second)",
+        "protected void addFlattenedActiveParsers(List<JsonParser> result)",
+        "public void close() throws IOException",
+        "public JsonToken nextToken() throws IOException, JsonParseException",
+        "public int containedParsersCount()",
+        "protected boolean switchToNext()"
+      ],
+      "fixed_signatures": [
+        "public class JsonParserSequence extends JsonParserDelegate { protected final JsonParser[] _parsers; protected int _nextParser; protected boolean _suppressNextToken; protected JsonParserSequence(JsonParser[] parsers)",
+        "public static JsonParserSequence createFlattened(JsonParser first, JsonParser second)",
+        "protected void addFlattenedActiveParsers(List<JsonParser> result)",
+        "public void close() throws IOException",
+        "public JsonToken nextToken() throws IOException",
+        "public int containedParsersCount()",
+        "protected boolean switchToNext()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -32,6 +32,7 @@",
+            "      *\n",
+            "      * @since 2.8\n",
+            "      */\n",
+            "+    protected boolean _suppressNextToken;\n",
+            "     \n",
+            "     /*\n",
+            "      *******************************************************\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  protected JsonParserSequence(JsonParser[] parsers) {\n  super(parsers[0]);\n  _parsers = parsers;\n  _nextParser = 1;\n  }",
+          "fixed_method": "  protected JsonParserSequence(JsonParser[] parsers) {\n  super(parsers[0]);\n  _suppressNextToken = delegate.hasCurrentToken();\n  _parsers = parsers;\n  _nextParser = 1;\n  }",
+          "diff": [
+            "@@ -42,6 +43,7 @@",
+            "     protected JsonParserSequence(JsonParser[] parsers)\n",
+            "     {\n",
+            "         super(parsers[0]);\n",
+            "+        _suppressNextToken = delegate.hasCurrentToken();\n",
+            "         _parsers = parsers;\n",
+            "         _nextParser = 1;\n",
+            "     }\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public JsonToken nextToken() throws IOException, JsonParseException {\n  JsonToken t = delegate.nextToken();\n  if (t != null) return t;\n  while (switchToNext()) {\n  t = delegate.nextToken();\n  if (t != null) return t;\n  }\n  return null;\n  }",
+          "fixed_method": "  public JsonToken nextToken() throws IOException {\n  if (delegate == null) {\n  return null;\n  }\n  if (_suppressNextToken) {\n  _suppressNextToken = false;\n  return delegate.currentToken();\n  }\n  JsonToken t = delegate.nextToken();\n  while ((t == null) && switchToNext()) {\n  t = delegate.hasCurrentToken()\n  ? delegate.currentToken() : delegate.nextToken();\n  }\n  return t;\n  }",
+          "diff": [
+            "@@ -101,15 +103,21 @@",
+            "     }\n",
+            " \n",
+            "     @Override\n",
+            "-    public JsonToken nextToken() throws IOException, JsonParseException\n",
+            "+    public JsonToken nextToken() throws IOException\n",
+            "     {\n",
+            "+        if (delegate == null) {\n",
+            "+            return null;\n",
+            "+        }\n",
+            "+        if (_suppressNextToken) {\n",
+            "+            _suppressNextToken = false;\n",
+            "+            return delegate.currentToken();\n",
+            "+        }\n",
+            "         JsonToken t = delegate.nextToken();\n",
+            "-        if (t != null) return t;\n",
+            "-        while (switchToNext()) {\n",
+            "-            t = delegate.nextToken();\n",
+            "-            if (t != null) return t;\n",
+            "+        while ((t == null) && switchToNext()) {\n",
+            "+            t = delegate.hasCurrentToken()\n",
+            "+                    ? delegate.currentToken() : delegate.nextToken();\n",
+            "         }\n",
+            "-        return null;\n",
+            "+        return t;\n",
+            "     }\n",
+            " \n",
+            "     /*\n"
+          ],
+          "changed_lines": 18
+        }
+      ]
+    }
+  ]
+}

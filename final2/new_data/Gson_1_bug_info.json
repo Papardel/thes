@@ -1,0 +1,118 @@
+{
+  "bug_id": "1",
+  "failed_tests": {
+    "com.google.gson.functional.TypeVariableTest": [
+      {
+        "methodName": "testSingle",
+        "error": "java.lang.UnsupportedOperationException",
+        "message": "Expecting parameterized type, got class com.google.gson.functional.TypeVariableTest$Bar.",
+        "fail_line": "    String json = gson.toJson(bar1);",
+        "test_source": "  public void testSingle() throws Exception {\n  Gson gson = new Gson();\n  Bar bar1 = new Bar(\"someString\", 1);\n  ArrayList<Integer> arrayList = new ArrayList<Integer>();\n  arrayList.add(1);\n  arrayList.add(2);\n  bar1.map.put(\"key1\", arrayList);\n  bar1.map.put(\"key2\", new ArrayList<Integer>());\n  String json = gson.toJson(bar1);\n  System.out.println(json);\n\n  Bar bar2 = gson.fromJson(json, Bar.class);\n  assertEquals(bar1, bar2);\n  }",
+        "stack": [
+          "TypeInfoFactory.getActualType line 97, TypeInfoFactory.getTypeInfoForField line 54, ObjectNavigator.navigateClassFields line 156, ObjectNavigator.accept line 131, JsonSerializationContextDefault.serialize line 56, Gson.toJsonTree line 231, Gson.toJson line 271, Gson.toJson line 251, TypeVariableTest.testSingle line 41"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/google/gson/TypeInfoFactory.java",
+      "buggy_full_code": "\n\npackage com.google.gson;\n\nimport java.lang.reflect.Field;\nimport java.lang.reflect.GenericArrayType;\nimport java.lang.reflect.ParameterizedType;\nimport java.lang.reflect.Type;\nimport java.lang.reflect.TypeVariable;\nimport java.lang.reflect.WildcardType;\n\n\nfinal class TypeInfoFactory {\n\n  private TypeInfoFactory() {\n    \n  }\n\n  public static TypeInfoArray getTypeInfoForArray(Type type) {\n    Preconditions.checkArgument(TypeUtils.isArray(type));\n    return new TypeInfoArray(type);\n  }\n\n  \n  public static TypeInfo getTypeInfoForField(Field f, Type typeDefiningF) {\n    Class<?> classDefiningF = TypeUtils.toRawClass(typeDefiningF);\n    Type type = f.getGenericType();\n    Type actualType = getActualType(type, typeDefiningF, classDefiningF);\n    return new TypeInfo(actualType);\n  }\n\n  private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass) {\n    if (typeToEvaluate instanceof Class<?>) {\n      return typeToEvaluate;\n    } else if (typeToEvaluate instanceof ParameterizedType) {\n      ParameterizedType castedType = (ParameterizedType) typeToEvaluate;\n      Type owner = castedType.getOwnerType();\n      Type[] actualTypeParameters =\n          extractRealTypes(castedType.getActualTypeArguments(), parentType, rawParentClass);\n      Type rawType = castedType.getRawType();\n      return new ParameterizedTypeImpl(rawType, actualTypeParameters, owner);\n    } else if (typeToEvaluate instanceof GenericArrayType) {\n      GenericArrayType castedType = (GenericArrayType) typeToEvaluate;\n      Type componentType = castedType.getGenericComponentType();\n      Type actualType = getActualType(componentType, parentType, rawParentClass);\n      if (componentType.equals(actualType)) {\n        return castedType;\n      }\n      return actualType instanceof Class<?> ?\n          TypeUtils.wrapWithArray(TypeUtils.toRawClass(actualType))\n          : new GenericArrayTypeImpl(actualType);\n    } else if (typeToEvaluate instanceof TypeVariable<?>) {\n      if (parentType instanceof ParameterizedType) {\n        \n        \n        \n        \n        \n        \n        TypeVariable<?> fieldTypeVariable = (TypeVariable<?>) typeToEvaluate;\n        TypeVariable<?>[] classTypeVariables = rawParentClass.getTypeParameters();\n        ParameterizedType objParameterizedType = (ParameterizedType) parentType;\n        int indexOfActualTypeArgument = getIndex(classTypeVariables, fieldTypeVariable);\n        Type[] actualTypeArguments = objParameterizedType.getActualTypeArguments();\n        return actualTypeArguments[indexOfActualTypeArgument];\n\n\n      }\n\n      throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n          + \".\\n Are you missing the use of TypeToken idiom?\\n See \"\n          + \"http:\n    } else if (typeToEvaluate instanceof WildcardType) {\n      WildcardType castedType = (WildcardType) typeToEvaluate;\n      return getActualType(castedType.getUpperBounds()[0], parentType, rawParentClass);\n    } else {\n      throw new IllegalArgumentException(\"Type \\'\" + typeToEvaluate + \"\\' is not a Class, \"\n          + \"ParameterizedType, GenericArrayType or TypeVariable. Can't extract type.\");\n    }\n  }\n\n\n      \n\n\n\n\n  private static Type[] extractRealTypes( Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass) {\n    Preconditions.checkNotNull(actualTypeArguments);\n\n    Type[] retTypes = new Type[actualTypeArguments.length];\n    for (int i = 0; i < actualTypeArguments.length; ++i) {\n      retTypes[i] = getActualType(actualTypeArguments[i], parentType, rawParentClass);\n    }\n    return retTypes;\n  }\n\n  private static int getIndex(TypeVariable<?>[] types, TypeVariable<?> type) {\n    for (int i = 0; i < types.length; ++i) {\n      if (type.equals(types[i])) {\n        return i;\n      }\n    }\n    throw new IllegalStateException(\n        \"How can the type variable not be present in the class declaration!\");\n  }\n}\n",
+      "fixed_full_code": "\n\npackage com.google.gson;\n\nimport java.lang.reflect.Field;\nimport java.lang.reflect.GenericArrayType;\nimport java.lang.reflect.ParameterizedType;\nimport java.lang.reflect.Type;\nimport java.lang.reflect.TypeVariable;\nimport java.lang.reflect.WildcardType;\n\n\nfinal class TypeInfoFactory {\n\n  private TypeInfoFactory() {\n    \n  }\n\n  public static TypeInfoArray getTypeInfoForArray(Type type) {\n    Preconditions.checkArgument(TypeUtils.isArray(type));\n    return new TypeInfoArray(type);\n  }\n\n  \n  public static TypeInfo getTypeInfoForField(Field f, Type typeDefiningF) {\n    Class<?> classDefiningF = TypeUtils.toRawClass(typeDefiningF);\n    Type type = f.getGenericType();\n    Type actualType = getActualType(type, typeDefiningF, classDefiningF);\n    return new TypeInfo(actualType);\n  }\n\n  private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass) {\n    if (typeToEvaluate instanceof Class<?>) {\n      return typeToEvaluate;\n    } else if (typeToEvaluate instanceof ParameterizedType) {\n      ParameterizedType castedType = (ParameterizedType) typeToEvaluate;\n      Type owner = castedType.getOwnerType();\n      Type[] actualTypeParameters =\n          extractRealTypes(castedType.getActualTypeArguments(), parentType, rawParentClass);\n      Type rawType = castedType.getRawType();\n      return new ParameterizedTypeImpl(rawType, actualTypeParameters, owner);\n    } else if (typeToEvaluate instanceof GenericArrayType) {\n      GenericArrayType castedType = (GenericArrayType) typeToEvaluate;\n      Type componentType = castedType.getGenericComponentType();\n      Type actualType = getActualType(componentType, parentType, rawParentClass);\n      if (componentType.equals(actualType)) {\n        return castedType;\n      }\n      return actualType instanceof Class<?> ?\n          TypeUtils.wrapWithArray(TypeUtils.toRawClass(actualType))\n          : new GenericArrayTypeImpl(actualType);\n    } else if (typeToEvaluate instanceof TypeVariable<?>) {\n      if (parentType instanceof ParameterizedType) {\n        \n        \n        \n        \n        \n        \n        TypeVariable<?> fieldTypeVariable = (TypeVariable<?>) typeToEvaluate;\n        TypeVariable<?>[] classTypeVariables = rawParentClass.getTypeParameters();\n        ParameterizedType objParameterizedType = (ParameterizedType) parentType;\n        int indexOfActualTypeArgument = getIndex(classTypeVariables, fieldTypeVariable);\n        Type[] actualTypeArguments = objParameterizedType.getActualTypeArguments();\n        return actualTypeArguments[indexOfActualTypeArgument];\n      } else if (typeToEvaluate instanceof TypeVariable<?>) {\n        Type theSearchedType = null;\n\n        do {\n          theSearchedType = extractTypeForHierarchy(parentType, (TypeVariable<?>) typeToEvaluate);\n        } while ((theSearchedType != null) && (theSearchedType instanceof TypeVariable<?>));\n\n        if (theSearchedType != null) {\n          return theSearchedType;\n        }\n      }\n\n      throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n          + \".\\n Are you missing the use of TypeToken idiom?\\n See \"\n          + \"http:\n    } else if (typeToEvaluate instanceof WildcardType) {\n      WildcardType castedType = (WildcardType) typeToEvaluate;\n      return getActualType(castedType.getUpperBounds()[0], parentType, rawParentClass);\n    } else {\n      throw new IllegalArgumentException(\"Type \\'\" + typeToEvaluate + \"\\' is not a Class, \"\n          + \"ParameterizedType, GenericArrayType or TypeVariable. Can't extract type.\");\n    }\n  }\n\n  private static Type extractTypeForHierarchy(Type parentType, TypeVariable<?> typeToEvaluate) {\n    Class<?> rawParentType = null;\n    if (parentType instanceof Class<?>) {\n      rawParentType = (Class<?>) parentType;\n    } else if (parentType instanceof ParameterizedType) {\n      ParameterizedType parentTypeAsPT = (ParameterizedType) parentType;\n      rawParentType = (Class<?>) parentTypeAsPT.getRawType();\n    } else {\n      return null;\n    }\n\n    Type superClass = rawParentType.getGenericSuperclass();\n    if (superClass instanceof ParameterizedType\n        && ((ParameterizedType) superClass).getRawType() == typeToEvaluate.getGenericDeclaration()) {\n      \n      TypeVariable<?>[] classTypeVariables =\n          ((Class<?>) ((ParameterizedType) superClass).getRawType()).getTypeParameters();\n      int indexOfActualTypeArgument = getIndex(classTypeVariables, typeToEvaluate);\n\n      Type[] actualTypeArguments = null;\n      if (parentType instanceof Class<?>) {\n        actualTypeArguments = ((ParameterizedType) superClass).getActualTypeArguments();\n      } else if (parentType instanceof ParameterizedType) {\n        actualTypeArguments = ((ParameterizedType) parentType).getActualTypeArguments();\n      } else {\n        return null;\n      }\n\n      return actualTypeArguments[indexOfActualTypeArgument];\n    }\n\n    Type searchedType = null;\n    if (superClass != null) {\n      searchedType = extractTypeForHierarchy(superClass, typeToEvaluate);\n    }\n    return searchedType;\n  }\n\n  private static Type[] extractRealTypes( Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass) {\n    Preconditions.checkNotNull(actualTypeArguments);\n\n    Type[] retTypes = new Type[actualTypeArguments.length];\n    for (int i = 0; i < actualTypeArguments.length; ++i) {\n      retTypes[i] = getActualType(actualTypeArguments[i], parentType, rawParentClass);\n    }\n    return retTypes;\n  }\n\n  private static int getIndex(TypeVariable<?>[] types, TypeVariable<?> type) {\n    for (int i = 0; i < types.length; ++i) {\n      if (type.equals(types[i])) {\n        return i;\n      }\n    }\n    throw new IllegalStateException(\n        \"How can the type variable not be present in the class declaration!\");\n  }\n}\n",
+      "buggy_signatures": [
+        "private TypeInfoFactory()",
+        "public static TypeInfoArray getTypeInfoForArray(Type type)",
+        "public static TypeInfo getTypeInfoForField(Field f, Type typeDefiningF)",
+        "private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass)",
+        "private static Type[] extractRealTypes( Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass)",
+        "private static int getIndex(TypeVariable<?>[] types, TypeVariable<?> type)"
+      ],
+      "fixed_signatures": [
+        "private TypeInfoFactory()",
+        "public static TypeInfoArray getTypeInfoForArray(Type type)",
+        "public static TypeInfo getTypeInfoForField(Field f, Type typeDefiningF)",
+        "private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass)",
+        "private static Type extractTypeForHierarchy(Type parentType, TypeVariable<?> typeToEvaluate)",
+        "private static Type[] extractRealTypes( Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass)",
+        "private static int getIndex(TypeVariable<?>[] types, TypeVariable<?> type)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass) {\n  if (typeToEvaluate instanceof Class<?>) {\n  return typeToEvaluate;\n  } else if (typeToEvaluate instanceof ParameterizedType) {\n  ParameterizedType castedType = (ParameterizedType) typeToEvaluate;\n  Type owner = castedType.getOwnerType();\n  Type[] actualTypeParameters =\n  extractRealTypes(castedType.getActualTypeArguments(), parentType, rawParentClass);\n  Type rawType = castedType.getRawType();\n  return new ParameterizedTypeImpl(rawType, actualTypeParameters, owner);\n  } else if (typeToEvaluate instanceof GenericArrayType) {\n  GenericArrayType castedType = (GenericArrayType) typeToEvaluate;\n  Type componentType = castedType.getGenericComponentType();\n  Type actualType = getActualType(componentType, parentType, rawParentClass);\n  if (componentType.equals(actualType)) {\n  return castedType;\n  }\n  return actualType instanceof Class<?> ?\n  TypeUtils.wrapWithArray(TypeUtils.toRawClass(actualType))\n  : new GenericArrayTypeImpl(actualType);\n  } else if (typeToEvaluate instanceof TypeVariable<?>) {\n  if (parentType instanceof ParameterizedType) {\n  \n  \n  \n  \n  \n  \n  TypeVariable<?> fieldTypeVariable = (TypeVariable<?>) typeToEvaluate;\n  TypeVariable<?>[] classTypeVariables = rawParentClass.getTypeParameters();\n  ParameterizedType objParameterizedType = (ParameterizedType) parentType;\n  int indexOfActualTypeArgument = getIndex(classTypeVariables, fieldTypeVariable);\n  Type[] actualTypeArguments = objParameterizedType.getActualTypeArguments();\n  return actualTypeArguments[indexOfActualTypeArgument];\n\n\n  }\n\n  throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n  + \".\\n Are you missing the use of TypeToken idiom?\\n See \"\n  + \"http:\n  } else if (typeToEvaluate instanceof WildcardType) {\n  WildcardType castedType = (WildcardType) typeToEvaluate;\n  return getActualType(castedType.getUpperBounds()[0], parentType, rawParentClass);\n  } else {\n  throw new IllegalArgumentException(\"Type \\'\" + typeToEvaluate + \"\\' is not a Class, \"\n  + \"ParameterizedType, GenericArrayType or TypeVariable. Can't extract type.\");\n  }\n  }",
+          "fixed_method": "  private static Type getActualType( Type typeToEvaluate, Type parentType, Class<?> rawParentClass) {\n  if (typeToEvaluate instanceof Class<?>) {\n  return typeToEvaluate;\n  } else if (typeToEvaluate instanceof ParameterizedType) {\n  ParameterizedType castedType = (ParameterizedType) typeToEvaluate;\n  Type owner = castedType.getOwnerType();\n  Type[] actualTypeParameters =\n  extractRealTypes(castedType.getActualTypeArguments(), parentType, rawParentClass);\n  Type rawType = castedType.getRawType();\n  return new ParameterizedTypeImpl(rawType, actualTypeParameters, owner);\n  } else if (typeToEvaluate instanceof GenericArrayType) {\n  GenericArrayType castedType = (GenericArrayType) typeToEvaluate;\n  Type componentType = castedType.getGenericComponentType();\n  Type actualType = getActualType(componentType, parentType, rawParentClass);\n  if (componentType.equals(actualType)) {\n  return castedType;\n  }\n  return actualType instanceof Class<?> ?\n  TypeUtils.wrapWithArray(TypeUtils.toRawClass(actualType))\n  : new GenericArrayTypeImpl(actualType);\n  } else if (typeToEvaluate instanceof TypeVariable<?>) {\n  if (parentType instanceof ParameterizedType) {\n  \n  \n  \n  \n  \n  \n  TypeVariable<?> fieldTypeVariable = (TypeVariable<?>) typeToEvaluate;\n  TypeVariable<?>[] classTypeVariables = rawParentClass.getTypeParameters();\n  ParameterizedType objParameterizedType = (ParameterizedType) parentType;\n  int indexOfActualTypeArgument = getIndex(classTypeVariables, fieldTypeVariable);\n  Type[] actualTypeArguments = objParameterizedType.getActualTypeArguments();\n  return actualTypeArguments[indexOfActualTypeArgument];\n  } else if (typeToEvaluate instanceof TypeVariable<?>) {\n  Type theSearchedType = null;\n\n  do {\n  theSearchedType = extractTypeForHierarchy(parentType, (TypeVariable<?>) typeToEvaluate);\n  } while ((theSearchedType != null) && (theSearchedType instanceof TypeVariable<?>));\n\n  if (theSearchedType != null) {\n  return theSearchedType;\n  }\n  }\n\n  throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n  + \".\\n Are you missing the use of TypeToken idiom?\\n See \"\n  + \"http:\n  } else if (typeToEvaluate instanceof WildcardType) {\n  WildcardType castedType = (WildcardType) typeToEvaluate;\n  return getActualType(castedType.getUpperBounds()[0], parentType, rawParentClass);\n  } else {\n  throw new IllegalArgumentException(\"Type \\'\" + typeToEvaluate + \"\\' is not a Class, \"\n  + \"ParameterizedType, GenericArrayType or TypeVariable. Can't extract type.\");\n  }\n  }",
+          "diff": [
+            "@@ -90,8 +90,16 @@",
+            "         int indexOfActualTypeArgument = getIndex(classTypeVariables, fieldTypeVariable);\n",
+            "         Type[] actualTypeArguments = objParameterizedType.getActualTypeArguments();\n",
+            "         return actualTypeArguments[indexOfActualTypeArgument];\n",
+            "+      } else if (typeToEvaluate instanceof TypeVariable<?>) {\n",
+            "+        Type theSearchedType = null;\n",
+            " \n",
+            "+        do {\n",
+            "+          theSearchedType = extractTypeForHierarchy(parentType, (TypeVariable<?>) typeToEvaluate);\n",
+            "+        } while ((theSearchedType != null) && (theSearchedType instanceof TypeVariable<?>));\n",
+            " \n",
+            "+        if (theSearchedType != null) {\n",
+            "+          return theSearchedType;\n",
+            "+        }\n",
+            "       }\n",
+            " \n",
+            "       throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n"
+          ],
+          "changed_lines": 8
+        },
+        {
+          "buggy_method": "  private static Type[] extractRealTypes( Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass) {\n  Preconditions.checkNotNull(actualTypeArguments);\n\n  Type[] retTypes = new Type[actualTypeArguments.length];\n  for (int i = 0; i < actualTypeArguments.length; ++i) {\n  retTypes[i] = getActualType(actualTypeArguments[i], parentType, rawParentClass);\n  }\n  return retTypes;\n  }",
+          "fixed_method": "  private static Type extractTypeForHierarchy(Type parentType, TypeVariable<?> typeToEvaluate) {\n  Class<?> rawParentType = null;\n  if (parentType instanceof Class<?>) {\n  rawParentType = (Class<?>) parentType;\n  } else if (parentType instanceof ParameterizedType) {\n  ParameterizedType parentTypeAsPT = (ParameterizedType) parentType;\n  rawParentType = (Class<?>) parentTypeAsPT.getRawType();\n  } else {\n  return null;\n  }\n\n  Type superClass = rawParentType.getGenericSuperclass();\n  if (superClass instanceof ParameterizedType\n  && ((ParameterizedType) superClass).getRawType() == typeToEvaluate.getGenericDeclaration()) {\n  \n  TypeVariable<?>[] classTypeVariables =\n  ((Class<?>) ((ParameterizedType) superClass).getRawType()).getTypeParameters();\n  int indexOfActualTypeArgument = getIndex(classTypeVariables, typeToEvaluate);\n\n  Type[] actualTypeArguments = null;\n  if (parentType instanceof Class<?>) {\n  actualTypeArguments = ((ParameterizedType) superClass).getActualTypeArguments();\n  } else if (parentType instanceof ParameterizedType) {\n  actualTypeArguments = ((ParameterizedType) parentType).getActualTypeArguments();\n  } else {\n  return null;\n  }\n\n  return actualTypeArguments[indexOfActualTypeArgument];\n  }\n\n  Type searchedType = null;\n  if (superClass != null) {\n  searchedType = extractTypeForHierarchy(superClass, typeToEvaluate);\n  }\n  return searchedType;\n  }",
+          "diff": [
+            "@@ -106,11 +114,43 @@",
+            "     }\n",
+            "   }\n",
+            " \n",
+            "+  private static Type extractTypeForHierarchy(Type parentType, TypeVariable<?> typeToEvaluate) {\n",
+            "+    Class<?> rawParentType = null;\n",
+            "+    if (parentType instanceof Class<?>) {\n",
+            "+      rawParentType = (Class<?>) parentType;\n",
+            "+    } else if (parentType instanceof ParameterizedType) {\n",
+            "+      ParameterizedType parentTypeAsPT = (ParameterizedType) parentType;\n",
+            "+      rawParentType = (Class<?>) parentTypeAsPT.getRawType();\n",
+            "+    } else {\n",
+            "+      return null;\n",
+            "+    }\n",
+            " \n",
+            "+    Type superClass = rawParentType.getGenericSuperclass();\n",
+            "+    if (superClass instanceof ParameterizedType\n",
+            "+        && ((ParameterizedType) superClass).getRawType() == typeToEvaluate.getGenericDeclaration()) {\n",
+            "       // Evaluate type on this type\n",
+            "+      TypeVariable<?>[] classTypeVariables =\n",
+            "+          ((Class<?>) ((ParameterizedType) superClass).getRawType()).getTypeParameters();\n",
+            "+      int indexOfActualTypeArgument = getIndex(classTypeVariables, typeToEvaluate);\n",
+            " \n",
+            "+      Type[] actualTypeArguments = null;\n",
+            "+      if (parentType instanceof Class<?>) {\n",
+            "+        actualTypeArguments = ((ParameterizedType) superClass).getActualTypeArguments();\n",
+            "+      } else if (parentType instanceof ParameterizedType) {\n",
+            "+        actualTypeArguments = ((ParameterizedType) parentType).getActualTypeArguments();\n",
+            "+      } else {\n",
+            "+        return null;\n",
+            "+      }\n",
+            " \n",
+            "+      return actualTypeArguments[indexOfActualTypeArgument];\n",
+            "+    }\n",
+            " \n",
+            "+    Type searchedType = null;\n",
+            "+    if (superClass != null) {\n",
+            "+      searchedType = extractTypeForHierarchy(superClass, typeToEvaluate);\n",
+            "+    }\n",
+            "+    return searchedType;\n",
+            "+  }\n",
+            " \n",
+            "   private static Type[] extractRealTypes(\n",
+            "       Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass) {\n"
+          ],
+          "changed_lines": 32
+        }
+      ]
+    }
+  ]
+}

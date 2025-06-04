@@ -1,0 +1,82 @@
+{
+  "bug_id": "5",
+  "failed_tests": {
+    "com.fasterxml.jackson.core.TestJsonPointer": [
+      {
+        "methodName": "testWonkyNumber173",
+        "error": "java.lang.NumberFormatException",
+        "message": "For input string: \"1e0\"",
+        "fail_line": "        JsonPointer ptr = JsonPointer.compile(\"/1e0\");",
+        "test_source": "  public void testWonkyNumber173() throws Exception {\n  JsonPointer ptr = JsonPointer.compile(\"/1e0\");\n  assertFalse(ptr.matches());\n  }",
+        "stack": [
+          "NumberInput.parseInt line 91, JsonPointer._parseIndex line 204, JsonPointer.<init> line 70, JsonPointer._parseTail line 225, JsonPointer.compile line 98, TestJsonPointer.testWonkyNumber173 line 41"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/core/JsonPointer.java",
+      "buggy_full_code": "package com.fasterxml.jackson.core;\n\nimport com.fasterxml.jackson.core.io.NumberInput;\n\n\npublic class JsonPointer { protected final static JsonPointer EMPTY = new JsonPointer(); protected final JsonPointer _nextSegment; protected final String _asString; protected final String _matchingPropertyName; protected final int _matchingElementIndex; protected JsonPointer() {\n        _nextSegment = null;\n        _matchingPropertyName = \"\";\n        _matchingElementIndex = -1;\n        _asString = \"\";\n    }\n\n    \n    protected JsonPointer(String fullString, String segment, JsonPointer next) {\n        _asString = fullString;\n        _nextSegment = next;\n        \n        _matchingPropertyName = segment;\n        _matchingElementIndex = _parseIndex(segment);\n    }\n    \n    \n    \n    \n    public static JsonPointer compile(String input) throws IllegalArgumentException {\n        \n        if ((input == null) || input.length() == 0) {\n            return EMPTY;\n        }\n        \n        if (input.charAt(0) != '/') {\n            throw new IllegalArgumentException(\"Invalid input: JSON Pointer expression must start with '/': \"+\"\\\"\"+input+\"\\\"\");\n        }\n        return _parseTail(input);\n    }\n\n    \n    public static JsonPointer valueOf(String input) { return compile(input); }\n\n    \n    \n    \n    \n\n    public boolean matches() { return _nextSegment == null; }\n    public String getMatchingProperty() { return _matchingPropertyName; }\n    public int getMatchingIndex() { return _matchingElementIndex; }\n    public boolean mayMatchProperty() { return _matchingPropertyName != null; }\n    public boolean mayMatchElement() { return _matchingElementIndex >= 0; }\n\n    public JsonPointer matchProperty(String name) {\n        if (_nextSegment == null || !_matchingPropertyName.equals(name)) {\n            return null;\n        }\n        return _nextSegment;\n    }\n\n    public JsonPointer matchElement (int index) {\n        if ((index != _matchingElementIndex) || (index < 0)) {\n            return null;\n        }\n        return _nextSegment;\n    }\n\n    \n    public JsonPointer tail() {\n        return _nextSegment;\n    }\n    \n    \n\n    @Override public String toString() { return _asString; }\n    @Override public int hashCode() { return _asString.hashCode(); }\n\n    @Override public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (!(o instanceof JsonPointer)) return false;\n        return _asString.equals(((JsonPointer) o)._asString);\n    }\n    \n    \n\n    private final static int _parseIndex(String str) {\n        final int len = str.length();\n        \n        \n        if (len == 0 || len > 10) {\n            return -1;\n        }\n        for (int i = 0; i < len; ++i) {\n            char c = str.charAt(i++);\n            if (c > '9' || c < '0') {\n                return -1;\n            }\n        }\n        if (len == 10) {\n            long l = NumberInput.parseLong(str);\n            if (l > Integer.MAX_VALUE) {\n                return -1;\n            }\n        }\n        return NumberInput.parseInt(str);\n    }\n    \n    protected static JsonPointer _parseTail(String input) {\n        final int end = input.length();\n\n        \n        for (int i = 1; i < end; ) {\n            char c = input.charAt(i);\n            if (c == '/') { \n                return new JsonPointer(input, input.substring(1, i),\n                        _parseTail(input.substring(i)));\n            }\n            ++i;\n            \n            if (c == '~' && i < end) { \n                return _parseQuotedTail(input, i);\n            }\n            \n        }\n        \n        return new JsonPointer(input, input.substring(1), EMPTY);\n    }\n\n    \n    protected static JsonPointer _parseQuotedTail(String input, int i) {\n        final int end = input.length();\n        StringBuilder sb = new StringBuilder(Math.max(16, end));\n        if (i > 2) {\n            sb.append(input, 1, i-1);\n        }\n        _appendEscape(sb, input.charAt(i++));\n        while (i < end) {\n            char c = input.charAt(i);\n            if (c == '/') { \n                return new JsonPointer(input, sb.toString(),\n                        _parseTail(input.substring(i))); \n            }\n            ++i;\n            if (c == '~' && i < end) {\n                _appendEscape(sb, input.charAt(i++));\n                continue;\n            }\n            sb.append(c);\n        }\n        \n        return new JsonPointer(input, sb.toString(), EMPTY);\n    }\n    \n    private static void _appendEscape(StringBuilder sb, char c) {\n        if (c == '0') {\n            c = '~';\n        } else if (c == '1') {\n            c = '/';\n        } else {\n            sb.append('~');\n        }\n        sb.append(c);\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.core;\n\nimport com.fasterxml.jackson.core.io.NumberInput;\n\n\npublic class JsonPointer { protected final static JsonPointer EMPTY = new JsonPointer(); protected final JsonPointer _nextSegment; protected final String _asString; protected final String _matchingPropertyName; protected final int _matchingElementIndex; protected JsonPointer() {\n        _nextSegment = null;\n        _matchingPropertyName = \"\";\n        _matchingElementIndex = -1;\n        _asString = \"\";\n    }\n\n    \n    protected JsonPointer(String fullString, String segment, JsonPointer next) {\n        _asString = fullString;\n        _nextSegment = next;\n        \n        _matchingPropertyName = segment;\n        _matchingElementIndex = _parseIndex(segment);\n    }\n    \n    \n    \n    \n    public static JsonPointer compile(String input) throws IllegalArgumentException {\n        \n        if ((input == null) || input.length() == 0) {\n            return EMPTY;\n        }\n        \n        if (input.charAt(0) != '/') {\n            throw new IllegalArgumentException(\"Invalid input: JSON Pointer expression must start with '/': \"+\"\\\"\"+input+\"\\\"\");\n        }\n        return _parseTail(input);\n    }\n\n    \n    public static JsonPointer valueOf(String input) { return compile(input); }\n\n    \n    \n    \n    \n\n    public boolean matches() { return _nextSegment == null; }\n    public String getMatchingProperty() { return _matchingPropertyName; }\n    public int getMatchingIndex() { return _matchingElementIndex; }\n    public boolean mayMatchProperty() { return _matchingPropertyName != null; }\n    public boolean mayMatchElement() { return _matchingElementIndex >= 0; }\n\n    public JsonPointer matchProperty(String name) {\n        if (_nextSegment == null || !_matchingPropertyName.equals(name)) {\n            return null;\n        }\n        return _nextSegment;\n    }\n\n    public JsonPointer matchElement (int index) {\n        if ((index != _matchingElementIndex) || (index < 0)) {\n            return null;\n        }\n        return _nextSegment;\n    }\n\n    \n    public JsonPointer tail() {\n        return _nextSegment;\n    }\n    \n    \n\n    @Override public String toString() { return _asString; }\n    @Override public int hashCode() { return _asString.hashCode(); }\n\n    @Override public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        if (!(o instanceof JsonPointer)) return false;\n        return _asString.equals(((JsonPointer) o)._asString);\n    }\n    \n    \n\n    private final static int _parseIndex(String str) {\n        final int len = str.length();\n        \n        \n        if (len == 0 || len > 10) {\n            return -1;\n        }\n        for (int i = 0; i < len; ++i) {\n            char c = str.charAt(i);\n            if (c > '9' || c < '0') {\n                return -1;\n            }\n        }\n        if (len == 10) {\n            long l = NumberInput.parseLong(str);\n            if (l > Integer.MAX_VALUE) {\n                return -1;\n            }\n        }\n        return NumberInput.parseInt(str);\n    }\n    \n    protected static JsonPointer _parseTail(String input) {\n        final int end = input.length();\n\n        \n        for (int i = 1; i < end; ) {\n            char c = input.charAt(i);\n            if (c == '/') { \n                return new JsonPointer(input, input.substring(1, i),\n                        _parseTail(input.substring(i)));\n            }\n            ++i;\n            \n            if (c == '~' && i < end) { \n                return _parseQuotedTail(input, i);\n            }\n            \n        }\n        \n        return new JsonPointer(input, input.substring(1), EMPTY);\n    }\n\n    \n    protected static JsonPointer _parseQuotedTail(String input, int i) {\n        final int end = input.length();\n        StringBuilder sb = new StringBuilder(Math.max(16, end));\n        if (i > 2) {\n            sb.append(input, 1, i-1);\n        }\n        _appendEscape(sb, input.charAt(i++));\n        while (i < end) {\n            char c = input.charAt(i);\n            if (c == '/') { \n                return new JsonPointer(input, sb.toString(),\n                        _parseTail(input.substring(i))); \n            }\n            ++i;\n            if (c == '~' && i < end) {\n                _appendEscape(sb, input.charAt(i++));\n                continue;\n            }\n            sb.append(c);\n        }\n        \n        return new JsonPointer(input, sb.toString(), EMPTY);\n    }\n    \n    private static void _appendEscape(StringBuilder sb, char c) {\n        if (c == '0') {\n            c = '~';\n        } else if (c == '1') {\n            c = '/';\n        } else {\n            sb.append('~');\n        }\n        sb.append(c);\n    }\n}\n",
+      "buggy_signatures": [
+        "protected JsonPointer(String fullString, String segment, JsonPointer next)",
+        "public static JsonPointer compile(String input) throws IllegalArgumentException",
+        "public static JsonPointer valueOf(String input)",
+        "public boolean matches()",
+        "public String getMatchingProperty()",
+        "public int getMatchingIndex()",
+        "public boolean mayMatchProperty()",
+        "public boolean mayMatchElement()",
+        "public JsonPointer matchProperty(String name)",
+        "public JsonPointer matchElement (int index)",
+        "public JsonPointer tail()",
+        "public String toString()",
+        "public int hashCode()",
+        "public boolean equals(Object o)",
+        "private final static int _parseIndex(String str)",
+        "protected static JsonPointer _parseTail(String input)",
+        "protected static JsonPointer _parseQuotedTail(String input, int i)",
+        "private static void _appendEscape(StringBuilder sb, char c)"
+      ],
+      "fixed_signatures": [
+        "protected JsonPointer(String fullString, String segment, JsonPointer next)",
+        "public static JsonPointer compile(String input) throws IllegalArgumentException",
+        "public static JsonPointer valueOf(String input)",
+        "public boolean matches()",
+        "public String getMatchingProperty()",
+        "public int getMatchingIndex()",
+        "public boolean mayMatchProperty()",
+        "public boolean mayMatchElement()",
+        "public JsonPointer matchProperty(String name)",
+        "public JsonPointer matchElement (int index)",
+        "public JsonPointer tail()",
+        "public String toString()",
+        "public int hashCode()",
+        "public boolean equals(Object o)",
+        "private final static int _parseIndex(String str)",
+        "protected static JsonPointer _parseTail(String input)",
+        "protected static JsonPointer _parseQuotedTail(String input, int i)",
+        "private static void _appendEscape(StringBuilder sb, char c)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private final static int _parseIndex(String str) {\n  final int len = str.length();\n  \n  \n  if (len == 0 || len > 10) {\n  return -1;\n  }\n  for (int i = 0; i < len; ++i) {\n  char c = str.charAt(i++);\n  if (c > '9' || c < '0') {\n  return -1;\n  }\n  }\n  if (len == 10) {\n  long l = NumberInput.parseLong(str);\n  if (l > Integer.MAX_VALUE) {\n  return -1;\n  }\n  }\n  return NumberInput.parseInt(str);\n  }",
+          "fixed_method": "  private final static int _parseIndex(String str) {\n  final int len = str.length();\n  \n  \n  if (len == 0 || len > 10) {\n  return -1;\n  }\n  for (int i = 0; i < len; ++i) {\n  char c = str.charAt(i);\n  if (c > '9' || c < '0') {\n  return -1;\n  }\n  }\n  if (len == 10) {\n  long l = NumberInput.parseLong(str);\n  if (l > Integer.MAX_VALUE) {\n  return -1;\n  }\n  }\n  return NumberInput.parseInt(str);\n  }",
+          "diff": [
+            "@@ -190,7 +190,7 @@",
+            "             return -1;\n",
+            "         }\n",
+            "         for (int i = 0; i < len; ++i) {\n",
+            "-            char c = str.charAt(i++);\n",
+            "+            char c = str.charAt(i);\n",
+            "             if (c > '9' || c < '0') {\n",
+            "                 return -1;\n",
+            "             }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

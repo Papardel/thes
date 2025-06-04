@@ -1,0 +1,190 @@
+{
+  "bug_id": "3",
+  "failed_tests": {
+    "org.mockito.internal.invocation.InvocationMatcherTest": [
+      {
+        "methodName": "should_capture_varargs_as_vararg",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[['a', 'b']]> but was:<[[1]]>",
+        "fail_line": "        Assertions.assertThat(m.getAllValues()).containsExactly(\"a\", \"b\");",
+        "test_source": "  public void should_capture_varargs_as_vararg() throws Exception {\n  //given\n  mock.mixedVarargs(1, \"a\", \"b\");\n  Invocation invocation = getLastInvocation();\n  CapturingMatcher m = new CapturingMatcher();\n  InvocationMatcher invocationMatcher = new InvocationMatcher(invocation, (List) asList(new Equals(1), new LocalizedMatcher(m)));\n\n  //when\n  invocationMatcher.captureArgumentsFrom(invocation);\n\n  //then\n  Assertions.assertThat(m.getAllValues()).containsExactly(\"a\", \"b\");\n  }",
+        "stack": [
+          "ConstructorInvoker.newInstance line 34, ComparisonFailureFactory.newComparisonFailure line 60, ComparisonFailureFactory.comparisonFailure line 46, Fail.comparisonFailed line 83, Fail.failIfNotEqual line 71, GenericAssert.assertEqualTo line 271, ListAssert.isEqualTo line 360, ListAssert.containsExactly line 350, InvocationMatcherTest.should_capture_varargs_as_vararg line 154"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.varargs.VarargsAndAnyObjectPicksUpExtraInvocationsTest": [
+      {
+        "methodName": "shouldVerifyCorrectlyNumberOfInvocationsWithVarargs",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 2 out of bounds for length 2",
+        "fail_line": "        verify(table).newRow(anyString(), eq(\"foo\"), anyString(), anyString());",
+        "test_source": "  public void shouldVerifyCorrectlyNumberOfInvocationsWithVarargs() {\n  //when\n  table.newRow(\"qux\", \"foo\", \"bar\", \"baz\");\n  table.newRow(\"abc\", \"def\");\n  \n  //then\n  verify(table).newRow(anyString(), eq(\"foo\"), anyString(), anyString());\n  verify(table).newRow(anyString(), anyString());\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 130, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VarargsAndAnyObjectPicksUpExtraInvocationsTest.shouldVerifyCorrectlyNumberOfInvocationsWithVarargs line 50"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.varargs.VarargsNotPlayingWithAnyObjectTest": [
+      {
+        "methodName": "shouldMatchAnyVararg",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 1 out of bounds for length 1",
+        "fail_line": "        verify(mock).run(anyString(), anyString());",
+        "test_source": "  public void shouldMatchAnyVararg() {\n  mock.run(\"a\", \"b\");\n\n  verify(mock).run(anyString(), anyString());\n  verify(mock).run((String) anyObject(), (String) anyObject());\n\n  verify(mock).run((String[]) anyVararg());\n  \n  verify(mock, never()).run();\n  verify(mock, never()).run(anyString(), eq(\"f\"));\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 130, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, VarargsNotPlayingWithAnyObjectTest.shouldMatchAnyVararg line 28"
+        ]
+      }
+    ],
+    "org.mockitousage.matchers.CapturingArgumentsTest": [
+      {
+        "methodName": "should_capture_all_vararg",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[['a', 'b', 'c', 'again ?!']]> but was:<[[42, 42]]>",
+        "fail_line": "        Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly(\"a\", \"b\", \"c\", \"again ?!\");",
+        "test_source": "  public void should_capture_all_vararg() throws Exception {\n  // given\n  ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);\n\n  // when\n  mock.mixedVarargs(42, \"a\", \"b\", \"c\");\n  mock.mixedVarargs(42, \"again ?!\");\n\n  // then\n  verify(mock, times(2)).mixedVarargs(any(), argumentCaptor.capture());\n\n  Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly(\"a\", \"b\", \"c\", \"again ?!\");\n  }",
+        "stack": [
+          "ConstructorInvoker.newInstance line 34, ComparisonFailureFactory.newComparisonFailure line 60, ComparisonFailureFactory.comparisonFailure line 46, Fail.comparisonFailed line 83, Fail.failIfNotEqual line 71, GenericAssert.assertEqualTo line 271, ListAssert.isEqualTo line 360, ListAssert.containsExactly line 350, CapturingArgumentsTest.should_capture_all_vararg line 278"
+        ]
+      },
+      {
+        "methodName": "captures_correctly_when_captor_used_multiple_times",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 2 out of bounds for length 2",
+        "fail_line": "        verify(mock).mixedVarargs(any(), argumentCaptor.capture(), argumentCaptor.capture(), argumentCaptor.capture());",
+        "test_source": "  public void captures_correctly_when_captor_used_multiple_times() throws Exception {\n  // given\n  ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);\n\n  // when\n  mock.mixedVarargs(42, \"a\", \"b\", \"c\");\n\n  // then\n  // this is only for backwards compatibility. It does not make sense in real to do so.\n  verify(mock).mixedVarargs(any(), argumentCaptor.capture(), argumentCaptor.capture(), argumentCaptor.capture());\n  Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly(\"a\", \"b\", \"c\");\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 130, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, CapturingArgumentsTest.captures_correctly_when_captor_used_multiple_times line 304"
+        ]
+      },
+      {
+        "methodName": "should_capture_vararg",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[['a', 'b', 'c']]> but was:<[[42]]>",
+        "fail_line": "        Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly(\"a\", \"b\", \"c\");",
+        "test_source": "  public void should_capture_vararg() throws Exception {\n  // given\n  ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);\n\n  // when\n  mock.mixedVarargs(42, \"a\", \"b\", \"c\");\n\n  // then\n  verify(mock).mixedVarargs(any(), argumentCaptor.capture());\n  Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly(\"a\", \"b\", \"c\");\n  }",
+        "stack": [
+          "ConstructorInvoker.newInstance line 34, ComparisonFailureFactory.newComparisonFailure line 60, ComparisonFailureFactory.comparisonFailure line 46, Fail.comparisonFailed line 83, Fail.failIfNotEqual line 71, GenericAssert.assertEqualTo line 271, ListAssert.isEqualTo line 360, ListAssert.containsExactly line 350, CapturingArgumentsTest.should_capture_vararg line 263"
+        ]
+      },
+      {
+        "methodName": "captures_correctly_when_captor_used_on_pure_vararg_method",
+        "error": "java.lang.ArrayIndexOutOfBoundsException",
+        "message": "Index 1 out of bounds for length 1",
+        "fail_line": "        verify(mock).varargs(eq(42), argumentCaptor.capture());",
+        "test_source": "  public void captures_correctly_when_captor_used_on_pure_vararg_method() throws Exception {\n  // given\n  ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);\n\n  // when\n  mock.varargs(42, \"capturedValue\");\n\n  // then\n  verify(mock).varargs(eq(42), argumentCaptor.capture());\n  Assertions.assertThat(argumentCaptor.getValue()).contains(\"capturedValue\");\n  }",
+        "stack": [
+          "InvocationMatcher.captureArgumentsFrom line 130, InvocationMarker.markVerified line 22, InvocationMarker.markVerified line 16, NumberOfInvocationsChecker.check line 48, Times.verify line 39, MockAwareVerificationMode.verify line 21, MockHandlerImpl.handle line 76, NullResultGuardian.handle line 29, InvocationNotifierHandler.handle line 37, MockMethodInterceptor.doIntercept line 82, MockMethodInterceptor.interceptAbstract line 70, CapturingArgumentsTest.captures_correctly_when_captor_used_on_pure_vararg_method line 317"
+        ]
+      },
+      {
+        "methodName": "should_capture_byte_vararg_by_creating_captor_with_primitive_wrapper",
+        "error": "java.lang.ClassCastException",
+        "message": "class [B cannot be cast to class java.lang.Byte ([B and java.lang.Byte are in module java.base of loader 'bootstrap')",
+        "fail_line": "        assertEquals((byte) 2, (byte) argumentCaptor.getValue());",
+        "test_source": "  public void should_capture_byte_vararg_by_creating_captor_with_primitive_wrapper() throws Exception {\n  // given\n  ArgumentCaptor<Byte> argumentCaptor = ArgumentCaptor.forClass(Byte.class);\n\n  // when\n  mock.varargsbyte((byte) 1, (byte) 2);\n\n  // then\n  verify(mock).varargsbyte(argumentCaptor.capture());\n  assertEquals((byte) 2, (byte) argumentCaptor.getValue());\n  Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly((byte) 1, (byte) 2);\n  }",
+        "stack": [
+          "CapturingArgumentsTest.should_capture_byte_vararg_by_creating_captor_with_primitive_wrapper line 249"
+        ]
+      },
+      {
+        "methodName": "should_capture_byte_vararg_by_creating_captor_with_primitive",
+        "error": "java.lang.ClassCastException",
+        "message": "class [B cannot be cast to class java.lang.Byte ([B and java.lang.Byte are in module java.base of loader 'bootstrap')",
+        "fail_line": "        assertEquals((byte) 2, (byte) argumentCaptor.getValue());",
+        "test_source": "  public void should_capture_byte_vararg_by_creating_captor_with_primitive() throws Exception {\n  // given\n  ArgumentCaptor<Byte> argumentCaptor = ArgumentCaptor.forClass(byte.class);\n\n  // when\n  mock.varargsbyte((byte) 1, (byte) 2);\n\n  // then\n  verify(mock).varargsbyte(argumentCaptor.capture());\n  assertEquals((byte) 2, (byte) argumentCaptor.getValue());\n  Assertions.assertThat(argumentCaptor.getAllValues()).containsExactly((byte) 1, (byte) 2);\n  }",
+        "stack": [
+          "CapturingArgumentsTest.should_capture_byte_vararg_by_creating_captor_with_primitive line 235"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/invocation/InvocationMatcher.java",
+      "buggy_full_code": "\n\npackage org.mockito.internal.invocation;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.lang.reflect.Method;\nimport java.util.*;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.CapturesArguments;\nimport org.mockito.internal.matchers.MatcherDecorator;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.invocation.DescribedInvocation;\nimport org.mockito.invocation.Invocation;\nimport org.mockito.invocation.Location;\n\n@SuppressWarnings(\"unchecked\")\npublic class InvocationMatcher implements DescribedInvocation, CapturesArgumensFromInvocation, Serializable { private static final long serialVersionUID = -3047126096857467610L; private final Invocation invocation; private final List<Matcher> matchers; public InvocationMatcher(Invocation invocation, List<Matcher> matchers) {\n        this.invocation = invocation;\n        if (matchers.isEmpty()) {\n            this.matchers = ArgumentsProcessor.argumentsToMatchers(invocation.getArguments());\n        } else {\n            this.matchers = matchers;\n        }\n    }\n    \n    public InvocationMatcher(Invocation invocation) {\n        this(invocation, Collections.<Matcher>emptyList());\n    }\n\n    public Method getMethod() {\n        return invocation.getMethod();\n    }\n    \n    public Invocation getInvocation() {\n        return this.invocation;\n    }\n    \n    public List<Matcher> getMatchers() {\n        return this.matchers;\n    }\n    \n    public String toString() {\n        return new PrintSettings().print(matchers, invocation);\n    }\n\n    public boolean matches(Invocation actual) {\n        return invocation.getMock().equals(actual.getMock())\n                && hasSameMethod(actual)\n                && new ArgumentsComparator().argumentsMatch(this, actual);\n    }\n\n    private boolean safelyArgumentsMatch(Object[] actualArgs) {\n        try {\n            return new ArgumentsComparator().argumentsMatch(this, actualArgs);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    \n    public boolean hasSimilarMethod(Invocation candidate) {\n        String wantedMethodName = getMethod().getName();\n        String currentMethodName = candidate.getMethod().getName();\n        \n        final boolean methodNameEquals = wantedMethodName.equals(currentMethodName);\n        final boolean isUnverified = !candidate.isVerified();\n        final boolean mockIsTheSame = getInvocation().getMock() == candidate.getMock();\n        final boolean methodEquals = hasSameMethod(candidate);\n\n        if (!methodNameEquals || !isUnverified || !mockIsTheSame) {\n            return false;\n        }\n\n        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());\n\n        return !overloadedButSameArgs;\n    }\n\n    public boolean hasSameMethod(Invocation candidate) {\n        \n        \n        Method m1 = invocation.getMethod();\n        Method m2 = candidate.getMethod();\n        \n        if (m1.getName() != null && m1.getName().equals(m2.getName())) {\n        \t\n        \tClass[] params1 = m1.getParameterTypes();\n        \tClass[] params2 = m2.getParameterTypes();\n        \tif (params1.length == params2.length) {\n        \t    for (int i = 0; i < params1.length; i++) {\n        \t\tif (params1[i] != params2[i])\n        \t\t    return false;\n        \t    }\n        \t    return true;\n        \t}\n        }\n        return false;\n    }\n    \n    public Location getLocation() {\n        return invocation.getLocation();\n    }\n\n    public void captureArgumentsFrom(Invocation invocation) {\n        if (invocation.getMethod().isVarArgs()) {\n            int indexOfVararg = invocation.getRawArguments().length - 1;\n            for (int position = 0; position < indexOfVararg; position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n            for (int position = indexOfVararg; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n                }\n            }\n        } else {\n            for (int position = 0; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n        }\n    }\n\n\n    public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n        LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n        for (Invocation i : invocations) {\n            out.add(new InvocationMatcher(i));\n        }\n        return out;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.mockito.internal.invocation;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Array;\nimport java.lang.reflect.Method;\nimport java.util.*;\n\nimport org.hamcrest.Matcher;\nimport org.mockito.internal.matchers.CapturesArguments;\nimport org.mockito.internal.matchers.MatcherDecorator;\nimport org.mockito.internal.reporting.PrintSettings;\nimport org.mockito.invocation.DescribedInvocation;\nimport org.mockito.invocation.Invocation;\nimport org.mockito.invocation.Location;\n\n@SuppressWarnings(\"unchecked\")\npublic class InvocationMatcher implements DescribedInvocation, CapturesArgumensFromInvocation, Serializable { private static final long serialVersionUID = -3047126096857467610L; private final Invocation invocation; private final List<Matcher> matchers; public InvocationMatcher(Invocation invocation, List<Matcher> matchers) {\n        this.invocation = invocation;\n        if (matchers.isEmpty()) {\n            this.matchers = ArgumentsProcessor.argumentsToMatchers(invocation.getArguments());\n        } else {\n            this.matchers = matchers;\n        }\n    }\n    \n    public InvocationMatcher(Invocation invocation) {\n        this(invocation, Collections.<Matcher>emptyList());\n    }\n\n    public Method getMethod() {\n        return invocation.getMethod();\n    }\n    \n    public Invocation getInvocation() {\n        return this.invocation;\n    }\n    \n    public List<Matcher> getMatchers() {\n        return this.matchers;\n    }\n    \n    public String toString() {\n        return new PrintSettings().print(matchers, invocation);\n    }\n\n    public boolean matches(Invocation actual) {\n        return invocation.getMock().equals(actual.getMock())\n                && hasSameMethod(actual)\n                && new ArgumentsComparator().argumentsMatch(this, actual);\n    }\n\n    private boolean safelyArgumentsMatch(Object[] actualArgs) {\n        try {\n            return new ArgumentsComparator().argumentsMatch(this, actualArgs);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    \n    public boolean hasSimilarMethod(Invocation candidate) {\n        String wantedMethodName = getMethod().getName();\n        String currentMethodName = candidate.getMethod().getName();\n        \n        final boolean methodNameEquals = wantedMethodName.equals(currentMethodName);\n        final boolean isUnverified = !candidate.isVerified();\n        final boolean mockIsTheSame = getInvocation().getMock() == candidate.getMock();\n        final boolean methodEquals = hasSameMethod(candidate);\n\n        if (!methodNameEquals || !isUnverified || !mockIsTheSame) {\n            return false;\n        }\n\n        final boolean overloadedButSameArgs = !methodEquals && safelyArgumentsMatch(candidate.getArguments());\n\n        return !overloadedButSameArgs;\n    }\n\n    public boolean hasSameMethod(Invocation candidate) {\n        \n        \n        Method m1 = invocation.getMethod();\n        Method m2 = candidate.getMethod();\n        \n        if (m1.getName() != null && m1.getName().equals(m2.getName())) {\n        \t\n        \tClass[] params1 = m1.getParameterTypes();\n        \tClass[] params2 = m2.getParameterTypes();\n        \tif (params1.length == params2.length) {\n        \t    for (int i = 0; i < params1.length; i++) {\n        \t\tif (params1[i] != params2[i])\n        \t\t    return false;\n        \t    }\n        \t    return true;\n        \t}\n        }\n        return false;\n    }\n    \n    public Location getLocation() {\n        return invocation.getLocation();\n    }\n\n    public void captureArgumentsFrom(Invocation invocation) {\n        if (invocation.getMethod().isVarArgs()) {\n            int indexOfVararg = invocation.getRawArguments().length - 1;\n            for (int position = 0; position < indexOfVararg; position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n            for (Matcher m : uniqueMatcherSet(indexOfVararg)) {\n                if (m instanceof CapturesArguments) {\n                    Object rawArgument = invocation.getRawArguments()[indexOfVararg];\n                    for (int i = 0; i < Array.getLength(rawArgument); i++) {\n                        ((CapturesArguments) m).captureFrom(Array.get(rawArgument, i));\n                    }\n                }\n            }\n        } else {\n            for (int position = 0; position < matchers.size(); position++) {\n                Matcher m = matchers.get(position);\n                if (m instanceof CapturesArguments) {\n                    ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n                }\n            }\n        }\n    }\n\n    private Set<Matcher> uniqueMatcherSet(int indexOfVararg) {\n        HashSet<Matcher> set = new HashSet<Matcher>();\n        for (int position = indexOfVararg; position < matchers.size(); position++) {\n            Matcher matcher = matchers.get(position);\n            if(matcher instanceof MatcherDecorator) {\n                set.add(((MatcherDecorator) matcher).getActualMatcher());\n            } else {\n                set.add(matcher);\n            }\n        }\n        return set;\n    }\n\n    public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n        LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n        for (Invocation i : invocations) {\n            out.add(new InvocationMatcher(i));\n        }\n        return out;\n    }\n}\n",
+      "buggy_signatures": [
+        "public InvocationMatcher(Invocation invocation)",
+        "public Method getMethod()",
+        "public Invocation getInvocation()",
+        "public List<Matcher> getMatchers()",
+        "public String toString()",
+        "public boolean matches(Invocation actual)",
+        "private boolean safelyArgumentsMatch(Object[] actualArgs)",
+        "public boolean hasSimilarMethod(Invocation candidate)",
+        "public boolean hasSameMethod(Invocation candidate)",
+        "public Location getLocation()",
+        "public void captureArgumentsFrom(Invocation invocation)",
+        "public static List<InvocationMatcher> createFrom(List<Invocation> invocations)"
+      ],
+      "fixed_signatures": [
+        "public InvocationMatcher(Invocation invocation)",
+        "public Method getMethod()",
+        "public Invocation getInvocation()",
+        "public List<Matcher> getMatchers()",
+        "public String toString()",
+        "public boolean matches(Invocation actual)",
+        "private boolean safelyArgumentsMatch(Object[] actualArgs)",
+        "public boolean hasSimilarMethod(Invocation candidate)",
+        "public boolean hasSameMethod(Invocation candidate)",
+        "public Location getLocation()",
+        "public void captureArgumentsFrom(Invocation invocation)",
+        "private Set<Matcher> uniqueMatcherSet(int indexOfVararg)",
+        "public static List<InvocationMatcher> createFrom(List<Invocation> invocations)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void captureArgumentsFrom(Invocation invocation) {\n  if (invocation.getMethod().isVarArgs()) {\n  int indexOfVararg = invocation.getRawArguments().length - 1;\n  for (int position = 0; position < indexOfVararg; position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  for (int position = indexOfVararg; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n  }\n  }\n  } else {\n  for (int position = 0; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  }\n  }",
+          "fixed_method": "  public void captureArgumentsFrom(Invocation invocation) {\n  if (invocation.getMethod().isVarArgs()) {\n  int indexOfVararg = invocation.getRawArguments().length - 1;\n  for (int position = 0; position < indexOfVararg; position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  for (Matcher m : uniqueMatcherSet(indexOfVararg)) {\n  if (m instanceof CapturesArguments) {\n  Object rawArgument = invocation.getRawArguments()[indexOfVararg];\n  for (int i = 0; i < Array.getLength(rawArgument); i++) {\n  ((CapturesArguments) m).captureFrom(Array.get(rawArgument, i));\n  }\n  }\n  }\n  } else {\n  for (int position = 0; position < matchers.size(); position++) {\n  Matcher m = matchers.get(position);\n  if (m instanceof CapturesArguments) {\n  ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n  }\n  }\n  }\n  }",
+          "diff": [
+            "@@ -124,10 +124,12 @@",
+            "                     ((CapturesArguments) m).captureFrom(invocation.getArgumentAt(position, Object.class));\n",
+            "                 }\n",
+            "             }\n",
+            "-            for (int position = indexOfVararg; position < matchers.size(); position++) {\n",
+            "-                Matcher m = matchers.get(position);\n",
+            "+            for (Matcher m : uniqueMatcherSet(indexOfVararg)) {\n",
+            "                 if (m instanceof CapturesArguments) {\n",
+            "-                    ((CapturesArguments) m).captureFrom(invocation.getRawArguments()[position - indexOfVararg]);\n",
+            "+                    Object rawArgument = invocation.getRawArguments()[indexOfVararg];\n",
+            "+                    for (int i = 0; i < Array.getLength(rawArgument); i++) {\n",
+            "+                        ((CapturesArguments) m).captureFrom(Array.get(rawArgument, i));\n",
+            "+                    }\n",
+            "                 }\n",
+            "             }\n",
+            "         } else {\n"
+          ],
+          "changed_lines": 8
+        },
+        {
+          "buggy_method": "  public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n  LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n  for (Invocation i : invocations) {\n  out.add(new InvocationMatcher(i));\n  }\n  return out;\n  }",
+          "fixed_method": "  private Set<Matcher> uniqueMatcherSet(int indexOfVararg) {\n  HashSet<Matcher> set = new HashSet<Matcher>();\n  for (int position = indexOfVararg; position < matchers.size(); position++) {\n  Matcher matcher = matchers.get(position);\n  if(matcher instanceof MatcherDecorator) {\n  set.add(((MatcherDecorator) matcher).getActualMatcher());\n  } else {\n  set.add(matcher);\n  }\n  }\n  return set;\n  }",
+          "diff": [
+            "@@ -140,6 +142,18 @@",
+            "         }\n",
+            "     }\n",
+            " \n",
+            "+    private Set<Matcher> uniqueMatcherSet(int indexOfVararg) {\n",
+            "+        HashSet<Matcher> set = new HashSet<Matcher>();\n",
+            "+        for (int position = indexOfVararg; position < matchers.size(); position++) {\n",
+            "+            Matcher matcher = matchers.get(position);\n",
+            "+            if(matcher instanceof MatcherDecorator) {\n",
+            "+                set.add(((MatcherDecorator) matcher).getActualMatcher());\n",
+            "+            } else {\n",
+            "+                set.add(matcher);\n",
+            "+            }\n",
+            "+        }\n",
+            "+        return set;\n",
+            "+    }\n",
+            " \n",
+            "     public static List<InvocationMatcher> createFrom(List<Invocation> invocations) {\n",
+            "         LinkedList<InvocationMatcher> out = new LinkedList<InvocationMatcher>();\n"
+          ],
+          "changed_lines": 12
+        }
+      ]
+    }
+  ]
+}

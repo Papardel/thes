@@ -1,0 +1,63 @@
+{
+  "bug_id": "38",
+  "failed_tests": {
+    "org.mockito.internal.verification.argumentmatching.ArgumentMatchingToolTest": [
+      {
+        "methodName": "shouldWorkFineWhenGivenArgIsNull",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes((List) Arrays.asList(new Equals(20)), new Object[] {null});",
+        "test_source": "  public void shouldWorkFineWhenGivenArgIsNull() {\n  //when\n  Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes((List) Arrays.asList(new Equals(20)), new Object[] {null});\n  \n  //then\n  assertEquals(0, suspicious.length);\n  }",
+        "stack": [
+          "ArgumentMatchingTool.toStringEquals line 48, ArgumentMatchingTool.getSuspiciouslyNotMatchingArgsIndexes line 30, ArgumentMatchingToolTest.shouldWorkFineWhenGivenArgIsNull line 82"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.ActualInvocationHasNullArgumentNPEBugTest": [
+      {
+        "methodName": "shouldAllowPassingNullArgument",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "            verify(mockFun).doFun(\"hello\");",
+        "test_source": "  public void shouldAllowPassingNullArgument() {\n  //given\n  Fun mockFun = mock(Fun.class);\n  when(mockFun.doFun((String) anyObject())).thenReturn(\"value\");\n\n  //when\n  mockFun.doFun(null);\n\n  //then\n  try {\n  verify(mockFun).doFun(\"hello\");\n  } catch(AssertionError r) {\n  //it's ok, we just want to reproduce the bug\n  }\n  }",
+        "stack": [
+          "ArgumentMatchingTool.toStringEquals line 48, ArgumentMatchingTool.getSuspiciouslyNotMatchingArgsIndexes line 30, MissingInvocationChecker.check line 38, Times.verify line 34, MockHandler.intercept line 74, MethodInterceptorFilter.intercept line 46, ActualInvocationHasNullArgumentNPEBugTest.shouldAllowPassingNullArgument line 30"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java",
+      "buggy_full_code": "\npackage org.mockito.internal.verification.argumentmatching;\n\nimport java.util.LinkedList;\nimport java.util.List;\n\nimport org.hamcrest.Matcher;\nimport org.hamcrest.StringDescription;\nimport org.mockito.internal.matchers.ContainsExtraTypeInformation;\n\n@SuppressWarnings(\"unchecked\")\npublic class ArgumentMatchingTool { public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List<Matcher> matchers, Object[] arguments) {\n        if (matchers.size() != arguments.length) {\n            return new Integer[0];\n        }\n        \n        List<Integer> suspicious = new LinkedList<Integer>();\n        int i = 0;\n        for (Matcher m : matchers) {\n            if (m instanceof ContainsExtraTypeInformation \n                    && !safelyMatches(m, arguments[i]) \n                    && toStringEquals(m, arguments[i])\n                    && !((ContainsExtraTypeInformation) m).typeMatches(arguments[i])) {\n                suspicious.add(i);\n            }\n            i++;\n        }\n        return suspicious.toArray(new Integer[0]);\n    }\n\n    private boolean safelyMatches(Matcher m, Object arg) {\n        try {\n            return m.matches(arg);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    private boolean toStringEquals(Matcher m, Object arg) {\n        return StringDescription.toString(m).equals(arg.toString());\n    }\n}\n",
+      "fixed_full_code": "\npackage org.mockito.internal.verification.argumentmatching;\n\nimport java.util.LinkedList;\nimport java.util.List;\n\nimport org.hamcrest.Matcher;\nimport org.hamcrest.StringDescription;\nimport org.mockito.internal.matchers.ContainsExtraTypeInformation;\n\n@SuppressWarnings(\"unchecked\")\npublic class ArgumentMatchingTool { public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List<Matcher> matchers, Object[] arguments) {\n        if (matchers.size() != arguments.length) {\n            return new Integer[0];\n        }\n        \n        List<Integer> suspicious = new LinkedList<Integer>();\n        int i = 0;\n        for (Matcher m : matchers) {\n            if (m instanceof ContainsExtraTypeInformation \n                    && !safelyMatches(m, arguments[i]) \n                    && toStringEquals(m, arguments[i])\n                    && !((ContainsExtraTypeInformation) m).typeMatches(arguments[i])) {\n                suspicious.add(i);\n            }\n            i++;\n        }\n        return suspicious.toArray(new Integer[0]);\n    }\n\n    private boolean safelyMatches(Matcher m, Object arg) {\n        try {\n            return m.matches(arg);\n        } catch (Throwable t) {\n            return false;\n        }\n    }\n\n    private boolean toStringEquals(Matcher m, Object arg) {\n        return StringDescription.toString(m).equals(arg == null? \"null\" : arg.toString());\n    }\n}\n",
+      "buggy_signatures": [
+        "public class ArgumentMatchingTool { public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List<Matcher> matchers, Object[] arguments)",
+        "private boolean safelyMatches(Matcher m, Object arg)",
+        "private boolean toStringEquals(Matcher m, Object arg)"
+      ],
+      "fixed_signatures": [
+        "public class ArgumentMatchingTool { public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List<Matcher> matchers, Object[] arguments)",
+        "private boolean safelyMatches(Matcher m, Object arg)",
+        "private boolean toStringEquals(Matcher m, Object arg)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private boolean toStringEquals(Matcher m, Object arg) {\n  return StringDescription.toString(m).equals(arg.toString());\n  }",
+          "fixed_method": "  private boolean toStringEquals(Matcher m, Object arg) {\n  return StringDescription.toString(m).equals(arg == null? \"null\" : arg.toString());\n  }",
+          "diff": [
+            "@@ -45,6 +45,6 @@",
+            "     }\n",
+            " \n",
+            "     private boolean toStringEquals(Matcher m, Object arg) {\n",
+            "-        return StringDescription.toString(m).equals(arg.toString());\n",
+            "+        return StringDescription.toString(m).equals(arg == null? \"null\" : arg.toString());\n",
+            "     }\n",
+            " }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "bug_id": "Cli_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\nTest Class: org.apache.commons.cli.bug.BugCLI51Test\nMethod: test\nError: org.apache.commons.cli.UnrecognizedOptionException\nMessage: Unrecognized option: -o\nFailing Line:         commandLine = parser.parse( options, args );\nTest Source:\npublic void test() throws Exception\n  {\n  Options options = buildCommandLineOptions();\n  CommandLineParser parser = new PosixParser();\n  String[] args = new String[] {\"-t\", \"-something\" };\n  CommandLine commandLine;\n  commandLine = parser.parse( options, args );\n  assertEquals(\"-something\", commandLine.getOptionValue( 't'));\n  }\nStack Trace:\nParser.processOption line 368, Parser.parse line 185, Parser.parse line 70, BugCLI51Test.test line 40\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any other non-source file.\n\nRESPONSE: org.apache.commons.cli.parser.PosixParser\n```"
+    }
+  ]
+}

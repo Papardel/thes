@@ -1,0 +1,94 @@
+{
+  "bug_id": "86",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.type.RecursiveTypeTest": [
+      {
+        "methodName": "testSuperClassWithReferencedJavaType",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertNotNull(baseTypeFromSub.getSuperClass());",
+        "test_source": "  public void testSuperClassWithReferencedJavaType() {\n  TypeFactory tf = objectMapper().getTypeFactory();\n  tf.constructType(Base.class); // must be constructed before sub to set the cache correctly\n  JavaType subType = tf.constructType(Sub.class);\n  // baseTypeFromSub should be a ResolvedRecursiveType in this test\n  JavaType baseTypeFromSub = subType.getSuperClass();\n  assertNotNull(baseTypeFromSub.getSuperClass());\n  }",
+        "stack": [
+          "RecursiveTypeTest.testSuperClassWithReferencedJavaType line 113"
+        ]
+      }
+    ],
+    "com.fasterxml.jackson.databind.type.TestTypeFactoryWithRecursiveTypes": [
+      {
+        "methodName": "testBasePropertiesIncludedWhenSerializingSubWhenSubTypeLoadedAfterBaseType",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{\"[base\":1,\"]sub\":2}> but was:<{\"[]sub\":2}>",
+        "fail_line": "        assertEquals(\"{\\\"base\\\":1,\\\"sub\\\":2}\", serialized);",
+        "test_source": "  public void testBasePropertiesIncludedWhenSerializingSubWhenSubTypeLoadedAfterBaseType() throws IOException {\n  TypeFactory tf = TypeFactory.defaultInstance();\n  tf.constructType(Base.class);\n  tf.constructType(Sub.class);\n  Sub sub = new Sub();\n  String serialized = objectMapper().writeValueAsString(sub);\n  assertEquals(\"{\\\"base\\\":1,\\\"sub\\\":2}\", serialized);\n  }",
+        "stack": [
+          "TestTypeFactoryWithRecursiveTypes.testBasePropertiesIncludedWhenSerializingSubWhenSubTypeLoadedAfterBaseType line 30"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class ResolvedRecursiveType extends TypeBase { private static final long serialVersionUID = 1L; protected JavaType _referencedType; public ResolvedRecursiveType(Class<?> erasedType, TypeBindings bindings) {\n        super(erasedType, bindings, null, null, 0, null, null, false);\n    }\n\n    public void setReference(JavaType ref) {\n        \n        if (_referencedType != null) {\n            throw new IllegalStateException(\"Trying to re-set self reference; old value = \"+_referencedType+\", new = \"+ref);\n        }\n        _referencedType = ref;\n    }\n   \n\n    public JavaType getSelfReferencedType() { return _referencedType; }\n\n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        return _referencedType.getGenericSignature(sb);\n    }\n\n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _referencedType.getErasedSignature(sb);\n    }\n\n    @Override\n    public JavaType withContentType(JavaType contentType) {\n        return this;\n    }\n    \n    @Override\n    public JavaType withTypeHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withContentTypeHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withValueHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withContentValueHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withStaticTyping() {\n        return this;\n    }\n\n    @Deprecated \n    @Override\n    protected JavaType _narrow(Class<?> subclass) {\n        return this;\n    }\n\n    @Override\n    public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces) {\n        return null;\n    }\n\n    @Override\n    public boolean isContainerType() {\n        return false;\n    }\n\n    @Override\n    public String toString() {\n        StringBuilder sb = new StringBuilder(40)\n                .append(\"[recursive type; \");\n        if (_referencedType == null) {\n            sb.append(\"UNRESOLVED\");\n        } else {\n            \n            \n            sb.append(_referencedType.getRawClass().getName());\n        }\n        return sb.toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        \n        if (_referencedType == null) {\n            return false;\n        }\n        return (o.getClass() == getClass()\n                && _referencedType.equals(((ResolvedRecursiveType) o).getSelfReferencedType()));\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.type;\n\nimport com.fasterxml.jackson.databind.JavaType;\n\n\npublic class ResolvedRecursiveType extends TypeBase { private static final long serialVersionUID = 1L; protected JavaType _referencedType; public ResolvedRecursiveType(Class<?> erasedType, TypeBindings bindings) {\n        super(erasedType, bindings, null, null, 0, null, null, false);\n    }\n\n    public void setReference(JavaType ref) {\n        \n        if (_referencedType != null) {\n            throw new IllegalStateException(\"Trying to re-set self reference; old value = \"+_referencedType+\", new = \"+ref);\n        }\n        _referencedType = ref;\n    }\n   \n    @Override\n    public JavaType getSuperClass() {\n    \tif (_referencedType != null) {\n    \t\treturn _referencedType.getSuperClass();\n    \t}\n    \treturn super.getSuperClass();\n    }\n\n    public JavaType getSelfReferencedType() { return _referencedType; }\n\n    @Override\n    public StringBuilder getGenericSignature(StringBuilder sb) {\n        return _referencedType.getGenericSignature(sb);\n    }\n\n    @Override\n    public StringBuilder getErasedSignature(StringBuilder sb) {\n        return _referencedType.getErasedSignature(sb);\n    }\n\n    @Override\n    public JavaType withContentType(JavaType contentType) {\n        return this;\n    }\n    \n    @Override\n    public JavaType withTypeHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withContentTypeHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withValueHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withContentValueHandler(Object h) {\n        return this;\n    }\n\n    @Override\n    public JavaType withStaticTyping() {\n        return this;\n    }\n\n    @Deprecated \n    @Override\n    protected JavaType _narrow(Class<?> subclass) {\n        return this;\n    }\n\n    @Override\n    public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces) {\n        return null;\n    }\n\n    @Override\n    public boolean isContainerType() {\n        return false;\n    }\n\n    @Override\n    public String toString() {\n        StringBuilder sb = new StringBuilder(40)\n                .append(\"[recursive type; \");\n        if (_referencedType == null) {\n            sb.append(\"UNRESOLVED\");\n        } else {\n            \n            \n            sb.append(_referencedType.getRawClass().getName());\n        }\n        return sb.toString();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o == this) return true;\n        if (o == null) return false;\n        \n        if (_referencedType == null) {\n            return false;\n        }\n        return (o.getClass() == getClass()\n                && _referencedType.equals(((ResolvedRecursiveType) o).getSelfReferencedType()));\n    }\n}\n",
+      "buggy_signatures": [
+        "public void setReference(JavaType ref)",
+        "public JavaType getSelfReferencedType()",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public JavaType withContentType(JavaType contentType)",
+        "public JavaType withTypeHandler(Object h)",
+        "public JavaType withContentTypeHandler(Object h)",
+        "public JavaType withValueHandler(Object h)",
+        "public JavaType withContentValueHandler(Object h)",
+        "public JavaType withStaticTyping()",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces)",
+        "public boolean isContainerType()",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "fixed_signatures": [
+        "public void setReference(JavaType ref)",
+        "public JavaType getSuperClass()",
+        "public JavaType getSelfReferencedType()",
+        "public StringBuilder getGenericSignature(StringBuilder sb)",
+        "public StringBuilder getErasedSignature(StringBuilder sb)",
+        "public JavaType withContentType(JavaType contentType)",
+        "public JavaType withTypeHandler(Object h)",
+        "public JavaType withContentTypeHandler(Object h)",
+        "public JavaType withValueHandler(Object h)",
+        "public JavaType withContentValueHandler(Object h)",
+        "public JavaType withStaticTyping()",
+        "protected JavaType _narrow(Class<?> subclass)",
+        "public JavaType refine(Class<?> rawType, TypeBindings bindings, JavaType superClass, JavaType[] superInterfaces)",
+        "public boolean isContainerType()",
+        "public String toString()",
+        "public boolean equals(Object o)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public JavaType getSelfReferencedType() { return _referencedType; }",
+          "fixed_method": "  public JavaType getSuperClass() {\n  \tif (_referencedType != null) {\n  \t\treturn _referencedType.getSuperClass();\n  \t}\n  \treturn super.getSuperClass();\n  }",
+          "diff": [
+            "@@ -26,6 +26,13 @@",
+            "         _referencedType = ref;\n",
+            "     }\n",
+            "    \n",
+            "+    @Override\n",
+            "+    public JavaType getSuperClass() {\n",
+            "+    \tif (_referencedType != null) {\n",
+            "+    \t\treturn _referencedType.getSuperClass();\n",
+            "+    \t}\n",
+            "+    \treturn super.getSuperClass();\n",
+            "+    }\n",
+            " \n",
+            "     public JavaType getSelfReferencedType() { return _referencedType; }\n",
+            " \n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

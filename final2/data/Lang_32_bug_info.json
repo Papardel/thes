@@ -1,0 +1,183 @@
+{
+  "bug_id": "32",
+  "failed_tests": {
+    "org.apache.commons.lang3.builder.HashCodeBuilderTest": [
+      {
+        "methodName": "testReflectionObjectCycle",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected: <null> but was: []",
+        "fail_line": "        assertNull(HashCodeBuilder.getRegistry());",
+        "test_source": "  public void testReflectionObjectCycle() {\n  ReflectionTestCycleA a = new ReflectionTestCycleA();\n  ReflectionTestCycleB b = new ReflectionTestCycleB();\n  a.b = b;\n  b.a = a;\n  \n  // Used to caused:\n  // java.lang.StackOverflowError\n  // at java.lang.ClassLoader.getCallerClassLoader(Native Method)\n  // at java.lang.Class.getDeclaredFields(Class.java:992)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionAppend(HashCodeBuilder.java:373)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionHashCode(HashCodeBuilder.java:349)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionHashCode(HashCodeBuilder.java:155)\n  // at\n  // org.apache.commons.lang.builder.HashCodeBuilderTest$ReflectionTestCycleB.hashCode(HashCodeBuilderTest.java:53)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.append(HashCodeBuilder.java:422)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionAppend(HashCodeBuilder.java:383)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionHashCode(HashCodeBuilder.java:349)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.reflectionHashCode(HashCodeBuilder.java:155)\n  // at\n  // org.apache.commons.lang.builder.HashCodeBuilderTest$ReflectionTestCycleA.hashCode(HashCodeBuilderTest.java:42)\n  // at org.apache.commons.lang.builder.HashCodeBuilder.append(HashCodeBuilder.java:422)\n\n  a.hashCode();\n  assertNull(HashCodeBuilder.getRegistry());\n  b.hashCode();\n  assertNull(HashCodeBuilder.getRegistry());\n  }",
+        "stack": [
+          "HashCodeBuilderTest.testReflectionObjectCycle line 524"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/builder/HashCodeBuilder.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.lang3.builder;\n\nimport java.lang.reflect.AccessibleObject;\nimport java.lang.reflect.Field;\nimport java.lang.reflect.Modifier;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Set;\n\nimport org.apache.commons.lang3.ArrayUtils;\n\n\npublic class HashCodeBuilder { private static final ThreadLocal<Set<IDKey>> REGISTRY = new ThreadLocal<Set<IDKey>>() {\n        @Override\n        protected Set<IDKey> initialValue() {\n            return new HashSet<IDKey>();\n        }\n    };\n\n    \n    \n    \n    static Set<IDKey> getRegistry() {\n        return REGISTRY.get();\n    }\n\n    \n    static boolean isRegistered(Object value) {\n        return getRegistry().contains(new IDKey(value));\n    }\n\n    \n    private static void reflectionAppend(Object object, Class<?> clazz, HashCodeBuilder builder, boolean useTransients, String[] excludeFields) {\n        if (isRegistered(object)) {\n            return;\n        }\n        try {\n            register(object);\n            Field[] fields = clazz.getDeclaredFields();\n            AccessibleObject.setAccessible(fields, true);\n            for (Field field : fields) {\n                if (!ArrayUtils.contains(excludeFields, field.getName())\n                    && (field.getName().indexOf('$') == -1)\n                    && (useTransients || !Modifier.isTransient(field.getModifiers()))\n                    && (!Modifier.isStatic(field.getModifiers()))) {\n                    try {\n                        Object fieldValue = field.get(object);\n                        builder.append(fieldValue);\n                    } catch (IllegalAccessException e) {\n                        \n                        \n                        throw new InternalError(\"Unexpected IllegalAccessException\");\n                    }\n                }\n            }\n        } finally {\n            unregister(object);\n        }\n    }\n\n    \n    public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, false, null, null);\n    }\n\n    \n    public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object, boolean testTransients) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, testTransients, null,\n                null);\n    }\n\n    \n    public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, testTransients,\n                reflectUpToClass, null);\n    }\n\n    \n    public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass, String[] excludeFields) {\n\n        if (object == null) {\n            throw new IllegalArgumentException(\"The object to build a hash code for must not be null\");\n        }\n        HashCodeBuilder builder = new HashCodeBuilder(initialNonZeroOddNumber, multiplierNonZeroOddNumber);\n        Class<?> clazz = object.getClass();\n        reflectionAppend(object, clazz, builder, testTransients, excludeFields);\n        while (clazz.getSuperclass() != null && clazz != reflectUpToClass) {\n            clazz = clazz.getSuperclass();\n            reflectionAppend(object, clazz, builder, testTransients, excludeFields);\n        }\n        return builder.toHashCode();\n    }\n\n    \n    public static int reflectionHashCode(Object object) {\n        return reflectionHashCode(17, 37, object, false, null, null);\n    }\n\n    \n    public static int reflectionHashCode(Object object, boolean testTransients) {\n        return reflectionHashCode(17, 37, object, testTransients, null, null);\n    }\n\n    \n    public static int reflectionHashCode(Object object, Collection<String> excludeFields) {\n        return reflectionHashCode(object, ReflectionToStringBuilder.toNoNullStringArray(excludeFields));\n    }\n\n    \n\n    \n    public static int reflectionHashCode(Object object, String[] excludeFields) {\n        return reflectionHashCode(17, 37, object, false, null, excludeFields);\n    }\n\n    \n    static void register(Object value) {\n        getRegistry().add(new IDKey(value));\n    }\n\n    \n    static void unregister(Object value) {\n        getRegistry().remove(new IDKey(value));\n    }\n\n    \n    private final int iConstant; private int iTotal = 0; public HashCodeBuilder() {\n        iConstant = 37;\n        iTotal = 17;\n    }\n\n    \n    public HashCodeBuilder(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber) {\n        if (initialNonZeroOddNumber == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires a non zero initial value\");\n        }\n        if (initialNonZeroOddNumber % 2 == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires an odd initial value\");\n        }\n        if (multiplierNonZeroOddNumber == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires a non zero multiplier\");\n        }\n        if (multiplierNonZeroOddNumber % 2 == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires an odd multiplier\");\n        }\n        iConstant = multiplierNonZeroOddNumber;\n        iTotal = initialNonZeroOddNumber;\n    }\n\n    \n    public HashCodeBuilder append(boolean value) {\n        iTotal = iTotal * iConstant + (value ? 0 : 1);\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(boolean[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n\n    \n    public HashCodeBuilder append(byte value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n\n    \n    public HashCodeBuilder append(byte[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(char value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(char[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(double value) {\n        return append(Double.doubleToLongBits(value));\n    }\n\n    \n    public HashCodeBuilder append(double[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(float value) {\n        iTotal = iTotal * iConstant + Float.floatToIntBits(value);\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(float[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(int value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(int[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    \n    \n    \n    \n    public HashCodeBuilder append(long value) {\n        iTotal = iTotal * iConstant + ((int) (value ^ (value >> 32)));\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(long[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(Object object) {\n        if (object == null) {\n            iTotal = iTotal * iConstant;\n\n        } else {\n            if(object.getClass().isArray()) {\n                \n                \n                if (object instanceof long[]) {\n                    append((long[]) object);\n                } else if (object instanceof int[]) {\n                    append((int[]) object);\n                } else if (object instanceof short[]) {\n                    append((short[]) object);\n                } else if (object instanceof char[]) {\n                    append((char[]) object);\n                } else if (object instanceof byte[]) {\n                    append((byte[]) object);\n                } else if (object instanceof double[]) {\n                    append((double[]) object);\n                } else if (object instanceof float[]) {\n                    append((float[]) object);\n                } else if (object instanceof boolean[]) {\n                    append((boolean[]) object);\n                } else {\n                    \n                    append((Object[]) object);\n                }\n            } else {\n                iTotal = iTotal * iConstant + object.hashCode();\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(Object[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(short value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(short[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder appendSuper(int superHashCode) {\n        iTotal = iTotal * iConstant + superHashCode;\n        return this;\n    }\n\n    \n    public int toHashCode() {\n        return iTotal;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return toHashCode();\n    }\n\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.lang3.builder;\n\nimport java.lang.reflect.AccessibleObject;\nimport java.lang.reflect.Field;\nimport java.lang.reflect.Modifier;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Set;\n\nimport org.apache.commons.lang3.ArrayUtils;\n\n\npublic class HashCodeBuilder { private static final ThreadLocal<Set<IDKey>> REGISTRY = new ThreadLocal<Set<IDKey>>(); static Set<IDKey> getRegistry() {\n        return REGISTRY.get();\n    }\n\n    \n    static boolean isRegistered(Object value) {\n        Set<IDKey> registry = getRegistry();\n        return registry != null && registry.contains(new IDKey(value));\n    }\n\n    \n    private static void reflectionAppend(Object object, Class<?> clazz, HashCodeBuilder builder, boolean useTransients, String[] excludeFields) {\n        if (isRegistered(object)) {\n            return;\n        }\n        try {\n            register(object);\n            Field[] fields = clazz.getDeclaredFields();\n            AccessibleObject.setAccessible(fields, true);\n            for (Field field : fields) {\n                if (!ArrayUtils.contains(excludeFields, field.getName())\n                    && (field.getName().indexOf('$') == -1)\n                    && (useTransients || !Modifier.isTransient(field.getModifiers()))\n                    && (!Modifier.isStatic(field.getModifiers()))) {\n                    try {\n                        Object fieldValue = field.get(object);\n                        builder.append(fieldValue);\n                    } catch (IllegalAccessException e) {\n                        \n                        \n                        throw new InternalError(\"Unexpected IllegalAccessException\");\n                    }\n                }\n            }\n        } finally {\n            unregister(object);\n        }\n    }\n\n    \n    public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, false, null, null);\n    }\n\n    \n    public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object, boolean testTransients) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, testTransients, null,\n                null);\n    }\n\n    \n    public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass) {\n        return reflectionHashCode(initialNonZeroOddNumber, multiplierNonZeroOddNumber, object, testTransients,\n                reflectUpToClass, null);\n    }\n\n    \n    public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass, String[] excludeFields) {\n\n        if (object == null) {\n            throw new IllegalArgumentException(\"The object to build a hash code for must not be null\");\n        }\n        HashCodeBuilder builder = new HashCodeBuilder(initialNonZeroOddNumber, multiplierNonZeroOddNumber);\n        Class<?> clazz = object.getClass();\n        reflectionAppend(object, clazz, builder, testTransients, excludeFields);\n        while (clazz.getSuperclass() != null && clazz != reflectUpToClass) {\n            clazz = clazz.getSuperclass();\n            reflectionAppend(object, clazz, builder, testTransients, excludeFields);\n        }\n        return builder.toHashCode();\n    }\n\n    \n    public static int reflectionHashCode(Object object) {\n        return reflectionHashCode(17, 37, object, false, null, null);\n    }\n\n    \n    public static int reflectionHashCode(Object object, boolean testTransients) {\n        return reflectionHashCode(17, 37, object, testTransients, null, null);\n    }\n\n    \n    public static int reflectionHashCode(Object object, Collection<String> excludeFields) {\n        return reflectionHashCode(object, ReflectionToStringBuilder.toNoNullStringArray(excludeFields));\n    }\n\n    \n\n    \n    public static int reflectionHashCode(Object object, String[] excludeFields) {\n        return reflectionHashCode(17, 37, object, false, null, excludeFields);\n    }\n\n    \n    static void register(Object value) {\n        synchronized (HashCodeBuilder.class) {\n            if (getRegistry() == null) {\n                REGISTRY.set(new HashSet<IDKey>());\n            }\n        }\n        getRegistry().add(new IDKey(value));\n    }\n\n    \n    static void unregister(Object value) {\n        Set<IDKey> s = getRegistry();\n        if (s != null) {\n            s.remove(new IDKey(value));\n            synchronized (HashCodeBuilder.class) {\n                if (s.isEmpty()) {\n                    REGISTRY.remove();\n                }\n            }\n        }\n    }\n\n    \n    private final int iConstant; private int iTotal = 0; public HashCodeBuilder() {\n        iConstant = 37;\n        iTotal = 17;\n    }\n\n    \n    public HashCodeBuilder(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber) {\n        if (initialNonZeroOddNumber == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires a non zero initial value\");\n        }\n        if (initialNonZeroOddNumber % 2 == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires an odd initial value\");\n        }\n        if (multiplierNonZeroOddNumber == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires a non zero multiplier\");\n        }\n        if (multiplierNonZeroOddNumber % 2 == 0) {\n            throw new IllegalArgumentException(\"HashCodeBuilder requires an odd multiplier\");\n        }\n        iConstant = multiplierNonZeroOddNumber;\n        iTotal = initialNonZeroOddNumber;\n    }\n\n    \n    public HashCodeBuilder append(boolean value) {\n        iTotal = iTotal * iConstant + (value ? 0 : 1);\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(boolean[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n\n    \n    public HashCodeBuilder append(byte value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n\n    \n    public HashCodeBuilder append(byte[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(char value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(char[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(double value) {\n        return append(Double.doubleToLongBits(value));\n    }\n\n    \n    public HashCodeBuilder append(double[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(float value) {\n        iTotal = iTotal * iConstant + Float.floatToIntBits(value);\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(float[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(int value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(int[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    \n    \n    \n    \n    public HashCodeBuilder append(long value) {\n        iTotal = iTotal * iConstant + ((int) (value ^ (value >> 32)));\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(long[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(Object object) {\n        if (object == null) {\n            iTotal = iTotal * iConstant;\n\n        } else {\n            if(object.getClass().isArray()) {\n                \n                \n                if (object instanceof long[]) {\n                    append((long[]) object);\n                } else if (object instanceof int[]) {\n                    append((int[]) object);\n                } else if (object instanceof short[]) {\n                    append((short[]) object);\n                } else if (object instanceof char[]) {\n                    append((char[]) object);\n                } else if (object instanceof byte[]) {\n                    append((byte[]) object);\n                } else if (object instanceof double[]) {\n                    append((double[]) object);\n                } else if (object instanceof float[]) {\n                    append((float[]) object);\n                } else if (object instanceof boolean[]) {\n                    append((boolean[]) object);\n                } else {\n                    \n                    append((Object[]) object);\n                }\n            } else {\n                iTotal = iTotal * iConstant + object.hashCode();\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(Object[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(short value) {\n        iTotal = iTotal * iConstant + value;\n        return this;\n    }\n\n    \n    public HashCodeBuilder append(short[] array) {\n        if (array == null) {\n            iTotal = iTotal * iConstant;\n        } else {\n            for (int i = 0; i < array.length; i++) {\n                append(array[i]);\n            }\n        }\n        return this;\n    }\n\n    \n    public HashCodeBuilder appendSuper(int superHashCode) {\n        iTotal = iTotal * iConstant + superHashCode;\n        return this;\n    }\n\n    \n    public int toHashCode() {\n        return iTotal;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return toHashCode();\n    }\n\n}\n",
+      "buggy_signatures": [
+        "protected Set<IDKey> initialValue()",
+        "static Set<IDKey> getRegistry()",
+        "static boolean isRegistered(Object value)",
+        "private static void reflectionAppend(Object object, Class<?> clazz, HashCodeBuilder builder, boolean useTransients, String[] excludeFields)",
+        "public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object)",
+        "public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object, boolean testTransients)",
+        "public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass)",
+        "public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass, String[] excludeFields)",
+        "public static int reflectionHashCode(Object object)",
+        "public static int reflectionHashCode(Object object, boolean testTransients)",
+        "public static int reflectionHashCode(Object object, Collection<String> excludeFields)",
+        "public static int reflectionHashCode(Object object, String[] excludeFields)",
+        "static void register(Object value)",
+        "static void unregister(Object value)",
+        "public HashCodeBuilder(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber)",
+        "public HashCodeBuilder append(boolean value)",
+        "public HashCodeBuilder append(boolean[] array)",
+        "public HashCodeBuilder append(byte value)",
+        "public HashCodeBuilder append(byte[] array)",
+        "public HashCodeBuilder append(char value)",
+        "public HashCodeBuilder append(char[] array)",
+        "public HashCodeBuilder append(double value)",
+        "public HashCodeBuilder append(double[] array)",
+        "public HashCodeBuilder append(float value)",
+        "public HashCodeBuilder append(float[] array)",
+        "public HashCodeBuilder append(int value)",
+        "public HashCodeBuilder append(int[] array)",
+        "public HashCodeBuilder append(long value)",
+        "public HashCodeBuilder append(long[] array)",
+        "public HashCodeBuilder append(Object object)",
+        "public HashCodeBuilder append(Object[] array)",
+        "public HashCodeBuilder append(short value)",
+        "public HashCodeBuilder append(short[] array)",
+        "public HashCodeBuilder appendSuper(int superHashCode)",
+        "public int toHashCode()",
+        "public int hashCode()"
+      ],
+      "fixed_signatures": [
+        "static boolean isRegistered(Object value)",
+        "private static void reflectionAppend(Object object, Class<?> clazz, HashCodeBuilder builder, boolean useTransients, String[] excludeFields)",
+        "public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object)",
+        "public static int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, Object object, boolean testTransients)",
+        "public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass)",
+        "public static <T> int reflectionHashCode(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber, T object, boolean testTransients, Class<? super T> reflectUpToClass, String[] excludeFields)",
+        "public static int reflectionHashCode(Object object)",
+        "public static int reflectionHashCode(Object object, boolean testTransients)",
+        "public static int reflectionHashCode(Object object, Collection<String> excludeFields)",
+        "public static int reflectionHashCode(Object object, String[] excludeFields)",
+        "static void register(Object value)",
+        "synchronized (HashCodeBuilder.class)",
+        "static void unregister(Object value)",
+        "synchronized (HashCodeBuilder.class)",
+        "public HashCodeBuilder(int initialNonZeroOddNumber, int multiplierNonZeroOddNumber)",
+        "public HashCodeBuilder append(boolean value)",
+        "public HashCodeBuilder append(boolean[] array)",
+        "public HashCodeBuilder append(byte value)",
+        "public HashCodeBuilder append(byte[] array)",
+        "public HashCodeBuilder append(char value)",
+        "public HashCodeBuilder append(char[] array)",
+        "public HashCodeBuilder append(double value)",
+        "public HashCodeBuilder append(double[] array)",
+        "public HashCodeBuilder append(float value)",
+        "public HashCodeBuilder append(float[] array)",
+        "public HashCodeBuilder append(int value)",
+        "public HashCodeBuilder append(int[] array)",
+        "public HashCodeBuilder append(long value)",
+        "public HashCodeBuilder append(long[] array)",
+        "public HashCodeBuilder append(Object object)",
+        "public HashCodeBuilder append(Object[] array)",
+        "public HashCodeBuilder append(short value)",
+        "public HashCodeBuilder append(short[] array)",
+        "public HashCodeBuilder appendSuper(int superHashCode)",
+        "public int toHashCode()",
+        "public int hashCode()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected Set<IDKey> initialValue() {\n  return new HashSet<IDKey>();\n  }",
+          "fixed_method": "  private static final ThreadLocal<Set<IDKey>> REGISTRY = new ThreadLocal<Set<IDKey>>(); static Set<IDKey> getRegistry() {\n  return REGISTRY.get();\n  }",
+          "diff": [
+            "@@ -101,12 +101,7 @@",
+            "      * \n",
+            "      * @since 2.3\n",
+            "      */\n",
+            "-    private static final ThreadLocal<Set<IDKey>> REGISTRY = new ThreadLocal<Set<IDKey>>() {\n",
+            "-        @Override\n",
+            "-        protected Set<IDKey> initialValue() {\n",
+            "-            return new HashSet<IDKey>();\n",
+            "-        }\n",
+            "-    };\n",
+            "+    private static final ThreadLocal<Set<IDKey>> REGISTRY = new ThreadLocal<Set<IDKey>>();\n",
+            " \n",
+            "     /*\n",
+            "      * N.B. we cannot store the actual objects in a HashSet, as that would use the very hashCode()\n"
+          ],
+          "changed_lines": 7
+        },
+        {
+          "buggy_method": "  static boolean isRegistered(Object value) {\n  return getRegistry().contains(new IDKey(value));\n  }",
+          "fixed_method": "  static boolean isRegistered(Object value) {\n  Set<IDKey> registry = getRegistry();\n  return registry != null && registry.contains(new IDKey(value));\n  }",
+          "diff": [
+            "@@ -149,7 +144,8 @@",
+            "      * @since 2.3\n",
+            "      */\n",
+            "     static boolean isRegistered(Object value) {\n",
+            "-        return getRegistry().contains(new IDKey(value));\n",
+            "+        Set<IDKey> registry = getRegistry();\n",
+            "+        return registry != null && registry.contains(new IDKey(value));\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  static void register(Object value) {\n  getRegistry().add(new IDKey(value));\n  }",
+          "fixed_method": "  synchronized (HashCodeBuilder.class) {\n  if (getRegistry() == null) {\n  REGISTRY.set(new HashSet<IDKey>());\n  }\n  }",
+          "diff": [
+            "@@ -519,6 +515,11 @@",
+            "      *            The object to register.\n",
+            "      */\n",
+            "     static void register(Object value) {\n",
+            "+        synchronized (HashCodeBuilder.class) {\n",
+            "+            if (getRegistry() == null) {\n",
+            "+                REGISTRY.set(new HashSet<IDKey>());\n",
+            "+            }\n",
+            "+        }\n",
+            "         getRegistry().add(new IDKey(value));\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 5
+        },
+        {
+          "buggy_method": "  static void unregister(Object value) {\n  getRegistry().remove(new IDKey(value));\n  }",
+          "fixed_method": "  synchronized (HashCodeBuilder.class) {\n  if (s.isEmpty()) {\n  REGISTRY.remove();\n  }\n  }",
+          "diff": [
+            "@@ -535,7 +536,15 @@",
+            "      * @since 2.3\n",
+            "      */\n",
+            "     static void unregister(Object value) {\n",
+            "-        getRegistry().remove(new IDKey(value));\n",
+            "+        Set<IDKey> s = getRegistry();\n",
+            "+        if (s != null) {\n",
+            "+            s.remove(new IDKey(value));\n",
+            "+            synchronized (HashCodeBuilder.class) {\n",
+            "+                if (s.isEmpty()) {\n",
+            "+                    REGISTRY.remove();\n",
+            "+                }\n",
+            "+            }\n",
+            "+        }\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 10
+        }
+      ]
+    }
+  ]
+}

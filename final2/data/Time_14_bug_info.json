@@ -1,0 +1,154 @@
+{
+  "bug_id": "14",
+  "failed_tests": {
+    "org.joda.time.TestMonthDay_Basics": [
+      {
+        "methodName": "testPlusMonths_int_negativeFromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.plusMonths(-1);",
+        "test_source": "  public void testPlusMonths_int_negativeFromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.plusMonths(-1);\n  MonthDay expected = new MonthDay(1, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, MonthDay.withFieldAdded line 519, MonthDay.plusMonths line 592, TestMonthDay_Basics.testPlusMonths_int_negativeFromLeap line 460"
+        ]
+      },
+      {
+        "methodName": "testMinusDays_int_negativeFromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.minusDays(-1);",
+        "test_source": "  public void testMinusDays_int_negativeFromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.minusDays(-1);\n  MonthDay expected = new MonthDay(3, 1, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, BaseDateTimeField.add line 324, MonthDay.withFieldAdded line 519, MonthDay.minusDays line 672, TestMonthDay_Basics.testMinusDays_int_negativeFromLeap line 610"
+        ]
+      },
+      {
+        "methodName": "testPlusMonths_int_fromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.plusMonths(1);",
+        "test_source": "  public void testPlusMonths_int_fromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.plusMonths(1);\n  MonthDay expected = new MonthDay(3, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, MonthDay.withFieldAdded line 519, MonthDay.plusMonths line 592, TestMonthDay_Basics.testPlusMonths_int_fromLeap line 453"
+        ]
+      },
+      {
+        "methodName": "testPlusMonths_int_negativeEndOfMonthAdjust",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<--02-29> but was:<--02-28>",
+        "fail_line": "        assertEquals(expected, result);",
+        "test_source": "  public void testPlusMonths_int_negativeEndOfMonthAdjust() {\n  MonthDay test = new MonthDay(3, 31, ISOChronology.getInstanceUTC());\n  MonthDay result = test.plusMonths(-1);\n  MonthDay expected = new MonthDay(2, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "TestMonthDay_Basics.testPlusMonths_int_negativeEndOfMonthAdjust line 476"
+        ]
+      },
+      {
+        "methodName": "testMinusMonths_int_endOfMonthAdjust",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<--02-29> but was:<--02-28>",
+        "fail_line": "        assertEquals(expected, result);",
+        "test_source": "  public void testMinusMonths_int_endOfMonthAdjust() {\n  MonthDay test = new MonthDay(3, 31, ISOChronology.getInstanceUTC());\n  MonthDay result = test.minusMonths(1);\n  MonthDay expected = new MonthDay(2, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "TestMonthDay_Basics.testMinusMonths_int_endOfMonthAdjust line 563"
+        ]
+      },
+      {
+        "methodName": "testMinusMonths_int_negativeFromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.minusMonths(-1);",
+        "test_source": "  public void testMinusMonths_int_negativeFromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.minusMonths(-1);\n  MonthDay expected = new MonthDay(3, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, MonthDay.withFieldAdded line 519, MonthDay.minusMonths line 652, TestMonthDay_Basics.testMinusMonths_int_negativeFromLeap line 554"
+        ]
+      },
+      {
+        "methodName": "testMinusMonths_int_fromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.minusMonths(1);",
+        "test_source": "  public void testMinusMonths_int_fromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.minusMonths(1);\n  MonthDay expected = new MonthDay(1, 29, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, MonthDay.withFieldAdded line 519, MonthDay.minusMonths line 652, TestMonthDay_Basics.testMinusMonths_int_fromLeap line 547"
+        ]
+      },
+      {
+        "methodName": "testPlusDays_int_fromLeap",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        MonthDay result = test.plusDays(1);",
+        "test_source": "  public void testPlusDays_int_fromLeap() {\n  MonthDay test = new MonthDay(2, 29, ISOChronology.getInstanceUTC());\n  MonthDay result = test.plusDays(1);\n  MonthDay expected = new MonthDay(3, 1, ISOChronology.getInstance());\n  assertEquals(expected, result);\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BasicMonthOfYearDateTimeField.add line 213, BaseDateTimeField.add line 324, MonthDay.withFieldAdded line 519, MonthDay.plusDays line 612, TestMonthDay_Basics.testPlusDays_int_fromLeap line 509"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/joda/time/chrono/BasicMonthOfYearDateTimeField.java",
+      "buggy_full_code": "\npackage org.joda.time.chrono;\n\nimport org.joda.time.DateTimeConstants;\nimport org.joda.time.DateTimeFieldType;\nimport org.joda.time.DateTimeUtils;\nimport org.joda.time.DurationField;\nimport org.joda.time.ReadablePartial;\nimport org.joda.time.field.FieldUtils;\nimport org.joda.time.field.ImpreciseDateTimeField;\n\n\nclass BasicMonthOfYearDateTimeField extends ImpreciseDateTimeField {\n\n    \n    private static final long serialVersionUID = -8258715387168736L; private static final int MIN = DateTimeConstants.JANUARY; private final BasicChronology iChronology; private final int iMax; private final int iLeapMonth; BasicMonthOfYearDateTimeField(BasicChronology chronology, int leapMonth) {\n        super(DateTimeFieldType.monthOfYear(), chronology.getAverageMillisPerMonth());\n        iChronology = chronology;\n        iMax = iChronology.getMaxMonth();\n        iLeapMonth = leapMonth;\n    }\n\n    \n    public boolean isLenient() {\n        return false;\n    }\n\n    \n    \n    public int get(long instant) {\n        return iChronology.getMonthOfYear(instant);\n    }\n\n    \n    \n    public long add(long instant, int months) {\n        if (months == 0) {\n            return instant; \n        }\n        \n        \n        \n        long timePart = iChronology.getMillisOfDay(instant);\n        \n        \n        \n        \n        int thisYear = iChronology.getYear(instant);\n        int thisMonth = iChronology.getMonthOfYear(instant, thisYear);\n        \n        \n        \n        \n        \n        int yearToUse;\n        \n        int monthToUse = thisMonth - 1 + months;\n        if (monthToUse >= 0) {\n            yearToUse = thisYear + (monthToUse / iMax);\n            monthToUse = (monthToUse % iMax) + 1;\n        } else {\n            yearToUse = thisYear + (monthToUse / iMax) - 1;\n            monthToUse = Math.abs(monthToUse);\n            int remMonthToUse = monthToUse % iMax;\n            \n            if (remMonthToUse == 0) {\n                remMonthToUse = iMax;\n            }\n            monthToUse = iMax - remMonthToUse + 1;\n            \n            if (monthToUse == 1) {\n                yearToUse += 1;\n            }\n        }\n        \n        \n\n        \n        \n        \n        int dayToUse = iChronology.getDayOfMonth(instant, thisYear, thisMonth);\n        int maxDay = iChronology.getDaysInYearMonth(yearToUse, monthToUse);\n        if (dayToUse > maxDay) {\n            dayToUse = maxDay;\n        }\n        \n        \n        \n        long datePart =\n            iChronology.getYearMonthDayMillis(yearToUse, monthToUse, dayToUse);\n        return datePart + timePart;\n    }\n\n    \n    public long add(long instant, long months) {\n        int i_months = (int)months;\n        if (i_months == months) {\n            return add(instant, i_months);\n        }\n\n        \n\n        long timePart = iChronology.getMillisOfDay(instant);\n\n        int thisYear = iChronology.getYear(instant);\n        int thisMonth = iChronology.getMonthOfYear(instant, thisYear);\n\n        long yearToUse;\n        long monthToUse = thisMonth - 1 + months;\n        if (monthToUse >= 0) {\n            yearToUse = thisYear + (monthToUse / iMax);\n            monthToUse = (monthToUse % iMax) + 1;\n        } else {\n            yearToUse = thisYear + (monthToUse / iMax) - 1;\n            monthToUse = Math.abs(monthToUse);\n            int remMonthToUse = (int)(monthToUse % iMax);\n            if (remMonthToUse == 0) {\n                remMonthToUse = iMax;\n            }\n            monthToUse = iMax - remMonthToUse + 1;\n            if (monthToUse == 1) {\n                yearToUse += 1;\n            }\n        }\n\n        if (yearToUse < iChronology.getMinYear() ||\n            yearToUse > iChronology.getMaxYear()) {\n\n            throw new IllegalArgumentException\n                (\"Magnitude of add amount is too large: \" + months);\n        }\n\n        int i_yearToUse = (int)yearToUse;\n        int i_monthToUse = (int)monthToUse;\n\n        int dayToUse = iChronology.getDayOfMonth(instant, thisYear, thisMonth);\n        int maxDay = iChronology.getDaysInYearMonth(i_yearToUse, i_monthToUse);\n        if (dayToUse > maxDay) {\n            dayToUse = maxDay;\n        }\n\n        long datePart =\n            iChronology.getYearMonthDayMillis(i_yearToUse, i_monthToUse, dayToUse);\n        return datePart + timePart;\n    }\n\n    \n    public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd) {\n        \n        \n        if (valueToAdd == 0) {\n            return values;\n        }\n            \n        if (DateTimeUtils.isContiguous(partial)) {\n            long instant = 0L;\n            for (int i = 0, isize = partial.size(); i < isize; i++) {\n                instant = partial.getFieldType(i).getField(iChronology).set(instant, values[i]);\n            }\n            instant = add(instant, valueToAdd);\n            return iChronology.get(partial, instant);\n        } else {\n            return super.add(partial, fieldIndex, values, valueToAdd);\n        }\n    }\n\n    \n    \n    public long addWrapField(long instant, int months) {\n        return set(instant, FieldUtils.getWrappedValue(get(instant), months, MIN, iMax));\n    }\n\n    \n    public long getDifferenceAsLong(long minuendInstant, long subtrahendInstant) {\n        if (minuendInstant < subtrahendInstant) {\n            return -getDifference(subtrahendInstant, minuendInstant);\n        }\n\n        int minuendYear = iChronology.getYear(minuendInstant);\n        int minuendMonth = iChronology.getMonthOfYear(minuendInstant, minuendYear);\n        int subtrahendYear = iChronology.getYear(subtrahendInstant);\n        int subtrahendMonth = iChronology.getMonthOfYear(subtrahendInstant, subtrahendYear);\n\n        long difference = (minuendYear - subtrahendYear) * ((long) iMax) + minuendMonth - subtrahendMonth;\n\n        \n        \n        int minuendDom = iChronology.getDayOfMonth\n            (minuendInstant, minuendYear, minuendMonth);\n        if (minuendDom == iChronology.getDaysInYearMonth(minuendYear, minuendMonth)) {\n            \n            int subtrahendDom = iChronology.getDayOfMonth\n                (subtrahendInstant, subtrahendYear, subtrahendMonth);\n            if (subtrahendDom > minuendDom) {\n                \n                \n                \n                subtrahendInstant = iChronology.dayOfMonth().set(subtrahendInstant, minuendDom);\n            }\n        }\n\n        \n        long minuendRem = minuendInstant\n            - iChronology.getYearMonthMillis(minuendYear, minuendMonth);\n        long subtrahendRem = subtrahendInstant\n            - iChronology.getYearMonthMillis(subtrahendYear, subtrahendMonth);\n\n        if (minuendRem < subtrahendRem) {\n            difference--;\n        }\n\n        return difference;\n    }\n\n    \n    \n    public long set(long instant, int month) {\n        FieldUtils.verifyValueBounds(this, month, MIN, iMax);\n        \n        int thisYear = iChronology.getYear(instant);\n        \n        int thisDom = iChronology.getDayOfMonth(instant, thisYear);\n        int maxDom = iChronology.getDaysInYearMonth(thisYear, month);\n        if (thisDom > maxDom) {\n            \n            thisDom = maxDom;\n        }\n        \n        return iChronology.getYearMonthDayMillis(thisYear, month, thisDom) +\n            iChronology.getMillisOfDay(instant);\n    }\n\n    \n    public DurationField getRangeDurationField() {\n        return iChronology.years();\n    }\n\n    \n    public boolean isLeap(long instant) {\n        int thisYear = iChronology.getYear(instant);\n        if (iChronology.isLeapYear(thisYear)) {\n            return (iChronology.getMonthOfYear(instant, thisYear) == iLeapMonth);\n        }\n        return false;\n    }\n\n    \n    public int getLeapAmount(long instant) {\n        return isLeap(instant) ? 1 : 0;\n    }\n\n    \n    public DurationField getLeapDurationField() {\n        return iChronology.days();\n    }\n\n    \n    public int getMinimumValue() {\n        return MIN;\n    }\n\n    \n    public int getMaximumValue() {\n        return iMax;\n    }\n\n    \n    public long roundFloor(long instant) {\n        int year = iChronology.getYear(instant);\n        int month = iChronology.getMonthOfYear(instant, year);\n        return iChronology.getYearMonthMillis(year, month);\n    }\n\n    \n    public long remainder(long instant) {\n        return instant - roundFloor(instant);\n    }\n\n    \n    \n    private Object readResolve() {\n        return iChronology.monthOfYear();\n    }\n}\n",
+      "fixed_full_code": "\npackage org.joda.time.chrono;\n\nimport org.joda.time.DateTimeConstants;\nimport org.joda.time.DateTimeFieldType;\nimport org.joda.time.DateTimeUtils;\nimport org.joda.time.DurationField;\nimport org.joda.time.ReadablePartial;\nimport org.joda.time.field.FieldUtils;\nimport org.joda.time.field.ImpreciseDateTimeField;\n\n\nclass BasicMonthOfYearDateTimeField extends ImpreciseDateTimeField {\n\n    \n    private static final long serialVersionUID = -8258715387168736L; private static final int MIN = DateTimeConstants.JANUARY; private final BasicChronology iChronology; private final int iMax; private final int iLeapMonth; BasicMonthOfYearDateTimeField(BasicChronology chronology, int leapMonth) {\n        super(DateTimeFieldType.monthOfYear(), chronology.getAverageMillisPerMonth());\n        iChronology = chronology;\n        iMax = iChronology.getMaxMonth();\n        iLeapMonth = leapMonth;\n    }\n\n    \n    public boolean isLenient() {\n        return false;\n    }\n\n    \n    \n    public int get(long instant) {\n        return iChronology.getMonthOfYear(instant);\n    }\n\n    \n    \n    public long add(long instant, int months) {\n        if (months == 0) {\n            return instant; \n        }\n        \n        \n        \n        long timePart = iChronology.getMillisOfDay(instant);\n        \n        \n        \n        \n        int thisYear = iChronology.getYear(instant);\n        int thisMonth = iChronology.getMonthOfYear(instant, thisYear);\n        \n        \n        \n        \n        \n        int yearToUse;\n        \n        int monthToUse = thisMonth - 1 + months;\n        if (monthToUse >= 0) {\n            yearToUse = thisYear + (monthToUse / iMax);\n            monthToUse = (monthToUse % iMax) + 1;\n        } else {\n            yearToUse = thisYear + (monthToUse / iMax) - 1;\n            monthToUse = Math.abs(monthToUse);\n            int remMonthToUse = monthToUse % iMax;\n            \n            if (remMonthToUse == 0) {\n                remMonthToUse = iMax;\n            }\n            monthToUse = iMax - remMonthToUse + 1;\n            \n            if (monthToUse == 1) {\n                yearToUse += 1;\n            }\n        }\n        \n        \n\n        \n        \n        \n        int dayToUse = iChronology.getDayOfMonth(instant, thisYear, thisMonth);\n        int maxDay = iChronology.getDaysInYearMonth(yearToUse, monthToUse);\n        if (dayToUse > maxDay) {\n            dayToUse = maxDay;\n        }\n        \n        \n        \n        long datePart =\n            iChronology.getYearMonthDayMillis(yearToUse, monthToUse, dayToUse);\n        return datePart + timePart;\n    }\n\n    \n    public long add(long instant, long months) {\n        int i_months = (int)months;\n        if (i_months == months) {\n            return add(instant, i_months);\n        }\n\n        \n\n        long timePart = iChronology.getMillisOfDay(instant);\n\n        int thisYear = iChronology.getYear(instant);\n        int thisMonth = iChronology.getMonthOfYear(instant, thisYear);\n\n        long yearToUse;\n        long monthToUse = thisMonth - 1 + months;\n        if (monthToUse >= 0) {\n            yearToUse = thisYear + (monthToUse / iMax);\n            monthToUse = (monthToUse % iMax) + 1;\n        } else {\n            yearToUse = thisYear + (monthToUse / iMax) - 1;\n            monthToUse = Math.abs(monthToUse);\n            int remMonthToUse = (int)(monthToUse % iMax);\n            if (remMonthToUse == 0) {\n                remMonthToUse = iMax;\n            }\n            monthToUse = iMax - remMonthToUse + 1;\n            if (monthToUse == 1) {\n                yearToUse += 1;\n            }\n        }\n\n        if (yearToUse < iChronology.getMinYear() ||\n            yearToUse > iChronology.getMaxYear()) {\n\n            throw new IllegalArgumentException\n                (\"Magnitude of add amount is too large: \" + months);\n        }\n\n        int i_yearToUse = (int)yearToUse;\n        int i_monthToUse = (int)monthToUse;\n\n        int dayToUse = iChronology.getDayOfMonth(instant, thisYear, thisMonth);\n        int maxDay = iChronology.getDaysInYearMonth(i_yearToUse, i_monthToUse);\n        if (dayToUse > maxDay) {\n            dayToUse = maxDay;\n        }\n\n        long datePart =\n            iChronology.getYearMonthDayMillis(i_yearToUse, i_monthToUse, dayToUse);\n        return datePart + timePart;\n    }\n\n    \n    public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd) {\n        \n        \n        if (valueToAdd == 0) {\n            return values;\n        }\n        if (partial.size() > 0 && partial.getFieldType(0).equals(DateTimeFieldType.monthOfYear()) && fieldIndex == 0) {\n            \n            int curMonth0 = partial.getValue(0) - 1;\n            int newMonth = ((curMonth0 + (valueToAdd % 12) + 12) % 12) + 1;\n            return set(partial, 0, values, newMonth);\n        }\n        if (DateTimeUtils.isContiguous(partial)) {\n            long instant = 0L;\n            for (int i = 0, isize = partial.size(); i < isize; i++) {\n                instant = partial.getFieldType(i).getField(iChronology).set(instant, values[i]);\n            }\n            instant = add(instant, valueToAdd);\n            return iChronology.get(partial, instant);\n        } else {\n            return super.add(partial, fieldIndex, values, valueToAdd);\n        }\n    }\n\n    \n    \n    public long addWrapField(long instant, int months) {\n        return set(instant, FieldUtils.getWrappedValue(get(instant), months, MIN, iMax));\n    }\n\n    \n    public long getDifferenceAsLong(long minuendInstant, long subtrahendInstant) {\n        if (minuendInstant < subtrahendInstant) {\n            return -getDifference(subtrahendInstant, minuendInstant);\n        }\n\n        int minuendYear = iChronology.getYear(minuendInstant);\n        int minuendMonth = iChronology.getMonthOfYear(minuendInstant, minuendYear);\n        int subtrahendYear = iChronology.getYear(subtrahendInstant);\n        int subtrahendMonth = iChronology.getMonthOfYear(subtrahendInstant, subtrahendYear);\n\n        long difference = (minuendYear - subtrahendYear) * ((long) iMax) + minuendMonth - subtrahendMonth;\n\n        \n        \n        int minuendDom = iChronology.getDayOfMonth\n            (minuendInstant, minuendYear, minuendMonth);\n        if (minuendDom == iChronology.getDaysInYearMonth(minuendYear, minuendMonth)) {\n            \n            int subtrahendDom = iChronology.getDayOfMonth\n                (subtrahendInstant, subtrahendYear, subtrahendMonth);\n            if (subtrahendDom > minuendDom) {\n                \n                \n                \n                subtrahendInstant = iChronology.dayOfMonth().set(subtrahendInstant, minuendDom);\n            }\n        }\n\n        \n        long minuendRem = minuendInstant\n            - iChronology.getYearMonthMillis(minuendYear, minuendMonth);\n        long subtrahendRem = subtrahendInstant\n            - iChronology.getYearMonthMillis(subtrahendYear, subtrahendMonth);\n\n        if (minuendRem < subtrahendRem) {\n            difference--;\n        }\n\n        return difference;\n    }\n\n    \n    \n    public long set(long instant, int month) {\n        FieldUtils.verifyValueBounds(this, month, MIN, iMax);\n        \n        int thisYear = iChronology.getYear(instant);\n        \n        int thisDom = iChronology.getDayOfMonth(instant, thisYear);\n        int maxDom = iChronology.getDaysInYearMonth(thisYear, month);\n        if (thisDom > maxDom) {\n            \n            thisDom = maxDom;\n        }\n        \n        return iChronology.getYearMonthDayMillis(thisYear, month, thisDom) +\n            iChronology.getMillisOfDay(instant);\n    }\n\n    \n    public DurationField getRangeDurationField() {\n        return iChronology.years();\n    }\n\n    \n    public boolean isLeap(long instant) {\n        int thisYear = iChronology.getYear(instant);\n        if (iChronology.isLeapYear(thisYear)) {\n            return (iChronology.getMonthOfYear(instant, thisYear) == iLeapMonth);\n        }\n        return false;\n    }\n\n    \n    public int getLeapAmount(long instant) {\n        return isLeap(instant) ? 1 : 0;\n    }\n\n    \n    public DurationField getLeapDurationField() {\n        return iChronology.days();\n    }\n\n    \n    public int getMinimumValue() {\n        return MIN;\n    }\n\n    \n    public int getMaximumValue() {\n        return iMax;\n    }\n\n    \n    public long roundFloor(long instant) {\n        int year = iChronology.getYear(instant);\n        int month = iChronology.getMonthOfYear(instant, year);\n        return iChronology.getYearMonthMillis(year, month);\n    }\n\n    \n    public long remainder(long instant) {\n        return instant - roundFloor(instant);\n    }\n\n    \n    \n    private Object readResolve() {\n        return iChronology.monthOfYear();\n    }\n}\n",
+      "buggy_signatures": [
+        "public boolean isLenient()",
+        "public int get(long instant)",
+        "public long add(long instant, int months)",
+        "public long add(long instant, long months)",
+        "public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd)",
+        "public long addWrapField(long instant, int months)",
+        "public long getDifferenceAsLong(long minuendInstant, long subtrahendInstant)",
+        "public long set(long instant, int month)",
+        "public DurationField getRangeDurationField()",
+        "public boolean isLeap(long instant)",
+        "public int getLeapAmount(long instant)",
+        "public DurationField getLeapDurationField()",
+        "public int getMinimumValue()",
+        "public int getMaximumValue()",
+        "public long roundFloor(long instant)",
+        "public long remainder(long instant)",
+        "private Object readResolve()"
+      ],
+      "fixed_signatures": [
+        "public boolean isLenient()",
+        "public int get(long instant)",
+        "public long add(long instant, int months)",
+        "public long add(long instant, long months)",
+        "public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd)",
+        "public long addWrapField(long instant, int months)",
+        "public long getDifferenceAsLong(long minuendInstant, long subtrahendInstant)",
+        "public long set(long instant, int month)",
+        "public DurationField getRangeDurationField()",
+        "public boolean isLeap(long instant)",
+        "public int getLeapAmount(long instant)",
+        "public DurationField getLeapDurationField()",
+        "public int getMinimumValue()",
+        "public int getMaximumValue()",
+        "public long roundFloor(long instant)",
+        "public long remainder(long instant)",
+        "private Object readResolve()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd) {\n  \n  \n  if (valueToAdd == 0) {\n  return values;\n  }\n  \n  if (DateTimeUtils.isContiguous(partial)) {\n  long instant = 0L;\n  for (int i = 0, isize = partial.size(); i < isize; i++) {\n  instant = partial.getFieldType(i).getField(iChronology).set(instant, values[i]);\n  }\n  instant = add(instant, valueToAdd);\n  return iChronology.get(partial, instant);\n  } else {\n  return super.add(partial, fieldIndex, values, valueToAdd);\n  }\n  }",
+          "fixed_method": "  public int[] add(ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd) {\n  \n  \n  if (valueToAdd == 0) {\n  return values;\n  }\n  if (partial.size() > 0 && partial.getFieldType(0).equals(DateTimeFieldType.monthOfYear()) && fieldIndex == 0) {\n  \n  int curMonth0 = partial.getValue(0) - 1;\n  int newMonth = ((curMonth0 + (valueToAdd % 12) + 12) % 12) + 1;\n  return set(partial, 0, values, newMonth);\n  }\n  if (DateTimeUtils.isContiguous(partial)) {\n  long instant = 0L;\n  for (int i = 0, isize = partial.size(); i < isize; i++) {\n  instant = partial.getFieldType(i).getField(iChronology).set(instant, values[i]);\n  }\n  instant = add(instant, valueToAdd);\n  return iChronology.get(partial, instant);\n  } else {\n  return super.add(partial, fieldIndex, values, valueToAdd);\n  }\n  }",
+          "diff": [
+            "@@ -206,7 +206,12 @@",
+            "         if (valueToAdd == 0) {\n",
+            "             return values;\n",
+            "         }\n",
+            "+        if (partial.size() > 0 && partial.getFieldType(0).equals(DateTimeFieldType.monthOfYear()) && fieldIndex == 0) {\n",
+            "             // month is largest field and being added to, such as month-day\n",
+            "+            int curMonth0 = partial.getValue(0) - 1;\n",
+            "+            int newMonth = ((curMonth0 + (valueToAdd % 12) + 12) % 12) + 1;\n",
+            "+            return set(partial, 0, values, newMonth);\n",
+            "+        }\n",
+            "         if (DateTimeUtils.isContiguous(partial)) {\n",
+            "             long instant = 0L;\n",
+            "             for (int i = 0, isize = partial.size(); i < isize; i++) {\n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "bug_id": "6",
+  "failed_tests": {
+    "org.jfree.chart.util.junit.ShapeListTests": [
+      {
+        "methodName": "testSerialization",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<org.jfree.chart.util.ShapeList@dd990c12> but was:<org.jfree.chart.util.ShapeList@b8ed12a0>",
+        "fail_line": "        assertEquals(l1, l2);",
+        "test_source": "  public void testSerialization() {\n\n  ShapeList l1 = new ShapeList();\n  l1.setShape(0, new Rectangle(1, 2, 3, 4));\n  l1.setShape(1, new Line2D.Double(1.0, 2.0, 3.0, 4.0));\n  l1.setShape(2, null);\n\n  ShapeList l2 = null;\n\n  try {\n  ByteArrayOutputStream buffer = new ByteArrayOutputStream();\n  ObjectOutput out = new ObjectOutputStream(buffer);\n  out.writeObject(l1);\n  out.close();\n\n  ObjectInput in = new ObjectInputStream(new ByteArrayInputStream(\n  \t\tbuffer.toByteArray()));\n  l2 = (ShapeList) in.readObject();\n  in.close();\n  }\n  catch (Exception e) {\n  e.printStackTrace();\n  }\n  assertEquals(l1, l2);\n\n  }",
+        "stack": [
+          "ShapeListTests.testSerialization line 151"
+        ]
+      },
+      {
+        "methodName": "testEquals",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(l1.equals(l2));",
+        "test_source": "  public void testEquals() {\n  ShapeList l1 = new ShapeList();\n  l1.setShape(0, new Rectangle(1, 2, 3, 4));\n  l1.setShape(1, new Line2D.Double(1.0, 2.0, 3.0, 4.0));\n  l1.setShape(2, null);\n\n  ShapeList l2 = new ShapeList();\n  l2.setShape(0, new Rectangle(1, 2, 3, 4));\n  l2.setShape(1, new Line2D.Double(1.0, 2.0, 3.0, 4.0));\n  l2.setShape(2, null);\n\n  assertTrue(l1.equals(l2));\n  assertTrue(l2.equals(l2));\n  }",
+        "stack": [
+          "ShapeListTests.testEquals line 95"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jfree/chart/util/ShapeList.java",
+      "buggy_full_code": "\n\npackage org.jfree.chart.util;\n\nimport java.awt.Shape;\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\n\n\npublic class ShapeList extends AbstractObjectList { public ShapeList() {\n        super();\n    }\n\n    \n    public Shape getShape(int index) {\n        return (Shape) get(index);\n    }\n\n    \n    public void setShape(int index, Shape shape) {\n        set(index, shape);\n    }\n\n    \n    public Object clone() throws CloneNotSupportedException {\n        return super.clone();\n    }\n\n    \n    public boolean equals(Object obj) {\n\n        if (obj == this) {\n            return true;\n        }\n        if (!(obj instanceof ShapeList)) {\n            return false;\n        }\n        return super.equals(obj);\n\n    }\n\n    \n    public int hashCode() {\n        return super.hashCode();\n    }\n\n    \n    private void writeObject(ObjectOutputStream stream) throws IOException {\n\n        stream.defaultWriteObject();\n        int count = size();\n        stream.writeInt(count);\n        for (int i = 0; i < count; i++) {\n            Shape shape = getShape(i);\n            if (shape != null) {\n                stream.writeInt(i);\n                SerialUtilities.writeShape(shape, stream);\n            }\n            else {\n                stream.writeInt(-1);\n            }\n        }\n\n    }\n\n    \n    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {\n\n        stream.defaultReadObject();\n        int count = stream.readInt();\n        for (int i = 0; i < count; i++) {\n            int index = stream.readInt();\n            if (index != -1) {\n                setShape(index, SerialUtilities.readShape(stream));\n            }\n        }\n\n    }\n\n}\n\n",
+      "fixed_full_code": "\n\npackage org.jfree.chart.util;\n\nimport java.awt.Shape;\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\n\n\npublic class ShapeList extends AbstractObjectList { public ShapeList() {\n        super();\n    }\n\n    \n    public Shape getShape(int index) {\n        return (Shape) get(index);\n    }\n\n    \n    public void setShape(int index, Shape shape) {\n        set(index, shape);\n    }\n\n    \n    public Object clone() throws CloneNotSupportedException {\n        return super.clone();\n    }\n\n    \n    public boolean equals(Object obj) {\n\n        if (obj == this) {\n            return true;\n        }\n        if (!(obj instanceof ShapeList)) {\n            return false;\n        }\n        ShapeList that = (ShapeList) obj;\n        int listSize = size();\n        for (int i = 0; i < listSize; i++) {\n           if (!ShapeUtilities.equal((Shape) get(i), (Shape) that.get(i))) {\n               return false;\n           }\n        }\n        return true;\n\n    }\n\n    \n    public int hashCode() {\n        return super.hashCode();\n    }\n\n    \n    private void writeObject(ObjectOutputStream stream) throws IOException {\n\n        stream.defaultWriteObject();\n        int count = size();\n        stream.writeInt(count);\n        for (int i = 0; i < count; i++) {\n            Shape shape = getShape(i);\n            if (shape != null) {\n                stream.writeInt(i);\n                SerialUtilities.writeShape(shape, stream);\n            }\n            else {\n                stream.writeInt(-1);\n            }\n        }\n\n    }\n\n    \n    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {\n\n        stream.defaultReadObject();\n        int count = stream.readInt();\n        for (int i = 0; i < count; i++) {\n            int index = stream.readInt();\n            if (index != -1) {\n                setShape(index, SerialUtilities.readShape(stream));\n            }\n        }\n\n    }\n\n}\n\n",
+      "buggy_signatures": [
+        "public class ShapeList extends AbstractObjectList { public ShapeList()",
+        "public Shape getShape(int index)",
+        "public void setShape(int index, Shape shape)",
+        "public Object clone() throws CloneNotSupportedException",
+        "public boolean equals(Object obj)",
+        "public int hashCode()",
+        "private void writeObject(ObjectOutputStream stream) throws IOException",
+        "private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException"
+      ],
+      "fixed_signatures": [
+        "public class ShapeList extends AbstractObjectList { public ShapeList()",
+        "public Shape getShape(int index)",
+        "public void setShape(int index, Shape shape)",
+        "public Object clone() throws CloneNotSupportedException",
+        "public boolean equals(Object obj)",
+        "public int hashCode()",
+        "private void writeObject(ObjectOutputStream stream) throws IOException",
+        "private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public boolean equals(Object obj) {\n\n  if (obj == this) {\n  return true;\n  }\n  if (!(obj instanceof ShapeList)) {\n  return false;\n  }\n  return super.equals(obj);\n\n  }",
+          "fixed_method": "  public boolean equals(Object obj) {\n\n  if (obj == this) {\n  return true;\n  }\n  if (!(obj instanceof ShapeList)) {\n  return false;\n  }\n  ShapeList that = (ShapeList) obj;\n  int listSize = size();\n  for (int i = 0; i < listSize; i++) {\n  if (!ShapeUtilities.equal((Shape) get(i), (Shape) that.get(i))) {\n  return false;\n  }\n  }\n  return true;\n\n  }",
+          "diff": [
+            "@@ -108,7 +108,14 @@",
+            "         if (!(obj instanceof ShapeList)) {\n",
+            "             return false;\n",
+            "         }\n",
+            "-        return super.equals(obj);\n",
+            "+        ShapeList that = (ShapeList) obj;\n",
+            "+        int listSize = size();\n",
+            "+        for (int i = 0; i < listSize; i++) {\n",
+            "+           if (!ShapeUtilities.equal((Shape) get(i), (Shape) that.get(i))) {\n",
+            "+               return false;\n",
+            "+           }\n",
+            "+        }\n",
+            "+        return true;\n",
+            " \n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 9
+        }
+      ]
+    }
+  ]
+}

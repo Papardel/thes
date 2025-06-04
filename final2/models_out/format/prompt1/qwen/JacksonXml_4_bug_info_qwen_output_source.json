@@ -1,0 +1,10 @@
+{
+  "bug_id": "JacksonXml_4_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 4\nTest Class: com.fasterxml.jackson.dataformat.xml.misc.RootNameTest\nMethod: testDynamicRootName\nError: junit.framework.ComparisonFailure\nMessage: expected:<<[rudy]/>> but was:<<[null]/>>\nFailing Line:         assertEquals(\"<rudy/>\", xml);\nTest Source:\npublic void testDynamicRootName() throws IOException {\n  String xml;\n\n  ObjectWriter w = _xmlMapper.writer().withRootName(\"rudy\");\n\n  xml = w.writeValueAsString(new StringBean(\"foo\"));\n  assertEquals(\"<rudy><text>foo</text></rudy>\", xml);\n\n  xml = w.writeValueAsString(new StringBean(null));\n  assertEquals(\"<rudy><text/></rudy>\", xml);\n\n  \n  xml = w.writeValueAsString(null);\n  assertEquals(\"<rudy/>\", xml);\n  }\nStack Trace:\nRootNameTest.testDynamicRootName line 81\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any third-party library classes.\n- any JDK internal classes.\n\n```\n```java\ncom.fasterxml.jackson.dataformat.xml.ser.XmlGeneratorFactory\n```"
+    }
+  ]
+}

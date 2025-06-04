@@ -1,0 +1,58 @@
+{
+  "bug_id": "104",
+  "failed_tests": {
+    "org.apache.commons.math.special.GammaTest": [
+      {
+        "methodName": "testRegularizedGammaPositivePositive",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0.632120558828558> but was:<0.6321205587649603>",
+        "fail_line": "        testRegularizedGamma(0.632120558828558, 1.0, 1.0);",
+        "test_source": "  public void testRegularizedGammaPositivePositive() {\n  testRegularizedGamma(0.632120558828558, 1.0, 1.0);\n  }",
+        "stack": [
+          "TestUtils.assertEquals line 62, TestUtils.assertEquals line 49, GammaTest.testRegularizedGamma line 40, GammaTest.testRegularizedGammaPositivePositive line 77"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/special/Gamma.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.special;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.util.ContinuedFraction;\n\n\npublic class Gamma implements Serializable { private static final long serialVersionUID = -6587513359895466954L; private static final double DEFAULT_EPSILON = 10e-9; private static double[] lanczos = { 0.99999999999999709182, 57.156235665862923517, -59.597960355475491248, 14.136097974741747174, -0.49191381609762019978, .33994649984811888699e-4, .46523628927048575665e-4, -.98374475304879564677e-4, .15808870322491248884e-3, -.21026444172410488319e-3, .21743961811521264320e-3, -.16431810653676389022e-3, .84418223983852743293e-4, -.26190838401581408670e-4, .36899182659531622704e-5, }; private static final double HALF_LOG_2_PI = 0.5 * Math.log(2.0 * Math.PI); private Gamma() {\n        super();\n    }\n\n    \n    public static double logGamma(double x) {\n        double ret;\n\n        if (Double.isNaN(x) || (x <= 0.0)) {\n            ret = Double.NaN;\n        } else {\n            double g = 607.0 / 128.0;\n            \n            double sum = 0.0;\n            for (int i = lanczos.length - 1; i > 0; --i) {\n                sum = sum + (lanczos[i] / (x + i));\n            }\n            sum = sum + lanczos[0];\n\n            double tmp = x + g + .5;\n            ret = ((x + .5) * Math.log(tmp)) - tmp +\n                HALF_LOG_2_PI + Math.log(sum / x);\n        }\n\n        return ret;\n    }\n\n    \n    public static double regularizedGammaP(double a, double x) throws MathException {\n        return regularizedGammaP(a, x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n        \n        \n    \n    public static double regularizedGammaP(double a, double x, double epsilon, int maxIterations) throws MathException {\n        double ret;\n\n        if (Double.isNaN(a) || Double.isNaN(x) || (a <= 0.0) || (x < 0.0)) {\n            ret = Double.NaN;\n        } else if (x == 0.0) {\n            ret = 0.0;\n        } else if (a >= 1.0 && x > a) {\n            \n            \n            ret = 1.0 - regularizedGammaQ(a, x, epsilon, maxIterations);\n        } else {\n            \n            double n = 0.0; \n            double an = 1.0 / a; \n            double sum = an; \n            while (Math.abs(an) > epsilon && n < maxIterations) {\n                \n                n = n + 1.0;\n                an = an * (x / (a + n));\n\n                \n                sum = sum + an;\n            }\n            if (n >= maxIterations) {\n                throw new MaxIterationsExceededException(maxIterations);\n            } else {\n                ret = Math.exp(-x + (a * Math.log(x)) - logGamma(a)) * sum;\n            }\n        }\n\n        return ret;\n    }\n    \n    \n    public static double regularizedGammaQ(double a, double x) throws MathException {\n        return regularizedGammaQ(a, x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n    \n    \n    public static double regularizedGammaQ(final double a, double x, double epsilon, int maxIterations) throws MathException {\n        double ret;\n\n        if (Double.isNaN(a) || Double.isNaN(x) || (a <= 0.0) || (x < 0.0)) {\n            ret = Double.NaN;\n        } else if (x == 0.0) {\n            ret = 1.0;\n        } else if (x < a || a < 1.0) {\n            \n            \n            ret = 1.0 - regularizedGammaP(a, x, epsilon, maxIterations);\n        } else {\n            \n            ContinuedFraction cf = new ContinuedFraction() {\n\n                private static final long serialVersionUID = 5378525034886164398L; protected double getA(int n, double x) {\n                    return ((2.0 * n) + 1.0) - a + x;\n                }\n\n                protected double getB(int n, double x) {\n                    return n * (a - n);\n                }\n            };\n            \n            ret = 1.0 / cf.evaluate(x, epsilon, maxIterations);\n            ret = Math.exp(-x + (a * Math.log(x)) - logGamma(a)) * ret;\n        }\n\n        return ret;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.special;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math.MathException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.util.ContinuedFraction;\n\n\npublic class Gamma implements Serializable { private static final long serialVersionUID = -6587513359895466954L; private static final double DEFAULT_EPSILON = 10e-15; private static double[] lanczos = { 0.99999999999999709182, 57.156235665862923517, -59.597960355475491248, 14.136097974741747174, -0.49191381609762019978, .33994649984811888699e-4, .46523628927048575665e-4, -.98374475304879564677e-4, .15808870322491248884e-3, -.21026444172410488319e-3, .21743961811521264320e-3, -.16431810653676389022e-3, .84418223983852743293e-4, -.26190838401581408670e-4, .36899182659531622704e-5, }; private static final double HALF_LOG_2_PI = 0.5 * Math.log(2.0 * Math.PI); private Gamma() {\n        super();\n    }\n\n    \n    public static double logGamma(double x) {\n        double ret;\n\n        if (Double.isNaN(x) || (x <= 0.0)) {\n            ret = Double.NaN;\n        } else {\n            double g = 607.0 / 128.0;\n            \n            double sum = 0.0;\n            for (int i = lanczos.length - 1; i > 0; --i) {\n                sum = sum + (lanczos[i] / (x + i));\n            }\n            sum = sum + lanczos[0];\n\n            double tmp = x + g + .5;\n            ret = ((x + .5) * Math.log(tmp)) - tmp +\n                HALF_LOG_2_PI + Math.log(sum / x);\n        }\n\n        return ret;\n    }\n\n    \n    public static double regularizedGammaP(double a, double x) throws MathException {\n        return regularizedGammaP(a, x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n        \n        \n    \n    public static double regularizedGammaP(double a, double x, double epsilon, int maxIterations) throws MathException {\n        double ret;\n\n        if (Double.isNaN(a) || Double.isNaN(x) || (a <= 0.0) || (x < 0.0)) {\n            ret = Double.NaN;\n        } else if (x == 0.0) {\n            ret = 0.0;\n        } else if (a >= 1.0 && x > a) {\n            \n            \n            ret = 1.0 - regularizedGammaQ(a, x, epsilon, maxIterations);\n        } else {\n            \n            double n = 0.0; \n            double an = 1.0 / a; \n            double sum = an; \n            while (Math.abs(an) > epsilon && n < maxIterations) {\n                \n                n = n + 1.0;\n                an = an * (x / (a + n));\n\n                \n                sum = sum + an;\n            }\n            if (n >= maxIterations) {\n                throw new MaxIterationsExceededException(maxIterations);\n            } else {\n                ret = Math.exp(-x + (a * Math.log(x)) - logGamma(a)) * sum;\n            }\n        }\n\n        return ret;\n    }\n    \n    \n    public static double regularizedGammaQ(double a, double x) throws MathException {\n        return regularizedGammaQ(a, x, DEFAULT_EPSILON, Integer.MAX_VALUE);\n    }\n    \n    \n    public static double regularizedGammaQ(final double a, double x, double epsilon, int maxIterations) throws MathException {\n        double ret;\n\n        if (Double.isNaN(a) || Double.isNaN(x) || (a <= 0.0) || (x < 0.0)) {\n            ret = Double.NaN;\n        } else if (x == 0.0) {\n            ret = 1.0;\n        } else if (x < a || a < 1.0) {\n            \n            \n            ret = 1.0 - regularizedGammaP(a, x, epsilon, maxIterations);\n        } else {\n            \n            ContinuedFraction cf = new ContinuedFraction() {\n\n                private static final long serialVersionUID = 5378525034886164398L; protected double getA(int n, double x) {\n                    return ((2.0 * n) + 1.0) - a + x;\n                }\n\n                protected double getB(int n, double x) {\n                    return n * (a - n);\n                }\n            };\n            \n            ret = 1.0 / cf.evaluate(x, epsilon, maxIterations);\n            ret = Math.exp(-x + (a * Math.log(x)) - logGamma(a)) * ret;\n        }\n\n        return ret;\n    }\n}\n",
+      "buggy_signatures": [
+        "public static double logGamma(double x)",
+        "public static double regularizedGammaP(double a, double x) throws MathException",
+        "public static double regularizedGammaP(double a, double x, double epsilon, int maxIterations) throws MathException",
+        "public static double regularizedGammaQ(double a, double x) throws MathException",
+        "public static double regularizedGammaQ(final double a, double x, double epsilon, int maxIterations) throws MathException",
+        "protected double getB(int n, double x)"
+      ],
+      "fixed_signatures": [
+        "public static double logGamma(double x)",
+        "public static double regularizedGammaP(double a, double x) throws MathException",
+        "public static double regularizedGammaP(double a, double x, double epsilon, int maxIterations) throws MathException",
+        "public static double regularizedGammaQ(double a, double x) throws MathException",
+        "public static double regularizedGammaQ(final double a, double x, double epsilon, int maxIterations) throws MathException",
+        "protected double getB(int n, double x)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -34,7 +34,7 @@",
+            "     private static final long serialVersionUID = -6587513359895466954L;\n",
+            " \n",
+            "     /** Maximum allowed numerical error. */\n",
+            "-    private static final double DEFAULT_EPSILON = 10e-9;\n",
+            "+    private static final double DEFAULT_EPSILON = 10e-15;\n",
+            " \n",
+            "     /** Lanczos coefficients */\n",
+            "     private static double[] lanczos =\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "bug_id": "Csv_4_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 4\nTest Class: org.apache.commons.csv.CSVParserTest\nMethod: testNoHeaderMap\nError: java.lang.NullPointerException\nMessage: \nFailing Line:         Assert.assertNull(parser.getHeaderMap());\nTest Source:\npublic void testNoHeaderMap() throws Exception {\n  final CSVParser parser = CSVParser.parse(\"a,b,c\\n1,2,3\\nx,y,z\", CSVFormat.DEFAULT);\n  Assert.assertNull(parser.getHeaderMap());\n  }\nStack Trace:\nCSVParser.getHeaderMap line 288, CSVParserTest.testNoHeaderMap line 670\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any class within a package that begins with junit or org.junit.\n\n```java\nimport org.apache.commons.csv.CSVParser;\nimport org.apache.commons.csv.CSVFormat;\nimport org.junit.Assert;\n\npublic class CSVParserTest {\n\n    public void testNoHeaderMap() throws Exception {\n        final CSVParser parser = CSVParser.parse(\"a,b,c\\n1,2,3\\nx,y,z\", CSVFormat.DEFAULT);\n        Assert.assertNull(parser.getHeaderMap());\n    }\n\n}\n```\n\n\n\n\n\n\n\n\n\n\n\n\n\n\ns"
+    }
+  ]
+}

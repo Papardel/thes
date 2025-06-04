@@ -1,0 +1,64 @@
+{
+  "bug_id": "14",
+  "failed_tests": {
+    "org.apache.commons.collections.map.TestCaseInsensitiveMap": [
+      {
+        "methodName": "testLocaleIndependence",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "en: 1 expected:<value> but was:<null>",
+        "fail_line": "                    assertEquals(Locale.getDefault() + \": \" + j, \"value\", map.get(data[j][1]));",
+        "test_source": "  public void testLocaleIndependence() {\n  Locale orig = Locale.getDefault();\n\n  Locale[] locales = { Locale.ENGLISH, new Locale(\"tr\"), Locale.getDefault() };\n\n  String[][] data = { \n  { \"i\", \"I\" },\n  { \"\\u03C2\", \"\\u03C3\" },\n  { \"\\u03A3\", \"\\u03C2\" },\n  { \"\\u03A3\", \"\\u03C3\" },\n  };\n\n  try {\n  for (int i = 0; i < locales.length; i++) {\n  Locale.setDefault(locales[i]);\n  for (int j = 0; j < data.length; j++) {\n  assertTrue(\"Test data corrupt: \" + j, data[j][0].equalsIgnoreCase(data[j][1]));\n  CaseInsensitiveMap map = new CaseInsensitiveMap();\n  map.put(data[j][0], \"value\");\n  assertEquals(Locale.getDefault() + \": \" + j, \"value\", map.get(data[j][1]));\n  }\n  }\n  } finally {\n  Locale.setDefault(orig);\n  }\n  }",
+        "stack": [
+          "TestCaseInsensitiveMap.testLocaleIndependence line 142"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/map/CaseInsensitiveMap.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.map;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\nimport java.util.Map;\n\n\npublic class CaseInsensitiveMap extends AbstractHashedMap implements Serializable, Cloneable { private static final long serialVersionUID = -7074655917369299456L; public CaseInsensitiveMap() {\n        super(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_THRESHOLD);\n    }\n\n    \n    public CaseInsensitiveMap(int initialCapacity) {\n        super(initialCapacity);\n    }\n\n    \n    public CaseInsensitiveMap(int initialCapacity, float loadFactor) {\n        super(initialCapacity, loadFactor);\n    }\n\n    \n    public CaseInsensitiveMap(Map map) {\n        super(map);\n    }\n\n    \n    \n    protected Object convertKey(Object key) {\n        if (key != null) {\n            return key.toString().toLowerCase();\n        } else {\n            return AbstractHashedMap.NULL;\n        }\n    }   \n\n    \n    \n    public Object clone() {\n        return super.clone();\n    }\n\n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        doWriteObject(out);\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        doReadObject(in);\n    }\n \n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.map;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\nimport java.util.Map;\n\n\npublic class CaseInsensitiveMap extends AbstractHashedMap implements Serializable, Cloneable { private static final long serialVersionUID = -7074655917369299456L; public CaseInsensitiveMap() {\n        super(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_THRESHOLD);\n    }\n\n    \n    public CaseInsensitiveMap(int initialCapacity) {\n        super(initialCapacity);\n    }\n\n    \n    public CaseInsensitiveMap(int initialCapacity, float loadFactor) {\n        super(initialCapacity, loadFactor);\n    }\n\n    \n    public CaseInsensitiveMap(Map map) {\n        super(map);\n    }\n\n    \n    \n    protected Object convertKey(Object key) {\n        if (key != null) {\n            char[] chars = key.toString().toCharArray();\n            for (int i = chars.length - 1; i >= 0; i--) {\n                chars[i] = Character.toLowerCase(Character.toUpperCase(chars[i]));\n            }\n            return new String(chars);\n        } else {\n            return AbstractHashedMap.NULL;\n        }\n    }   \n\n    \n    \n    public Object clone() {\n        return super.clone();\n    }\n\n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        doWriteObject(out);\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        doReadObject(in);\n    }\n \n}\n",
+      "buggy_signatures": [
+        "public CaseInsensitiveMap(int initialCapacity)",
+        "public CaseInsensitiveMap(int initialCapacity, float loadFactor)",
+        "public CaseInsensitiveMap(Map map)",
+        "protected Object convertKey(Object key)",
+        "public Object clone()",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException"
+      ],
+      "fixed_signatures": [
+        "public CaseInsensitiveMap(int initialCapacity)",
+        "public CaseInsensitiveMap(int initialCapacity, float loadFactor)",
+        "public CaseInsensitiveMap(Map map)",
+        "protected Object convertKey(Object key)",
+        "public Object clone()",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected Object convertKey(Object key) {\n  if (key != null) {\n  return key.toString().toLowerCase();\n  } else {\n  return AbstractHashedMap.NULL;\n  }\n  }  ",
+          "fixed_method": "  protected Object convertKey(Object key) {\n  if (key != null) {\n  char[] chars = key.toString().toCharArray();\n  for (int i = chars.length - 1; i >= 0; i--) {\n  chars[i] = Character.toLowerCase(Character.toUpperCase(chars[i]));\n  }\n  return new String(chars);\n  } else {\n  return AbstractHashedMap.NULL;\n  }\n  }  ",
+          "diff": [
+            "@@ -118,7 +118,11 @@",
+            "      */\n",
+            "     protected Object convertKey(Object key) {\n",
+            "         if (key != null) {\n",
+            "-            return key.toString().toLowerCase();\n",
+            "+            char[] chars = key.toString().toCharArray();\n",
+            "+            for (int i = chars.length - 1; i >= 0; i--) {\n",
+            "+                chars[i] = Character.toLowerCase(Character.toUpperCase(chars[i]));\n",
+            "+            }\n",
+            "+            return new String(chars);\n",
+            "         } else {\n",
+            "             return AbstractHashedMap.NULL;\n",
+            "         }\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

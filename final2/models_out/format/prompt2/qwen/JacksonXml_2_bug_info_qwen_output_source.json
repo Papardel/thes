@@ -1,0 +1,10 @@
+{
+  "bug_id": "JacksonXml_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE:\n<signature-1>\n<signature-2>\n<signature-3>\n<signature-4>\n<signature-5>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 2\n--------------------\nSource:\npublic void testMixedContent() throws Exception {\n  WindSpeed result = MAPPER.readValue(\"<windSpeed units='kt'> 27 <radius>20</radius></windSpeed>\",\n  WindSpeed.class);\n  assertEquals(27, result.value);\n  assertNotNull(result.radius);\n  assertEquals(20, result.radius.value);\n  }\nStack:\nXmlTextTest.testMixedContent line 70\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream\n    - XMLStreamReader2 getXmlReader()\n    - int next() throws IOException\n    - void skipEndElement() throws IOException\n    - int getCurrentToken()\n    - String getText()\n    - String getLocalName()\n    - String getNamespaceURI()\n    - boolean hasAttributes()\n    - void closeCompletely() throws IOException\n    - void close() throws IOException\n    - JsonLocation getCurrentLocation()\n    - JsonLocation getTokenLocation()\n    - void repeatStartElement()\n    - void skipAttributes()\n    - String convertToString() throws IOException\n    - int _next() throws XMLStreamException\n    - String _collectUntilTag() throws XMLStreamException\n    - int _skipUntilTag() throws XMLStreamException\n    - int _initStartElement() throws XMLStreamException\n    - int _handleRepeatElement() throws IOException\n    - int _handleEndElement()\n    - JsonLocation _extractLocation(XMLStreamLocation2 location)\n    - String toString()\n\nYour task:\nList the FIVE most suspicious method (or constructor)",
+      "response": "calls within the candidate source classes that could potentially lead to a bug or vulnerability related to the given stack trace. Provide your answer in the format specified above.\n:"
+    }
+  ]
+}

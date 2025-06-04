@@ -1,0 +1,208 @@
+{
+  "bug_id": "9",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.compiler.CoreOperationTest": [
+      {
+        "methodName": "testNan",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Evaluating <$nan = $nan> expected:<false> but was:<true>",
+        "fail_line": "        assertXPathValue(context, \"$nan = $nan\", Boolean.FALSE, Boolean.class);",
+        "test_source": "  public void testNan() {\n  assertXPathValue(context, \"$nan > $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan < $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan <= $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= $nan and $nan <= $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan = $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan != $nan\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan > 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan < 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan <= 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= 0 and $nan <= 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan = 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan != 0\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan > 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan < 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan <= 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan >= 1 and $nan <= 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan = 1\", Boolean.FALSE, Boolean.class);\n  assertXPathValue(context, \"$nan != 1\", Boolean.FALSE, Boolean.class);\n  }",
+        "stack": [
+          "JXPathTestCase.assertXPathValue line 63, CoreOperationTest.testNan line 121"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.Pointer;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2) {\n\n        super(new Expression[] { arg1, arg2 });\n    }\n\n\n    protected int getPrecedence() {\n        return 2;\n    }\n\n    protected boolean isSymmetric() {\n        return true;\n    }\n\n    \n    protected boolean equal( EvalContext context, Expression left, Expression right) {\n        Object l = left.compute(context);\n        Object r = right.compute(context);\n\n        if (l instanceof InitialContext) {\n            ((EvalContext) l).reset();\n        }\n\n        if (l instanceof SelfContext) {\n            l = ((EvalContext) l).getSingleNodePointer();\n        }\n\n        if (r instanceof InitialContext) {\n            ((EvalContext) r).reset();\n        }\n\n        if (r instanceof SelfContext) {\n            r = ((EvalContext) r).getSingleNodePointer();\n        }\n\n        if (l instanceof Collection) {\n            l = ((Collection) l).iterator();\n        }\n\n        if (r instanceof Collection) {\n            r = ((Collection) r).iterator();\n        }\n\n        if (l instanceof Iterator && r instanceof Iterator) {\n            return findMatch((Iterator) l, (Iterator) r);\n        }\n        if (l instanceof Iterator) {\n            return contains((Iterator) l, r);\n        }\n        if (r instanceof Iterator) {\n            return contains((Iterator) r, l);\n        }\n        return equal(l, r);\n    }\n\n    protected boolean contains(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (equal(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (contains(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean equal(Object l, Object r) {\n        if (l instanceof Pointer && r instanceof Pointer) {\n            if (l.equals(r)) {\n                return true;\n            }\n        }\n        if (l instanceof Pointer) {\n            l = ((Pointer) l).getValue();\n        }\n\n        if (r instanceof Pointer) {\n            r = ((Pointer) r).getValue();\n        }\n\n        if (l == r) {\n            return true;\n        }\n        if (l instanceof Boolean || r instanceof Boolean) {\n            return (InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r));\n            }\n            \n        if (l instanceof Number || r instanceof Number) {\n            return (InfoSetUtil.doubleValue(l) == InfoSetUtil.doubleValue(r));\n            }\n            if (l instanceof String || r instanceof String) {\n            return (\n                InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n        }\n        return l != null && l.equals(r);\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\n\nimport org.apache.commons.jxpath.Pointer;\nimport org.apache.commons.jxpath.ri.EvalContext;\nimport org.apache.commons.jxpath.ri.InfoSetUtil;\nimport org.apache.commons.jxpath.ri.axes.InitialContext;\nimport org.apache.commons.jxpath.ri.axes.SelfContext;\n\n\npublic abstract class CoreOperationCompare extends CoreOperation { private boolean invert; public CoreOperationCompare(Expression arg1, Expression arg2) {\n        this(arg1, arg2, false);\n    }\n\n    protected CoreOperationCompare(Expression arg1, Expression arg2, boolean invert) {\n        super(new Expression[] { arg1, arg2 });\n        this.invert = invert;\n    }\n\n    public Object computeValue(EvalContext context) {\n        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n    }\n\n    protected int getPrecedence() {\n        return 2;\n    }\n\n    protected boolean isSymmetric() {\n        return true;\n    }\n\n    \n    protected boolean equal( EvalContext context, Expression left, Expression right) {\n        Object l = left.compute(context);\n        Object r = right.compute(context);\n\n        if (l instanceof InitialContext) {\n            ((EvalContext) l).reset();\n        }\n\n        if (l instanceof SelfContext) {\n            l = ((EvalContext) l).getSingleNodePointer();\n        }\n\n        if (r instanceof InitialContext) {\n            ((EvalContext) r).reset();\n        }\n\n        if (r instanceof SelfContext) {\n            r = ((EvalContext) r).getSingleNodePointer();\n        }\n\n        if (l instanceof Collection) {\n            l = ((Collection) l).iterator();\n        }\n\n        if (r instanceof Collection) {\n            r = ((Collection) r).iterator();\n        }\n\n        if (l instanceof Iterator && r instanceof Iterator) {\n            return findMatch((Iterator) l, (Iterator) r);\n        }\n        if (l instanceof Iterator) {\n            return contains((Iterator) l, r);\n        }\n        if (r instanceof Iterator) {\n            return contains((Iterator) r, l);\n        }\n        return equal(l, r);\n    }\n\n    protected boolean contains(Iterator it, Object value) {\n        while (it.hasNext()) {\n            Object element = it.next();\n            if (equal(element, value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean findMatch(Iterator lit, Iterator rit) {\n        HashSet left = new HashSet();\n        while (lit.hasNext()) {\n            left.add(lit.next());\n        }\n        while (rit.hasNext()) {\n            if (contains(left.iterator(), rit.next())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    protected boolean equal(Object l, Object r) {\n        if (l instanceof Pointer) {\n            l = ((Pointer) l).getValue();\n        }\n\n        if (r instanceof Pointer) {\n            r = ((Pointer) r).getValue();\n        }\n\n        boolean result;\n        if (l instanceof Boolean || r instanceof Boolean) {\n            result = l == r || InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r);\n        } else if (l instanceof Number || r instanceof Number) {\n            \n            double ld = InfoSetUtil.doubleValue(l);\n            if (Double.isNaN(ld)) {\n                return false;\n            }\n            double rd = InfoSetUtil.doubleValue(r);\n            if (Double.isNaN(rd)) {\n                return false;\n            }\n            result = ld == rd;\n        } else {\n            if (l instanceof String || r instanceof String) {\n                l = InfoSetUtil.stringValue(l);\n                r = InfoSetUtil.stringValue(r);\n            }\n            result = l == r || l != null && l.equals(r);\n        }\n        return result ^ invert;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public abstract class CoreOperationCompare extends CoreOperation { public CoreOperationCompare(Expression arg1, Expression arg2)",
+        "protected int getPrecedence()",
+        "protected boolean isSymmetric()",
+        "protected boolean equal( EvalContext context, Expression left, Expression right)",
+        "protected boolean contains(Iterator it, Object value)",
+        "protected boolean findMatch(Iterator lit, Iterator rit)",
+        "protected boolean equal(Object l, Object r)"
+      ],
+      "fixed_signatures": [
+        "public abstract class CoreOperationCompare extends CoreOperation { private boolean invert; public CoreOperationCompare(Expression arg1, Expression arg2)",
+        "protected CoreOperationCompare(Expression arg1, Expression arg2, boolean invert)",
+        "public Object computeValue(EvalContext context)",
+        "protected int getPrecedence()",
+        "protected boolean isSymmetric()",
+        "protected boolean equal( EvalContext context, Expression left, Expression right)",
+        "protected boolean contains(Iterator it, Object value)",
+        "protected boolean findMatch(Iterator lit, Iterator rit)",
+        "protected boolean equal(Object l, Object r)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected int getPrecedence() {\n  return 2;\n  }",
+          "fixed_method": "  protected CoreOperationCompare(Expression arg1, Expression arg2, boolean invert) {\n  super(new Expression[] { arg1, arg2 });\n  this.invert = invert;\n  }",
+          "diff": [
+            "@@ -34,12 +34,20 @@",
+            "  * @version $Revision$ $Date$\n",
+            "  */\n",
+            " public abstract class CoreOperationCompare extends CoreOperation {\n",
+            "+    private boolean invert;\n",
+            " \n",
+            "     public CoreOperationCompare(Expression arg1, Expression arg2) {\n",
+            "-\n",
+            "-        super(new Expression[] { arg1, arg2 });\n",
+            "+        this(arg1, arg2, false);\n",
+            "     }\n",
+            " \n",
+            "+    protected CoreOperationCompare(Expression arg1, Expression arg2, boolean invert) {\n",
+            "+        super(new Expression[] { arg1, arg2 });\n",
+            "+        this.invert = invert;\n",
+            "+    }\n",
+            "+\n",
+            "+    public Object computeValue(EvalContext context) {\n",
+            "+        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n",
+            "+    }\n",
+            " \n",
+            "     protected int getPrecedence() {\n",
+            "         return 2;\n"
+          ],
+          "changed_lines": 12
+        },
+        {
+          "buggy_method": "  protected boolean equal(Object l, Object r) {\n  if (l instanceof Pointer && r instanceof Pointer) {\n  if (l.equals(r)) {\n  return true;\n  }\n  }\n  if (l instanceof Pointer) {\n  l = ((Pointer) l).getValue();\n  }\n\n  if (r instanceof Pointer) {\n  r = ((Pointer) r).getValue();\n  }\n\n  if (l == r) {\n  return true;\n  }\n  if (l instanceof Boolean || r instanceof Boolean) {\n  return (InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r));\n  }\n  \n  if (l instanceof Number || r instanceof Number) {\n  return (InfoSetUtil.doubleValue(l) == InfoSetUtil.doubleValue(r));\n  }\n  if (l instanceof String || r instanceof String) {\n  return (\n  InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n  }\n  return l != null && l.equals(r);\n  }",
+          "fixed_method": "  protected boolean equal(Object l, Object r) {\n  if (l instanceof Pointer) {\n  l = ((Pointer) l).getValue();\n  }\n\n  if (r instanceof Pointer) {\n  r = ((Pointer) r).getValue();\n  }\n\n  boolean result;\n  if (l instanceof Boolean || r instanceof Boolean) {\n  result = l == r || InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r);\n  } else if (l instanceof Number || r instanceof Number) {\n  \n  double ld = InfoSetUtil.doubleValue(l);\n  if (Double.isNaN(ld)) {\n  return false;\n  }\n  double rd = InfoSetUtil.doubleValue(r);\n  if (Double.isNaN(rd)) {\n  return false;\n  }\n  result = ld == rd;\n  } else {\n  if (l instanceof String || r instanceof String) {\n  l = InfoSetUtil.stringValue(l);\n  r = InfoSetUtil.stringValue(r);\n  }\n  result = l == r || l != null && l.equals(r);\n  }\n  return result ^ invert;\n  }",
+          "diff": [
+            "@@ -120,11 +128,6 @@",
+            "     }\n",
+            " \n",
+            "     protected boolean equal(Object l, Object r) {\n",
+            "-        if (l instanceof Pointer && r instanceof Pointer) {\n",
+            "-            if (l.equals(r)) {\n",
+            "-                return true;\n",
+            "-            }\n",
+            "-        }\n",
+            "         if (l instanceof Pointer) {\n",
+            "             l = ((Pointer) l).getValue();\n",
+            "         }\n",
+            "@@ -133,21 +136,28 @@",
+            "             r = ((Pointer) r).getValue();\n",
+            "         }\n",
+            " \n",
+            "-        if (l == r) {\n",
+            "-            return true;\n",
+            "+        boolean result;\n",
+            "+        if (l instanceof Boolean || r instanceof Boolean) {\n",
+            "+            result = l == r || InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r);\n",
+            "+        } else if (l instanceof Number || r instanceof Number) {\n",
+            "+            //if either side is NaN, no comparison returns true:\n",
+            "+            double ld = InfoSetUtil.doubleValue(l);\n",
+            "+            if (Double.isNaN(ld)) {\n",
+            "+                return false;\n",
+            "+            }\n",
+            "+            double rd = InfoSetUtil.doubleValue(r);\n",
+            "+            if (Double.isNaN(rd)) {\n",
+            "+                return false;\n",
+            "+            }\n",
+            "+            result = ld == rd;\n",
+            "+        } else {\n",
+            "+            if (l instanceof String || r instanceof String) {\n",
+            "+                l = InfoSetUtil.stringValue(l);\n",
+            "+                r = InfoSetUtil.stringValue(r);\n",
+            "+            }\n",
+            "+            result = l == r || l != null && l.equals(r);\n",
+            "         }\n",
+            "-        if (l instanceof Boolean || r instanceof Boolean) {\n",
+            "-            return (InfoSetUtil.booleanValue(l) == InfoSetUtil.booleanValue(r));\n",
+            "-            }\n",
+            "-            //if either side is NaN, no comparison returns true:\n",
+            "-        if (l instanceof Number || r instanceof Number) {\n",
+            "-            return (InfoSetUtil.doubleValue(l) == InfoSetUtil.doubleValue(r));\n",
+            "-            }\n",
+            "-            if (l instanceof String || r instanceof String) {\n",
+            "-            return (\n",
+            "-                InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n",
+            "-        }\n",
+            "-        return l != null && l.equals(r);\n",
+            "+        return result ^ invert;\n",
+            "     }\n",
+            " \n",
+            " }\n"
+          ],
+          "changed_lines": 40
+        }
+      ]
+    },
+    {
+      "name": "org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\n\npublic class CoreOperationEqual extends CoreOperationCompare { public CoreOperationEqual(Expression arg1, Expression arg2) {\n        super(arg1, arg2);\n    }\n\n    public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context) {\n        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n    }\n    public String getSymbol() {\n        return \"=\";\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\n\npublic class CoreOperationEqual extends CoreOperationCompare { public CoreOperationEqual(Expression arg1, Expression arg2) {\n        super(arg1, arg2);\n    }\n\n    public String getSymbol() {\n        return \"=\";\n    }\n}\n",
+      "buggy_signatures": [
+        "public class CoreOperationEqual extends CoreOperationCompare { public CoreOperationEqual(Expression arg1, Expression arg2)",
+        "public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context)",
+        "public String getSymbol()"
+      ],
+      "fixed_signatures": [
+        "public class CoreOperationEqual extends CoreOperationCompare { public CoreOperationEqual(Expression arg1, Expression arg2)",
+        "public String getSymbol()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public String getSymbol() {\n  return \"=\";\n  }",
+          "fixed_method": "  public String getSymbol() {\n  return \"=\";\n  }",
+          "diff": [
+            "@@ -28,9 +28,6 @@",
+            "         super(arg1, arg2);\n",
+            "     }\n",
+            " \n",
+            "-    public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context) {\n",
+            "-        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n",
+            "-    }\n",
+            "     public String getSymbol() {\n",
+            "         return \"=\";\n",
+            "     }\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    },
+    {
+      "name": "org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\n\npublic class CoreOperationNotEqual extends CoreOperationCompare { public CoreOperationNotEqual(Expression arg1, Expression arg2) {\n        super(arg1, arg2);\n    }\n\n    public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context) {\n        return equal(context, args[0], args[1]) ? Boolean.FALSE : Boolean.TRUE;\n    }\n    public String getSymbol() {\n        return \"!=\";\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.compiler;\n\n\npublic class CoreOperationNotEqual extends CoreOperationCompare { public CoreOperationNotEqual(Expression arg1, Expression arg2) {\n        super(arg1, arg2, true);\n    }\n\n    public String getSymbol() {\n        return \"!=\";\n    }\n}\n",
+      "buggy_signatures": [
+        "public class CoreOperationNotEqual extends CoreOperationCompare { public CoreOperationNotEqual(Expression arg1, Expression arg2)",
+        "public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context)",
+        "public String getSymbol()"
+      ],
+      "fixed_signatures": [
+        "public class CoreOperationNotEqual extends CoreOperationCompare { public CoreOperationNotEqual(Expression arg1, Expression arg2)",
+        "public String getSymbol()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context) {\n  return equal(context, args[0], args[1]) ? Boolean.FALSE : Boolean.TRUE;\n  }",
+          "fixed_method": "  public String getSymbol() {\n  return \"!=\";\n  }",
+          "diff": [
+            "@@ -25,12 +25,9 @@",
+            " public class CoreOperationNotEqual extends CoreOperationCompare {\n",
+            " \n",
+            "     public CoreOperationNotEqual(Expression arg1, Expression arg2) {\n",
+            "-        super(arg1, arg2);\n",
+            "+        super(arg1, arg2, true);\n",
+            "     }\n",
+            " \n",
+            "-    public Object computeValue(org.apache.commons.jxpath.ri.EvalContext context) {\n",
+            "-        return equal(context, args[0], args[1]) ? Boolean.FALSE : Boolean.TRUE;\n",
+            "-    }\n",
+            "     public String getSymbol() {\n",
+            "         return \"!=\";\n",
+            "     }\n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

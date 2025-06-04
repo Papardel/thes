@@ -1,0 +1,116 @@
+{
+  "bug_id": "53",
+  "failed_tests": {
+    "org.jsoup.select.SelectorTest": [
+      {
+        "methodName": "attributeWithBrackets",
+        "error": "org.jsoup.select.Selector$SelectorParseException",
+        "message": "Could not parse query 'div[data='End]'': unexpected token at '''",
+        "fail_line": "        assertEquals(\"One\", doc.select(\"div[data='End]'\").first().text());",
+        "test_source": "",
+        "stack": [
+          "QueryParser.findElements line 196, QueryParser.parse line 65, QueryParser.parse line 39, Selector.<init> line 84, Selector.select line 106, Element.select line 286, SelectorTest.attributeWithBrackets line 668"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/parser/TokenQueue.java",
+      "buggy_full_code": "package org.jsoup.parser;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\n\n\npublic class TokenQueue { private String queue; private int pos = 0; private static final char ESC = '\\\\'; public TokenQueue(String data) {\n        Validate.notNull(data);\n        queue = data;\n    }\n\n    \n    public boolean isEmpty() {\n        return remainingLength() == 0;\n    }\n    \n    private int remainingLength() {\n        return queue.length() - pos;\n    }\n\n    \n    public char peek() {\n        return isEmpty() ? 0 : queue.charAt(pos);\n    }\n\n    \n    public void addFirst(Character c) {\n        addFirst(c.toString());\n    }\n\n    \n    public void addFirst(String seq) {\n        \n        queue = seq + queue.substring(pos);\n        pos = 0;\n    }\n\n    \n    public boolean matches(String seq) {\n        return queue.regionMatches(true, pos, seq, 0, seq.length());\n    }\n\n    \n    public boolean matchesCS(String seq) {\n        return queue.startsWith(seq, pos);\n    }\n    \n\n    \n    public boolean matchesAny(String... seq) {\n        for (String s : seq) {\n            if (matches(s))\n                return true;\n        }\n        return false;\n    }\n\n    public boolean matchesAny(char... seq) {\n        if (isEmpty())\n            return false;\n\n        for (char c: seq) {\n            if (queue.charAt(pos) == c)\n                return true;\n        }\n        return false;\n    }\n\n    public boolean matchesStartTag() {\n        \n        return (remainingLength() >= 2 && queue.charAt(pos) == '<' && Character.isLetter(queue.charAt(pos+1)));\n    }\n\n    \n    public boolean matchChomp(String seq) {\n        if (matches(seq)) {\n            pos += seq.length();\n            return true;\n        } else {\n            return false;\n        }\n    }\n\n    \n    public boolean matchesWhitespace() {\n        return !isEmpty() && StringUtil.isWhitespace(queue.charAt(pos));\n    }\n\n    \n    public boolean matchesWord() {\n        return !isEmpty() && Character.isLetterOrDigit(queue.charAt(pos));\n    }\n\n    \n    public void advance() {\n        if (!isEmpty()) pos++;\n    }\n\n    \n    public char consume() {\n        return queue.charAt(pos++);\n    }\n\n    \n    public void consume(String seq) {\n        if (!matches(seq))\n            throw new IllegalStateException(\"Queue did not match expected sequence\");\n        int len = seq.length();\n        if (len > remainingLength())\n            throw new IllegalStateException(\"Queue not long enough to consume sequence\");\n        \n        pos += len;\n    }\n\n    \n    public String consumeTo(String seq) {\n        int offset = queue.indexOf(seq, pos);\n        if (offset != -1) {\n            String consumed = queue.substring(pos, offset);\n            pos += consumed.length();\n            return consumed;\n        } else {\n            return remainder();\n        }\n    }\n    \n    public String consumeToIgnoreCase(String seq) {\n        int start = pos;\n        String first = seq.substring(0, 1);\n        boolean canScan = first.toLowerCase().equals(first.toUpperCase()); \n        while (!isEmpty()) {\n            if (matches(seq))\n                break;\n            \n            if (canScan) {\n                int skip = queue.indexOf(first, pos) - pos;\n                if (skip == 0) \n                    pos++;\n                else if (skip < 0) \n                    pos = queue.length();\n                else\n                    pos += skip;\n            }\n            else\n                pos++;\n        }\n\n        return queue.substring(start, pos);\n    }\n\n    \n    \n    \n    public String consumeToAny(String... seq) {\n        int start = pos;\n        while (!isEmpty() && !matchesAny(seq)) {\n            pos++;\n        }\n\n        return queue.substring(start, pos);\n    }\n\n    \n    public String chompTo(String seq) {\n        String data = consumeTo(seq);\n        matchChomp(seq);\n        return data;\n    }\n    \n    public String chompToIgnoreCase(String seq) {\n        String data = consumeToIgnoreCase(seq); \n        matchChomp(seq);\n        return data;\n    }\n\n    \n    public String chompBalanced(char open, char close) {\n        int start = -1;\n        int end = -1;\n        int depth = 0;\n        char last = 0;\n\n        do {\n            if (isEmpty()) break;\n            Character c = consume();\n            if (last == 0 || last != ESC) {\n                if (c.equals(open)) {\n                    depth++;\n                    if (start == -1)\n                        start = pos;\n                }\n                else if (c.equals(close))\n                    depth--;\n            }\n\n            if (depth > 0 && last != 0)\n                end = pos; \n            last = c;\n        } while (depth > 0);\n        return (end >= 0) ? queue.substring(start, end) : \"\";\n    }\n    \n    \n    public static String unescape(String in) {\n        StringBuilder out = new StringBuilder();\n        char last = 0;\n        for (char c : in.toCharArray()) {\n            if (c == ESC) {\n                if (last != 0 && last == ESC)\n                    out.append(c);\n            }\n            else \n                out.append(c);\n            last = c;\n        }\n        return out.toString();\n    }\n\n    \n    public boolean consumeWhitespace() {\n        boolean seen = false;\n        while (matchesWhitespace()) {\n            pos++;\n            seen = true;\n        }\n        return seen;\n    }\n\n    \n    public String consumeWord() {\n        int start = pos;\n        while (matchesWord())\n            pos++;\n        return queue.substring(start, pos);\n    }\n    \n    \n    public String consumeTagName() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny(':', '_', '-')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n    \n    \n    public String consumeElementSelector() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('|', '_', '-')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n\n    \n    public String consumeCssIdentifier() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('-', '_')))\n            pos++;\n\n        return queue.substring(start, pos);\n    }\n\n    \n    public String consumeAttributeKey() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('-', '_', ':')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n\n    \n    public String remainder() {\n        final String remainder = queue.substring(pos, queue.length());\n        pos = queue.length();\n        return remainder;\n    }\n    \n    @Override\n    public String toString() {\n        return queue.substring(pos);\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.parser;\n\nimport org.jsoup.helper.StringUtil;\nimport org.jsoup.helper.Validate;\n\n\npublic class TokenQueue { private String queue; private int pos = 0; private static final char ESC = '\\\\'; public TokenQueue(String data) {\n        Validate.notNull(data);\n        queue = data;\n    }\n\n    \n    public boolean isEmpty() {\n        return remainingLength() == 0;\n    }\n    \n    private int remainingLength() {\n        return queue.length() - pos;\n    }\n\n    \n    public char peek() {\n        return isEmpty() ? 0 : queue.charAt(pos);\n    }\n\n    \n    public void addFirst(Character c) {\n        addFirst(c.toString());\n    }\n\n    \n    public void addFirst(String seq) {\n        \n        queue = seq + queue.substring(pos);\n        pos = 0;\n    }\n\n    \n    public boolean matches(String seq) {\n        return queue.regionMatches(true, pos, seq, 0, seq.length());\n    }\n\n    \n    public boolean matchesCS(String seq) {\n        return queue.startsWith(seq, pos);\n    }\n    \n\n    \n    public boolean matchesAny(String... seq) {\n        for (String s : seq) {\n            if (matches(s))\n                return true;\n        }\n        return false;\n    }\n\n    public boolean matchesAny(char... seq) {\n        if (isEmpty())\n            return false;\n\n        for (char c: seq) {\n            if (queue.charAt(pos) == c)\n                return true;\n        }\n        return false;\n    }\n\n    public boolean matchesStartTag() {\n        \n        return (remainingLength() >= 2 && queue.charAt(pos) == '<' && Character.isLetter(queue.charAt(pos+1)));\n    }\n\n    \n    public boolean matchChomp(String seq) {\n        if (matches(seq)) {\n            pos += seq.length();\n            return true;\n        } else {\n            return false;\n        }\n    }\n\n    \n    public boolean matchesWhitespace() {\n        return !isEmpty() && StringUtil.isWhitespace(queue.charAt(pos));\n    }\n\n    \n    public boolean matchesWord() {\n        return !isEmpty() && Character.isLetterOrDigit(queue.charAt(pos));\n    }\n\n    \n    public void advance() {\n        if (!isEmpty()) pos++;\n    }\n\n    \n    public char consume() {\n        return queue.charAt(pos++);\n    }\n\n    \n    public void consume(String seq) {\n        if (!matches(seq))\n            throw new IllegalStateException(\"Queue did not match expected sequence\");\n        int len = seq.length();\n        if (len > remainingLength())\n            throw new IllegalStateException(\"Queue not long enough to consume sequence\");\n        \n        pos += len;\n    }\n\n    \n    public String consumeTo(String seq) {\n        int offset = queue.indexOf(seq, pos);\n        if (offset != -1) {\n            String consumed = queue.substring(pos, offset);\n            pos += consumed.length();\n            return consumed;\n        } else {\n            return remainder();\n        }\n    }\n    \n    public String consumeToIgnoreCase(String seq) {\n        int start = pos;\n        String first = seq.substring(0, 1);\n        boolean canScan = first.toLowerCase().equals(first.toUpperCase()); \n        while (!isEmpty()) {\n            if (matches(seq))\n                break;\n            \n            if (canScan) {\n                int skip = queue.indexOf(first, pos) - pos;\n                if (skip == 0) \n                    pos++;\n                else if (skip < 0) \n                    pos = queue.length();\n                else\n                    pos += skip;\n            }\n            else\n                pos++;\n        }\n\n        return queue.substring(start, pos);\n    }\n\n    \n    \n    \n    public String consumeToAny(String... seq) {\n        int start = pos;\n        while (!isEmpty() && !matchesAny(seq)) {\n            pos++;\n        }\n\n        return queue.substring(start, pos);\n    }\n\n    \n    public String chompTo(String seq) {\n        String data = consumeTo(seq);\n        matchChomp(seq);\n        return data;\n    }\n    \n    public String chompToIgnoreCase(String seq) {\n        String data = consumeToIgnoreCase(seq); \n        matchChomp(seq);\n        return data;\n    }\n\n    \n    public String chompBalanced(char open, char close) {\n        int start = -1;\n        int end = -1;\n        int depth = 0;\n        char last = 0;\n        boolean inQuote = false;\n\n        do {\n            if (isEmpty()) break;\n            Character c = consume();\n            if (last == 0 || last != ESC) {\n                if (c.equals('\\'') || c.equals('\"') && c != open)\n                    inQuote = !inQuote;\n                if (inQuote)\n                    continue;\n                if (c.equals(open)) {\n                    depth++;\n                    if (start == -1)\n                        start = pos;\n                }\n                else if (c.equals(close))\n                    depth--;\n            }\n\n            if (depth > 0 && last != 0)\n                end = pos; \n            last = c;\n        } while (depth > 0);\n        return (end >= 0) ? queue.substring(start, end) : \"\";\n    }\n    \n    \n    public static String unescape(String in) {\n        StringBuilder out = new StringBuilder();\n        char last = 0;\n        for (char c : in.toCharArray()) {\n            if (c == ESC) {\n                if (last != 0 && last == ESC)\n                    out.append(c);\n            }\n            else \n                out.append(c);\n            last = c;\n        }\n        return out.toString();\n    }\n\n    \n    public boolean consumeWhitespace() {\n        boolean seen = false;\n        while (matchesWhitespace()) {\n            pos++;\n            seen = true;\n        }\n        return seen;\n    }\n\n    \n    public String consumeWord() {\n        int start = pos;\n        while (matchesWord())\n            pos++;\n        return queue.substring(start, pos);\n    }\n    \n    \n    public String consumeTagName() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny(':', '_', '-')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n    \n    \n    public String consumeElementSelector() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('|', '_', '-')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n\n    \n    public String consumeCssIdentifier() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('-', '_')))\n            pos++;\n\n        return queue.substring(start, pos);\n    }\n\n    \n    public String consumeAttributeKey() {\n        int start = pos;\n        while (!isEmpty() && (matchesWord() || matchesAny('-', '_', ':')))\n            pos++;\n        \n        return queue.substring(start, pos);\n    }\n\n    \n    public String remainder() {\n        final String remainder = queue.substring(pos, queue.length());\n        pos = queue.length();\n        return remainder;\n    }\n    \n    @Override\n    public String toString() {\n        return queue.substring(pos);\n    }\n}\n",
+      "buggy_signatures": [
+        "public boolean isEmpty()",
+        "private int remainingLength()",
+        "public char peek()",
+        "public void addFirst(Character c)",
+        "public void addFirst(String seq)",
+        "public boolean matches(String seq)",
+        "public boolean matchesCS(String seq)",
+        "public boolean matchesAny(String... seq)",
+        "public boolean matchesAny(char... seq)",
+        "public boolean matchesStartTag()",
+        "public boolean matchChomp(String seq)",
+        "public boolean matchesWhitespace()",
+        "public boolean matchesWord()",
+        "public void advance()",
+        "public char consume()",
+        "public void consume(String seq)",
+        "public String consumeTo(String seq)",
+        "public String consumeToIgnoreCase(String seq)",
+        "public String consumeToAny(String... seq)",
+        "public String chompTo(String seq)",
+        "public String chompToIgnoreCase(String seq)",
+        "public String chompBalanced(char open, char close)",
+        "public static String unescape(String in)",
+        "public boolean consumeWhitespace()",
+        "public String consumeWord()",
+        "public String consumeTagName()",
+        "public String consumeElementSelector()",
+        "public String consumeCssIdentifier()",
+        "public String consumeAttributeKey()",
+        "public String remainder()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public boolean isEmpty()",
+        "private int remainingLength()",
+        "public char peek()",
+        "public void addFirst(Character c)",
+        "public void addFirst(String seq)",
+        "public boolean matches(String seq)",
+        "public boolean matchesCS(String seq)",
+        "public boolean matchesAny(String... seq)",
+        "public boolean matchesAny(char... seq)",
+        "public boolean matchesStartTag()",
+        "public boolean matchChomp(String seq)",
+        "public boolean matchesWhitespace()",
+        "public boolean matchesWord()",
+        "public void advance()",
+        "public char consume()",
+        "public void consume(String seq)",
+        "public String consumeTo(String seq)",
+        "public String consumeToIgnoreCase(String seq)",
+        "public String consumeToAny(String... seq)",
+        "public String chompTo(String seq)",
+        "public String chompToIgnoreCase(String seq)",
+        "public String chompBalanced(char open, char close)",
+        "public static String unescape(String in)",
+        "public boolean consumeWhitespace()",
+        "public String consumeWord()",
+        "public String consumeTagName()",
+        "public String consumeElementSelector()",
+        "public String consumeCssIdentifier()",
+        "public String consumeAttributeKey()",
+        "public String remainder()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public String chompBalanced(char open, char close) {\n  int start = -1;\n  int end = -1;\n  int depth = 0;\n  char last = 0;\n\n  do {\n  if (isEmpty()) break;\n  Character c = consume();\n  if (last == 0 || last != ESC) {\n  if (c.equals(open)) {\n  depth++;\n  if (start == -1)\n  start = pos;\n  }\n  else if (c.equals(close))\n  depth--;\n  }\n\n  if (depth > 0 && last != 0)\n  end = pos; \n  last = c;\n  } while (depth > 0);\n  return (end >= 0) ? queue.substring(start, end) : \"\";\n  }",
+          "fixed_method": "  public String chompBalanced(char open, char close) {\n  int start = -1;\n  int end = -1;\n  int depth = 0;\n  char last = 0;\n  boolean inQuote = false;\n\n  do {\n  if (isEmpty()) break;\n  Character c = consume();\n  if (last == 0 || last != ESC) {\n  if (c.equals('\\'') || c.equals('\"') && c != open)\n  inQuote = !inQuote;\n  if (inQuote)\n  continue;\n  if (c.equals(open)) {\n  depth++;\n  if (start == -1)\n  start = pos;\n  }\n  else if (c.equals(close))\n  depth--;\n  }\n\n  if (depth > 0 && last != 0)\n  end = pos; \n  last = c;\n  } while (depth > 0);\n  return (end >= 0) ? queue.substring(start, end) : \"\";\n  }",
+          "diff": [
+            "@@ -262,11 +262,16 @@",
+            "         int end = -1;\n",
+            "         int depth = 0;\n",
+            "         char last = 0;\n",
+            "+        boolean inQuote = false;\n",
+            " \n",
+            "         do {\n",
+            "             if (isEmpty()) break;\n",
+            "             Character c = consume();\n",
+            "             if (last == 0 || last != ESC) {\n",
+            "+                if (c.equals('\\'') || c.equals('\"') && c != open)\n",
+            "+                    inQuote = !inQuote;\n",
+            "+                if (inQuote)\n",
+            "+                    continue;\n",
+            "                 if (c.equals(open)) {\n",
+            "                     depth++;\n",
+            "                     if (start == -1)\n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

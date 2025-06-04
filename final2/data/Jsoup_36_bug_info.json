@@ -1,0 +1,180 @@
+{
+  "bug_id": "36",
+  "failed_tests": {
+    "org.jsoup.helper.DataUtilTest": [
+      {
+        "methodName": "shouldCorrectCharsetForDuplicateCharsetString",
+        "error": "java.nio.charset.IllegalCharsetNameException",
+        "message": "charset=iso-8859-1",
+        "fail_line": "        assertEquals(\"iso-8859-1\", DataUtil.getCharsetFromContentType(\"text/html; charset=charset=iso-8859-1\"));",
+        "test_source": "  public void shouldCorrectCharsetForDuplicateCharsetString() {\n  assertEquals(\"iso-8859-1\", DataUtil.getCharsetFromContentType(\"text/html; charset=charset=iso-8859-1\"));\n  }",
+        "stack": [
+          "DataUtil.getCharsetFromContentType line 161, DataUtilTest.shouldCorrectCharsetForDuplicateCharsetString line 51"
+        ]
+      },
+      {
+        "methodName": "shouldNotThrowExceptionOnEmptyCharset",
+        "error": "java.nio.charset.IllegalCharsetNameException:",
+        "message": "",
+        "fail_line": "        assertEquals(null, DataUtil.getCharsetFromContentType(\"text/html; charset=\"));",
+        "test_source": "  public void shouldNotThrowExceptionOnEmptyCharset() {\n  assertEquals(null, DataUtil.getCharsetFromContentType(\"text/html; charset=\"));\n  assertEquals(null, DataUtil.getCharsetFromContentType(\"text/html; charset=;\"));\n  }",
+        "stack": [
+          "DataUtil.getCharsetFromContentType line 161, DataUtilTest.shouldNotThrowExceptionOnEmptyCharset line 40"
+        ]
+      },
+      {
+        "methodName": "testQuotedCharset",
+        "error": "java.nio.charset.IllegalCharsetNameException",
+        "message": "'UTF-8'",
+        "fail_line": "        assertEquals(\"UTF-8\", DataUtil.getCharsetFromContentType(\"text/html; charset='UTF-8'\"));",
+        "test_source": "",
+        "stack": [
+          "DataUtil.getCharsetFromContentType line 161, DataUtilTest.testQuotedCharset line 28"
+        ]
+      },
+      {
+        "methodName": "shouldSelectFirstCharsetOnWeirdMultileCharsetsInMetaTags",
+        "error": "java.nio.charset.IllegalCharsetNameException",
+        "message": "ISO-8859-1,",
+        "fail_line": "        assertEquals(\"ISO-8859-1\", DataUtil.getCharsetFromContentType(\"text/html; charset=ISO-8859-1, charset=1251\"));",
+        "test_source": "  public void shouldSelectFirstCharsetOnWeirdMultileCharsetsInMetaTags() {\n  assertEquals(\"ISO-8859-1\", DataUtil.getCharsetFromContentType(\"text/html; charset=ISO-8859-1, charset=1251\"));\n  }",
+        "stack": [
+          "DataUtil.getCharsetFromContentType line 161, DataUtilTest.shouldSelectFirstCharsetOnWeirdMultileCharsetsInMetaTags line 46"
+        ]
+      },
+      {
+        "methodName": "shouldReturnNullForIllegalCharsetNames",
+        "error": "java.nio.charset.IllegalCharsetNameException",
+        "message": "$HJKDF§$/(",
+        "fail_line": "        assertEquals(null, DataUtil.getCharsetFromContentType(\"text/html; charset=$HJKDF§$/(\"));",
+        "test_source": "  public void shouldReturnNullForIllegalCharsetNames() {\n  assertEquals(null, DataUtil.getCharsetFromContentType(\"text/html; charset=$HJKDF§$/(\"));\n  }",
+        "stack": [
+          "DataUtil.getCharsetFromContentType line 161, DataUtilTest.shouldReturnNullForIllegalCharsetNames line 56"
+        ]
+      }
+    ],
+    "org.jsoup.integration.ParseTest": [
+      {
+        "methodName": "testBrokenHtml5CharsetWithASingleDoubleQuote",
+        "error": "java.nio.charset.IllegalCharsetNameException",
+        "message": "UTF-8\"",
+        "fail_line": "        Document doc = Jsoup.parse(in, null, \"http://example.com/\");",
+        "test_source": "  public void testBrokenHtml5CharsetWithASingleDoubleQuote() throws IOException {\n  InputStream in = inputStreamFrom(\"<html>\\n\" +\n  \"<head><meta charset=UTF-8\\\"></head>\\n\" +\n  \"<body></body>\\n\" +\n  \"</html>\");\n  Document doc = Jsoup.parse(in, null, \"http://example.com/\");\n  assertEquals(\"UTF-8\", doc.outputSettings().charset().displayName());\n  }",
+        "stack": [
+          "DataUtil.parseByteData line 94, DataUtil.load line 55, Jsoup.parse line 118, ParseTest.testBrokenHtml5CharsetWithASingleDoubleQuote line 149"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/helper/DataUtil.java",
+      "buggy_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Document;\nimport org.jsoup.nodes.Element;\nimport org.jsoup.parser.Parser;\n\nimport java.io.*;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\nimport java.util.Locale;\n\n\npublic class DataUtil { private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*\\\"?([^\\\\s;\\\"]*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private DataUtil() {}\n\n    \n    public static Document load(File in, String charsetName, String baseUri) throws IOException {\n        FileInputStream inStream = null;\n        try {\n            inStream = new FileInputStream(in);\n            ByteBuffer byteData = readToByteBuffer(inStream);\n            return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n        } finally {\n            if (inStream != null)\n                inStream.close();\n        }\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, parser);\n    }\n\n    \n    \n    static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n        String docData;\n        Document doc = null;\n        if (charsetName == null) { \n            \n            docData = Charset.forName(defaultCharset).decode(byteData).toString();\n            doc = parser.parseInput(docData, baseUri);\n            Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n            if (meta != null) { \n\n                String foundCharset;\n                if (meta.hasAttr(\"http-equiv\")) {\n                    foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n                } else {\n                    foundCharset = meta.attr(\"charset\");\n                }\n\n                if (foundCharset != null && foundCharset.length() != 0 && !foundCharset.equals(defaultCharset)) { \n                    charsetName = foundCharset;\n                    byteData.rewind();\n                    docData = Charset.forName(foundCharset).decode(byteData).toString();\n                    doc = null;\n                }\n            }\n        } else { \n            Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n            docData = Charset.forName(charsetName).decode(byteData).toString();\n        }\n        if (doc == null) {\n            \n            \n            \n            if (docData.length() > 0 && docData.charAt(0) == 65279)\n                docData = docData.substring(1);\n\n            doc = parser.parseInput(docData, baseUri);\n            doc.outputSettings().charset(charsetName);\n        }\n        return doc;\n    }\n\n    \n    static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException {\n        Validate.isTrue(maxSize >= 0, \"maxSize must be 0 (unlimited) or larger\");\n        final boolean capped = maxSize > 0;\n        byte[] buffer = new byte[bufferSize];\n        ByteArrayOutputStream outStream = new ByteArrayOutputStream(bufferSize);\n        int read;\n        int remaining = maxSize;\n\n        while (true) {\n            read = inStream.read(buffer);\n            if (read == -1) break;\n            if (capped) {\n                if (read > remaining) {\n                    outStream.write(buffer, 0, remaining);\n                    break;\n                }\n                remaining -= read;\n            }\n            outStream.write(buffer, 0, read);\n        }\n        ByteBuffer byteData = ByteBuffer.wrap(outStream.toByteArray());\n        return byteData;\n    }\n\n    static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException {\n        return readToByteBuffer(inStream, 0);\n    }\n\n    \n    static String getCharsetFromContentType(String contentType) {\n        if (contentType == null) return null;\n        Matcher m = charsetPattern.matcher(contentType);\n        if (m.find()) {\n            String charset = m.group(1).trim();\n                if (Charset.isSupported(charset)) return charset;\n                charset = charset.toUpperCase(Locale.ENGLISH);\n                if (Charset.isSupported(charset)) return charset;\n                \n        }\n        return null;\n    }\n    \n    \n}\n",
+      "fixed_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Document;\nimport org.jsoup.nodes.Element;\nimport org.jsoup.parser.Parser;\n\nimport java.io.*;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\nimport java.nio.charset.IllegalCharsetNameException;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\nimport java.util.Locale;\n\n\npublic class DataUtil { private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*(?:\\\"|')?([^\\\\s,;\\\"']*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private DataUtil() {}\n\n    \n    public static Document load(File in, String charsetName, String baseUri) throws IOException {\n        FileInputStream inStream = null;\n        try {\n            inStream = new FileInputStream(in);\n            ByteBuffer byteData = readToByteBuffer(inStream);\n            return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n        } finally {\n            if (inStream != null)\n                inStream.close();\n        }\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, parser);\n    }\n\n    \n    \n    static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n        String docData;\n        Document doc = null;\n        if (charsetName == null) { \n            \n            docData = Charset.forName(defaultCharset).decode(byteData).toString();\n            doc = parser.parseInput(docData, baseUri);\n            Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n            if (meta != null) { \n\n                String foundCharset;\n                if (meta.hasAttr(\"http-equiv\")) {\n                    foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n                    if (foundCharset == null && meta.hasAttr(\"charset\")) {\n                        try {\n                            if (Charset.isSupported(meta.attr(\"charset\"))) {\n                                foundCharset = meta.attr(\"charset\");\n                            }\n                        } catch (IllegalCharsetNameException e) {\n                            foundCharset = null;\n                        }\n                    }\n                } else {\n                    foundCharset = meta.attr(\"charset\");\n                }\n\n                if (foundCharset != null && foundCharset.length() != 0 && !foundCharset.equals(defaultCharset)) { \n                    foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n                    charsetName = foundCharset;\n                    byteData.rewind();\n                    docData = Charset.forName(foundCharset).decode(byteData).toString();\n                    doc = null;\n                }\n            }\n        } else { \n            Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n            docData = Charset.forName(charsetName).decode(byteData).toString();\n        }\n        if (doc == null) {\n            \n            \n            \n            if (docData.length() > 0 && docData.charAt(0) == 65279)\n                docData = docData.substring(1);\n\n            doc = parser.parseInput(docData, baseUri);\n            doc.outputSettings().charset(charsetName);\n        }\n        return doc;\n    }\n\n    \n    static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException {\n        Validate.isTrue(maxSize >= 0, \"maxSize must be 0 (unlimited) or larger\");\n        final boolean capped = maxSize > 0;\n        byte[] buffer = new byte[bufferSize];\n        ByteArrayOutputStream outStream = new ByteArrayOutputStream(bufferSize);\n        int read;\n        int remaining = maxSize;\n\n        while (true) {\n            read = inStream.read(buffer);\n            if (read == -1) break;\n            if (capped) {\n                if (read > remaining) {\n                    outStream.write(buffer, 0, remaining);\n                    break;\n                }\n                remaining -= read;\n            }\n            outStream.write(buffer, 0, read);\n        }\n        ByteBuffer byteData = ByteBuffer.wrap(outStream.toByteArray());\n        return byteData;\n    }\n\n    static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException {\n        return readToByteBuffer(inStream, 0);\n    }\n\n    \n    static String getCharsetFromContentType(String contentType) {\n        if (contentType == null) return null;\n        Matcher m = charsetPattern.matcher(contentType);\n        if (m.find()) {\n            String charset = m.group(1).trim();\n            charset = charset.replace(\"charset=\", \"\");\n            if (charset.isEmpty()) return null;\n            try {\n                if (Charset.isSupported(charset)) return charset;\n                charset = charset.toUpperCase(Locale.ENGLISH);\n                if (Charset.isSupported(charset)) return charset;\n            } catch (IllegalCharsetNameException e) {\n                \n                return null;\n            }\n        }\n        return null;\n    }\n    \n    \n}\n",
+      "buggy_signatures": [
+        "public static Document load(File in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException",
+        "static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser)",
+        "static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException",
+        "static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException",
+        "static String getCharsetFromContentType(String contentType)"
+      ],
+      "fixed_signatures": [
+        "public static Document load(File in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException",
+        "static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser)",
+        "static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException",
+        "static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException",
+        "static String getCharsetFromContentType(String contentType)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -7,6 +7,7 @@",
+            " import java.io.*;\n",
+            " import java.nio.ByteBuffer;\n",
+            " import java.nio.charset.Charset;\n",
+            "+import java.nio.charset.IllegalCharsetNameException;\n",
+            " import java.util.regex.Matcher;\n",
+            " import java.util.regex.Pattern;\n",
+            " import java.util.Locale;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*\\\"?([^\\\\s;\\\"]*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private DataUtil() {}",
+          "fixed_method": "  private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*(?:\\\"|')?([^\\\\s,;\\\"']*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private DataUtil() {}",
+          "diff": [
+            "@@ -16,7 +17,7 @@",
+            "  *\n",
+            "  */\n",
+            " public class DataUtil {\n",
+            "-    private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*\\\"?([^\\\\s;\\\"]*)\");\n",
+            "+    private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*(?:\\\"|')?([^\\\\s,;\\\"']*)\");\n",
+            "     static final String defaultCharset = \"UTF-8\"; // used if not found in header or meta charset\n",
+            "     private static final int bufferSize = 0x20000; // ~130K.\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n  String docData;\n  Document doc = null;\n  if (charsetName == null) { \n  \n  docData = Charset.forName(defaultCharset).decode(byteData).toString();\n  doc = parser.parseInput(docData, baseUri);\n  Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n  if (meta != null) { \n\n  String foundCharset;\n  if (meta.hasAttr(\"http-equiv\")) {\n  foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n  } else {\n  foundCharset = meta.attr(\"charset\");\n  }\n\n  if (foundCharset != null && foundCharset.length() != 0 && !foundCharset.equals(defaultCharset)) { \n  charsetName = foundCharset;\n  byteData.rewind();\n  docData = Charset.forName(foundCharset).decode(byteData).toString();\n  doc = null;\n  }\n  }\n  } else { \n  Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n  docData = Charset.forName(charsetName).decode(byteData).toString();\n  }\n  if (doc == null) {\n  \n  \n  \n  if (docData.length() > 0 && docData.charAt(0) == 65279)\n  docData = docData.substring(1);\n\n  doc = parser.parseInput(docData, baseUri);\n  doc.outputSettings().charset(charsetName);\n  }\n  return doc;\n  }",
+          "fixed_method": "  static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n  String docData;\n  Document doc = null;\n  if (charsetName == null) { \n  \n  docData = Charset.forName(defaultCharset).decode(byteData).toString();\n  doc = parser.parseInput(docData, baseUri);\n  Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n  if (meta != null) { \n\n  String foundCharset;\n  if (meta.hasAttr(\"http-equiv\")) {\n  foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n  if (foundCharset == null && meta.hasAttr(\"charset\")) {\n  try {\n  if (Charset.isSupported(meta.attr(\"charset\"))) {\n  foundCharset = meta.attr(\"charset\");\n  }\n  } catch (IllegalCharsetNameException e) {\n  foundCharset = null;\n  }\n  }\n  } else {\n  foundCharset = meta.attr(\"charset\");\n  }\n\n  if (foundCharset != null && foundCharset.length() != 0 && !foundCharset.equals(defaultCharset)) { \n  foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n  charsetName = foundCharset;\n  byteData.rewind();\n  docData = Charset.forName(foundCharset).decode(byteData).toString();\n  doc = null;\n  }\n  }\n  } else { \n  Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n  docData = Charset.forName(charsetName).decode(byteData).toString();\n  }\n  if (doc == null) {\n  \n  \n  \n  if (docData.length() > 0 && docData.charAt(0) == 65279)\n  docData = docData.substring(1);\n\n  doc = parser.parseInput(docData, baseUri);\n  doc.outputSettings().charset(charsetName);\n  }\n  return doc;\n  }",
+          "diff": [
+            "@@ -84,11 +85,21 @@",
+            "                 String foundCharset;\n",
+            "                 if (meta.hasAttr(\"http-equiv\")) {\n",
+            "                     foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n",
+            "+                    if (foundCharset == null && meta.hasAttr(\"charset\")) {\n",
+            "+                        try {\n",
+            "+                            if (Charset.isSupported(meta.attr(\"charset\"))) {\n",
+            "+                                foundCharset = meta.attr(\"charset\");\n",
+            "+                            }\n",
+            "+                        } catch (IllegalCharsetNameException e) {\n",
+            "+                            foundCharset = null;\n",
+            "+                        }\n",
+            "+                    }\n",
+            "                 } else {\n",
+            "                     foundCharset = meta.attr(\"charset\");\n",
+            "                 }\n",
+            " \n",
+            "                 if (foundCharset != null && foundCharset.length() != 0 && !foundCharset.equals(defaultCharset)) { // need to re-decode\n",
+            "+                    foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n",
+            "                     charsetName = foundCharset;\n",
+            "                     byteData.rewind();\n",
+            "                     docData = Charset.forName(foundCharset).decode(byteData).toString();\n"
+          ],
+          "changed_lines": 10
+        },
+        {
+          "buggy_method": "  static String getCharsetFromContentType(String contentType) {\n  if (contentType == null) return null;\n  Matcher m = charsetPattern.matcher(contentType);\n  if (m.find()) {\n  String charset = m.group(1).trim();\n  if (Charset.isSupported(charset)) return charset;\n  charset = charset.toUpperCase(Locale.ENGLISH);\n  if (Charset.isSupported(charset)) return charset;\n  \n  }\n  return null;\n  }",
+          "fixed_method": "  static String getCharsetFromContentType(String contentType) {\n  if (contentType == null) return null;\n  Matcher m = charsetPattern.matcher(contentType);\n  if (m.find()) {\n  String charset = m.group(1).trim();\n  charset = charset.replace(\"charset=\", \"\");\n  if (charset.isEmpty()) return null;\n  try {\n  if (Charset.isSupported(charset)) return charset;\n  charset = charset.toUpperCase(Locale.ENGLISH);\n  if (Charset.isSupported(charset)) return charset;\n  } catch (IllegalCharsetNameException e) {\n  \n  return null;\n  }\n  }\n  return null;\n  }",
+          "diff": [
+            "@@ -158,10 +169,16 @@",
+            "         Matcher m = charsetPattern.matcher(contentType);\n",
+            "         if (m.find()) {\n",
+            "             String charset = m.group(1).trim();\n",
+            "+            charset = charset.replace(\"charset=\", \"\");\n",
+            "+            if (charset.isEmpty()) return null;\n",
+            "+            try {\n",
+            "                 if (Charset.isSupported(charset)) return charset;\n",
+            "                 charset = charset.toUpperCase(Locale.ENGLISH);\n",
+            "                 if (Charset.isSupported(charset)) return charset;\n",
+            "+            } catch (IllegalCharsetNameException e) {\n",
+            "                 // if our advanced charset matching fails.... we just take the default\n",
+            "+                return null;\n",
+            "+            }\n",
+            "         }\n",
+            "         return null;\n",
+            "     }\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

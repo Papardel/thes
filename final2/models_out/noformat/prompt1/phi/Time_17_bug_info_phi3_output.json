@@ -1,0 +1,13 @@
+{
+  "bug_id": "Time_17_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 17\nTest Class: org.joda.time.TestDateTimeZoneCutover\nMethod: testBug3476684_adjustOffset\nError: junit.framework.AssertionFailedError\nMessage: expected:<2012-02-25T23:15:00.000-03:00> but was:<2012-02-25T23:15:00.000-02:00>\nFailing Line:         assertEquals(baseAfter, baseBefore.withLaterOffsetAtOverlap());\nTest Source:\npublic void testBug3476684_adjustOffset() {\n  final DateTimeZone zone = DateTimeZone.forID(\"America/Sao_Paulo\");\n  DateTime base = new DateTime(2012, 2, 25, 22, 15, zone);\n  DateTime baseBefore = base.plusHours(1);  \n  DateTime baseAfter = base.plusHours(2);  \n  \n  assertSame(base, base.withEarlierOffsetAtOverlap());\n  assertSame(base, base.withLaterOffsetAtOverlap());\n  \n  assertSame(baseBefore, baseBefore.withEarlierOffsetAtOverlap());\n  assertEquals(baseAfter, baseBefore.withLaterOffsetAtOverlap());\n  \n  assertSame(baseAfter, baseAfter.withLaterOffsetAtOverlap());\n  assertEquals(baseBefore, baseAfter.withEarlierOffsetAtOverlap());\n  }\nStack Trace:\nTestDateTimeZoneCutover.testBug3476684_adjustOffset line 1259\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "# Answer:RESPONSE: org.joda.time.test.TestDateTimeZoneCutover"
+    }
+  ],
+  "classes": [
+    "DateTimeZone"
+  ]
+}

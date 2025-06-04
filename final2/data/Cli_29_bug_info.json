@@ -1,0 +1,59 @@
+{
+  "bug_id": "29",
+  "failed_tests": {
+    "org.apache.commons.cli.UtilTest": [
+      {
+        "methodName": "testStripLeadingAndTrailingQuotes",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<foo \"bar[\"]> but was:<foo \"bar[]>",
+        "fail_line": "        assertEquals(\"foo \\\"bar\\\"\", Util.stripLeadingAndTrailingQuotes(\"foo \\\"bar\\\"\"));",
+        "test_source": "  public void testStripLeadingAndTrailingQuotes() {\n  assertEquals(\"foo\", Util.stripLeadingAndTrailingQuotes(\"\\\"foo\\\"\"));\n  assertEquals(\"foo \\\"bar\\\"\", Util.stripLeadingAndTrailingQuotes(\"foo \\\"bar\\\"\"));\n  assertEquals(\"\\\"foo\\\" bar\", Util.stripLeadingAndTrailingQuotes(\"\\\"foo\\\" bar\"));\n  assertEquals(\"\\\"foo\\\" and \\\"bar\\\"\", Util.stripLeadingAndTrailingQuotes(\"\\\"foo\\\" and \\\"bar\\\"\"));\n  assertEquals(\"\\\"\", Util.stripLeadingAndTrailingQuotes(\"\\\"\"));\n  }",
+        "stack": [
+          "UtilTest.testStripLeadingAndTrailingQuotes line 38"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/Util.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\n\nclass Util\n{\n    \n    static String stripLeadingHyphens(String str) {\n        if (str == null)\n        {\n            return null;\n        }\n        if (str.startsWith(\"--\"))\n        {\n            return str.substring(2, str.length());\n        }\n        else if (str.startsWith(\"-\"))\n        {\n            return str.substring(1, str.length());\n        }\n\n        return str;\n    }\n\n    \n    static String stripLeadingAndTrailingQuotes(String str) {\n        if (str.startsWith(\"\\\"\"))\n        {\n            str = str.substring(1, str.length());\n        }\n        int length = str.length();\n        if (str.endsWith(\"\\\"\"))\n        {\n            str = str.substring(0, length - 1);\n        }\n        \n        return str;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\n\nclass Util\n{\n    \n    static String stripLeadingHyphens(String str) {\n        if (str == null)\n        {\n            return null;\n        }\n        if (str.startsWith(\"--\"))\n        {\n            return str.substring(2, str.length());\n        }\n        else if (str.startsWith(\"-\"))\n        {\n            return str.substring(1, str.length());\n        }\n\n        return str;\n    }\n\n    \n    static String stripLeadingAndTrailingQuotes(String str) {\n        int length = str.length();\n        if (length > 1 && str.startsWith(\"\\\"\") && str.endsWith(\"\\\"\") && str.substring(1, length - 1).indexOf('\"') == -1)\n        {\n            str = str.substring(1, length - 1);\n        }\n        \n        return str;\n    }\n}\n",
+      "buggy_signatures": [
+        "static String stripLeadingHyphens(String str)",
+        "static String stripLeadingAndTrailingQuotes(String str)"
+      ],
+      "fixed_signatures": [
+        "static String stripLeadingHyphens(String str)",
+        "static String stripLeadingAndTrailingQuotes(String str)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  static String stripLeadingAndTrailingQuotes(String str) {\n  if (str.startsWith(\"\\\"\"))\n  {\n  str = str.substring(1, str.length());\n  }\n  int length = str.length();\n  if (str.endsWith(\"\\\"\"))\n  {\n  str = str.substring(0, length - 1);\n  }\n  \n  return str;\n  }",
+          "fixed_method": "  static String stripLeadingAndTrailingQuotes(String str) {\n  int length = str.length();\n  if (length > 1 && str.startsWith(\"\\\"\") && str.endsWith(\"\\\"\") && str.substring(1, length - 1).indexOf('\"') == -1)\n  {\n  str = str.substring(1, length - 1);\n  }\n  \n  return str;\n  }",
+          "diff": [
+            "@@ -62,14 +62,10 @@",
+            "      */\n",
+            "     static String stripLeadingAndTrailingQuotes(String str)\n",
+            "     {\n",
+            "-        if (str.startsWith(\"\\\"\"))\n",
+            "+        int length = str.length();\n",
+            "+        if (length > 1 && str.startsWith(\"\\\"\") && str.endsWith(\"\\\"\") && str.substring(1, length - 1).indexOf('\"') == -1)\n",
+            "         {\n",
+            "-            str = str.substring(1, str.length());\n",
+            "-        }\n",
+            "-        int length = str.length();\n",
+            "-        if (str.endsWith(\"\\\"\"))\n",
+            "-        {\n",
+            "-            str = str.substring(0, length - 1);\n",
+            "+            str = str.substring(1, length - 1);\n",
+            "         }\n",
+            "         \n",
+            "         return str;\n"
+          ],
+          "changed_lines": 10
+        }
+      ]
+    }
+  ]
+}

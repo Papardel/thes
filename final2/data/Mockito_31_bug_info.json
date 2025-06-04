@@ -1,0 +1,66 @@
+{
+  "bug_id": "31",
+  "failed_tests": {
+    "org.mockito.internal.stubbing.defaultanswers.ReturnsSmartNullsTest": [
+      {
+        "methodName": "shouldPrintTheParametersWhenCallingAMethodWithArgs",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<... unstubbed withArgs([oompa, lumpa]) method on mock> but was:<... unstubbed withArgs([]) method on mock>",
+        "fail_line": "    \tassertEquals(\"SmartNull returned by unstubbed withArgs(oompa, lumpa) method on mock\", smartNull + \"\");",
+        "test_source": "  public void shouldPrintTheParametersWhenCallingAMethodWithArgs() throws Throwable {\n  \tAnswer<Object> answer = new ReturnsSmartNulls();\n\n  \tFoo smartNull = (Foo) answer.answer(invocationOf(Foo.class, \"withArgs\", \"oompa\", \"lumpa\"));\n\n  \tassertEquals(\"SmartNull returned by unstubbed withArgs(oompa, lumpa) method on mock\", smartNull + \"\");\n  }",
+        "stack": [
+          "ReturnsSmartNullsTest.shouldPrintTheParametersWhenCallingAMethodWithArgs line 57"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java",
+      "buggy_full_code": "\npackage org.mockito.internal.stubbing.defaultanswers;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Method;\n\nimport org.mockito.Mockito;\nimport org.mockito.cglib.proxy.MethodInterceptor;\nimport org.mockito.cglib.proxy.MethodProxy;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.internal.creation.jmock.ClassImposterizer;\nimport org.mockito.internal.debugging.Location;\nimport org.mockito.internal.util.ObjectMethodsGuru;\nimport org.mockito.invocation.InvocationOnMock;\nimport org.mockito.stubbing.Answer;\n\n\npublic class ReturnsSmartNulls implements Answer<Object>, Serializable { private static final long serialVersionUID = 7618312406617949441L; private final class ThrowingInterceptor implements MethodInterceptor { private final InvocationOnMock invocation; private final Location location = new Location(); private ThrowingInterceptor(InvocationOnMock invocation) {\n            this.invocation = invocation;\n        }\n\n        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {\n            if (new ObjectMethodsGuru().isToString(method)) {\n                return \"SmartNull returned by unstubbed \" + formatMethodCall()  + \" method on mock\";\n            }\n\n            new Reporter().smartNullPointerException(location);\n            return null;\n        }\n\n\t\tprivate String formatMethodCall() {\n\t\t\treturn invocation.getMethod().getName() + \"()\";\n\t\t}\n    }\n\n    private final Answer<Object> delegate = new ReturnsMoreEmptyValues(); public Object answer(final InvocationOnMock invocation) throws Throwable {\n        Object defaultReturnValue = delegate.answer(invocation);\n        if (defaultReturnValue != null) {\n            return defaultReturnValue;\n        }\n        Class<?> type = invocation.getMethod().getReturnType();\n        if (ClassImposterizer.INSTANCE.canImposterise(type)) {\n            return ClassImposterizer.INSTANCE.imposterise(new ThrowingInterceptor(invocation), type);\n        }\n        return null;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.mockito.internal.stubbing.defaultanswers;\n\nimport java.io.Serializable;\nimport java.lang.reflect.Method;\nimport java.util.Arrays;\n\nimport org.mockito.Mockito;\nimport org.mockito.cglib.proxy.MethodInterceptor;\nimport org.mockito.cglib.proxy.MethodProxy;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.internal.creation.jmock.ClassImposterizer;\nimport org.mockito.internal.debugging.Location;\nimport org.mockito.internal.util.ObjectMethodsGuru;\nimport org.mockito.invocation.InvocationOnMock;\nimport org.mockito.stubbing.Answer;\n\n\npublic class ReturnsSmartNulls implements Answer<Object>, Serializable { private static final long serialVersionUID = 7618312406617949441L; private final class ThrowingInterceptor implements MethodInterceptor { private final InvocationOnMock invocation; private final Location location = new Location(); private ThrowingInterceptor(InvocationOnMock invocation) {\n            this.invocation = invocation;\n        }\n\n        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {\n            if (new ObjectMethodsGuru().isToString(method)) {\n                return \"SmartNull returned by unstubbed \" + formatMethodCall()  + \" method on mock\";\n            }\n\n            new Reporter().smartNullPointerException(location);\n            return null;\n        }\n\n\t\tprivate String formatMethodCall() {\n\t\t\tString args = Arrays.toString(invocation.getArguments());\n\t\t\treturn invocation.getMethod().getName() + \"(\" + args.substring(1, args.length() - 1) +\t\")\";\n\t\t}\n    }\n\n    private final Answer<Object> delegate = new ReturnsMoreEmptyValues(); public Object answer(final InvocationOnMock invocation) throws Throwable {\n        Object defaultReturnValue = delegate.answer(invocation);\n        if (defaultReturnValue != null) {\n            return defaultReturnValue;\n        }\n        Class<?> type = invocation.getMethod().getReturnType();\n        if (ClassImposterizer.INSTANCE.canImposterise(type)) {\n            return ClassImposterizer.INSTANCE.imposterise(new ThrowingInterceptor(invocation), type);\n        }\n        return null;\n    }\n}\n",
+      "buggy_signatures": [
+        "public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable",
+        "private String formatMethodCall()"
+      ],
+      "fixed_signatures": [
+        "public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable",
+        "private String formatMethodCall()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -6,6 +6,7 @@",
+            " \n",
+            " import java.io.Serializable;\n",
+            " import java.lang.reflect.Method;\n",
+            "+import java.util.Arrays;\n",
+            " \n",
+            " import org.mockito.Mockito;\n",
+            " import org.mockito.cglib.proxy.MethodInterceptor;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "\t\tprivate String formatMethodCall() {\n\t\t\treturn invocation.getMethod().getName() + \"()\";\n\t\t}",
+          "fixed_method": "\t\tprivate String formatMethodCall() {\n\t\t\tString args = Arrays.toString(invocation.getArguments());\n\t\t\treturn invocation.getMethod().getName() + \"(\" + args.substring(1, args.length() - 1) +\t\")\";\n\t\t}",
+          "diff": [
+            "@@ -57,7 +58,8 @@",
+            "         }\n",
+            " \n",
+            " \t\tprivate String formatMethodCall() {\n",
+            "-\t\t\treturn invocation.getMethod().getName() + \"()\";\n",
+            "+\t\t\tString args = Arrays.toString(invocation.getArguments());\n",
+            "+\t\t\treturn invocation.getMethod().getName() + \"(\" + args.substring(1, args.length() - 1) +\t\")\";\n",
+            " \t\t}\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

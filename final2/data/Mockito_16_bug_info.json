@@ -1,0 +1,175 @@
+{
+  "bug_id": "16",
+  "failed_tests": {
+    "org.mockitousage.bugs.StubbingMocksThatAreConfiguredToReturnMocksTest": [
+      {
+        "methodName": "shouldAllowStubbingMocksConfiguredWithRETURNS_MOCKS",
+        "error": "org.mockito.exceptions.misusing.MissingMethodInvocationException:",
+        "message": "",
+        "fail_line": "        when(mock.objectReturningMethodNoArgs()).thenReturn(null);",
+        "test_source": "  public void shouldAllowStubbingMocksConfiguredWithRETURNS_MOCKS() {\n  IMethods mock = mock(IMethods.class, RETURNS_MOCKS);\n  when(mock.objectReturningMethodNoArgs()).thenReturn(null);\n  }",
+        "stack": [
+          "Reporter.missingMethodInvocation line 77, MockitoCore.stub line 43, MockitoCore.when line 56, Mockito.when line 994, StubbingMocksThatAreConfiguredToReturnMocksTest.shouldAllowStubbingMocksConfiguredWithRETURNS_MOCKS line 19"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/MockitoCore.java",
+      "buggy_full_code": "\npackage org.mockito.internal;\n\nimport org.mockito.InOrder;\nimport org.mockito.MockSettings;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.exceptions.misusing.NotAMockException;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.invocation.Invocation;\nimport org.mockito.internal.progress.IOngoingStubbing;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\nimport org.mockito.internal.stubbing.OngoingStubbingImpl;\nimport org.mockito.internal.stubbing.StubberImpl;\nimport org.mockito.internal.util.MockUtil;\nimport org.mockito.internal.verification.api.VerificationMode;\nimport org.mockito.stubbing.*;\n\nimport java.util.Arrays;\nimport java.util.List;\n\n@SuppressWarnings(\"unchecked\")\npublic class MockitoCore { private final Reporter reporter = new Reporter(); private final MockUtil mockUtil = new MockUtil(); private final MockingProgress mockingProgress = new ThreadSafeMockingProgress(); public <T> T mock(Class<T> classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) { return mock(classToMock, mockSettings); }\n    public <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n        mockingProgress.validateState();\n            mockingProgress.resetOngoingStubbing();\n        return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\n    }\n    \n    public IOngoingStubbing stub() {\n        IOngoingStubbing stubbing = mockingProgress.pullOngoingStubbing();\n        if (stubbing == null) {\n            mockingProgress.reset();\n            reporter.missingMethodInvocation();\n        }\n        return stubbing;\n    }\n\n    @Deprecated\n    public <T> DeprecatedOngoingStubbing<T> stub(T methodCall) {\n        mockingProgress.stubbingStarted();\n        return (DeprecatedOngoingStubbing) stub();\n    }\n\n    public <T> OngoingStubbing<T> when(T methodCall) {\n        mockingProgress.stubbingStarted();\n        return (OngoingStubbing) stub();\n    }\n    \n    \n    public <T> T verify(T mock, VerificationMode mode) {\n        if (mock == null) {\n            reporter.nullPassedToVerify();\n        } else if (!mockUtil.isMock(mock)) {\n            reporter.notAMockPassedToVerify();\n        }\n        mockingProgress.verificationStarted(mode);\n        return mock;\n    }\n    \n    public <T> void reset(T ... mocks) {\n        mockingProgress.validateState();\n        mockingProgress.reset();\n        mockingProgress.resetOngoingStubbing();\n        \n        for (T m : mocks) {\n            mockUtil.resetMock(m);\n        }\n    }\n    \n    public void verifyNoMoreInteractions(Object... mocks) {\n        assertMocksNotEmpty(mocks);\n        mockingProgress.validateState();\n        for (Object mock : mocks) {\n            try {\n                if (mock == null) {\n                    reporter.nullPassedToVerifyNoMoreInteractions();\n                }\n                mockUtil.getMockHandler(mock).verifyNoMoreInteractions();\n            } catch (NotAMockException e) {\n                reporter.notAMockPassedToVerifyNoMoreInteractions();\n            }\n        }\n    }\n    \n    private void assertMocksNotEmpty(Object[] mocks) {\n        if (mocks == null || mocks.length == 0) {\n            reporter.mocksHaveToBePassedToVerifyNoMoreInteractions();\n        }\n    }\n    \n    public InOrder inOrder(Object... mocks) {\n        if (mocks == null || mocks.length == 0) {\n            reporter.mocksHaveToBePassedWhenCreatingInOrder();\n        }\n        for (Object mock : mocks) {\n            if (mock == null) {\n                reporter.nullPassedWhenCreatingInOrder();\n            } else if (!mockUtil.isMock(mock)) {\n                reporter.notAMockPassedWhenCreatingInOrder();\n            }\n        }\n        return new InOrderImpl(Arrays.asList(mocks));\n    }\n    \n    public Stubber doAnswer(Answer answer) {\n        mockingProgress.stubbingStarted();\n        mockingProgress.resetOngoingStubbing();\n        return new StubberImpl().doAnswer(answer);\n    }\n    \n    public <T> VoidMethodStubbable<T> stubVoid(T mock) {\n        MockHandlerInterface<T> handler = mockUtil.getMockHandler(mock);\n        mockingProgress.stubbingStarted();\n        return handler.voidMethodStubbable(mock);\n    }\n\n    public void validateMockitoUsage() {\n        mockingProgress.validateState();\n    }\n\n    \n    public Invocation getLastInvocation() {\n        OngoingStubbingImpl ongoingStubbing = ((OngoingStubbingImpl) mockingProgress.pullOngoingStubbing());\n        List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();\n        return allInvocations.get(allInvocations.size()-1);\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito.internal;\n\nimport org.mockito.InOrder;\nimport org.mockito.MockSettings;\nimport org.mockito.exceptions.Reporter;\nimport org.mockito.exceptions.misusing.NotAMockException;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.invocation.Invocation;\nimport org.mockito.internal.progress.IOngoingStubbing;\nimport org.mockito.internal.progress.MockingProgress;\nimport org.mockito.internal.progress.ThreadSafeMockingProgress;\nimport org.mockito.internal.stubbing.OngoingStubbingImpl;\nimport org.mockito.internal.stubbing.StubberImpl;\nimport org.mockito.internal.util.MockUtil;\nimport org.mockito.internal.verification.api.VerificationMode;\nimport org.mockito.stubbing.*;\n\nimport java.util.Arrays;\nimport java.util.List;\n\n@SuppressWarnings(\"unchecked\")\npublic class MockitoCore { private final Reporter reporter = new Reporter(); private final MockUtil mockUtil = new MockUtil(); private final MockingProgress mockingProgress = new ThreadSafeMockingProgress(); public <T> T mock(Class<T> classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) {\n        mockingProgress.validateState();\n        if (shouldResetOngoingStubbing) {\n            mockingProgress.resetOngoingStubbing();\n        }\n        return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\n    }\n    \n    public IOngoingStubbing stub() {\n        IOngoingStubbing stubbing = mockingProgress.pullOngoingStubbing();\n        if (stubbing == null) {\n            mockingProgress.reset();\n            reporter.missingMethodInvocation();\n        }\n        return stubbing;\n    }\n\n    @Deprecated\n    public <T> DeprecatedOngoingStubbing<T> stub(T methodCall) {\n        mockingProgress.stubbingStarted();\n        return (DeprecatedOngoingStubbing) stub();\n    }\n\n    public <T> OngoingStubbing<T> when(T methodCall) {\n        mockingProgress.stubbingStarted();\n        return (OngoingStubbing) stub();\n    }\n    \n    \n    public <T> T verify(T mock, VerificationMode mode) {\n        if (mock == null) {\n            reporter.nullPassedToVerify();\n        } else if (!mockUtil.isMock(mock)) {\n            reporter.notAMockPassedToVerify();\n        }\n        mockingProgress.verificationStarted(mode);\n        return mock;\n    }\n    \n    public <T> void reset(T ... mocks) {\n        mockingProgress.validateState();\n        mockingProgress.reset();\n        mockingProgress.resetOngoingStubbing();\n        \n        for (T m : mocks) {\n            mockUtil.resetMock(m);\n        }\n    }\n    \n    public void verifyNoMoreInteractions(Object... mocks) {\n        assertMocksNotEmpty(mocks);\n        mockingProgress.validateState();\n        for (Object mock : mocks) {\n            try {\n                if (mock == null) {\n                    reporter.nullPassedToVerifyNoMoreInteractions();\n                }\n                mockUtil.getMockHandler(mock).verifyNoMoreInteractions();\n            } catch (NotAMockException e) {\n                reporter.notAMockPassedToVerifyNoMoreInteractions();\n            }\n        }\n    }\n    \n    private void assertMocksNotEmpty(Object[] mocks) {\n        if (mocks == null || mocks.length == 0) {\n            reporter.mocksHaveToBePassedToVerifyNoMoreInteractions();\n        }\n    }\n    \n    public InOrder inOrder(Object... mocks) {\n        if (mocks == null || mocks.length == 0) {\n            reporter.mocksHaveToBePassedWhenCreatingInOrder();\n        }\n        for (Object mock : mocks) {\n            if (mock == null) {\n                reporter.nullPassedWhenCreatingInOrder();\n            } else if (!mockUtil.isMock(mock)) {\n                reporter.notAMockPassedWhenCreatingInOrder();\n            }\n        }\n        return new InOrderImpl(Arrays.asList(mocks));\n    }\n    \n    public Stubber doAnswer(Answer answer) {\n        mockingProgress.stubbingStarted();\n        mockingProgress.resetOngoingStubbing();\n        return new StubberImpl().doAnswer(answer);\n    }\n    \n    public <T> VoidMethodStubbable<T> stubVoid(T mock) {\n        MockHandlerInterface<T> handler = mockUtil.getMockHandler(mock);\n        mockingProgress.stubbingStarted();\n        return handler.voidMethodStubbable(mock);\n    }\n\n    public void validateMockitoUsage() {\n        mockingProgress.validateState();\n    }\n\n    \n    public Invocation getLastInvocation() {\n        OngoingStubbingImpl ongoingStubbing = ((OngoingStubbingImpl) mockingProgress.pullOngoingStubbing());\n        List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();\n        return allInvocations.get(allInvocations.size()-1);\n    }\n}",
+      "buggy_signatures": [
+        "public <T> T mock(Class<T> classToMock, MockSettings mockSettings)",
+        "public IOngoingStubbing stub()",
+        "public <T> DeprecatedOngoingStubbing<T> stub(T methodCall)",
+        "public <T> OngoingStubbing<T> when(T methodCall)",
+        "public <T> T verify(T mock, VerificationMode mode)",
+        "public <T> void reset(T ... mocks)",
+        "public void verifyNoMoreInteractions(Object... mocks)",
+        "private void assertMocksNotEmpty(Object[] mocks)",
+        "public InOrder inOrder(Object... mocks)",
+        "public Stubber doAnswer(Answer answer)",
+        "public <T> VoidMethodStubbable<T> stubVoid(T mock)",
+        "public void validateMockitoUsage()",
+        "public Invocation getLastInvocation()"
+      ],
+      "fixed_signatures": [
+        "public IOngoingStubbing stub()",
+        "public <T> DeprecatedOngoingStubbing<T> stub(T methodCall)",
+        "public <T> OngoingStubbing<T> when(T methodCall)",
+        "public <T> T verify(T mock, VerificationMode mode)",
+        "public <T> void reset(T ... mocks)",
+        "public void verifyNoMoreInteractions(Object... mocks)",
+        "private void assertMocksNotEmpty(Object[] mocks)",
+        "public InOrder inOrder(Object... mocks)",
+        "public Stubber doAnswer(Answer answer)",
+        "public <T> VoidMethodStubbable<T> stubVoid(T mock)",
+        "public void validateMockitoUsage()",
+        "public Invocation getLastInvocation()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n  mockingProgress.validateState();\n  mockingProgress.resetOngoingStubbing();\n  return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\n  }",
+          "fixed_method": "  public <T> T mock(Class<T> classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) {\n  mockingProgress.validateState();\n  if (shouldResetOngoingStubbing) {\n  mockingProgress.resetOngoingStubbing();\n  }\n  return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\n  }",
+          "diff": [
+            "@@ -29,10 +29,11 @@",
+            "     private final MockUtil mockUtil = new MockUtil();\n",
+            "     private final MockingProgress mockingProgress = new ThreadSafeMockingProgress();\n",
+            "     \n",
+            "-    public <T> T mock(Class<T> classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) { return mock(classToMock, mockSettings); }\n",
+            "-    public <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n",
+            "+    public <T> T mock(Class<T> classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) {\n",
+            "         mockingProgress.validateState();\n",
+            "+        if (shouldResetOngoingStubbing) {\n",
+            "             mockingProgress.resetOngoingStubbing();\n",
+            "+        }\n",
+            "         return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\n",
+            "     }\n",
+            "     \n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    },
+    {
+      "name": "org/mockito/Mockito.java",
+      "buggy_full_code": "\npackage org.mockito;\n\nimport org.mockito.internal.MockitoCore;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.debugging.MockitoDebuggerImpl;\nimport org.mockito.internal.stubbing.answers.*;\nimport org.mockito.internal.stubbing.defaultanswers.*;\nimport org.mockito.internal.verification.VerificationModeFactory;\nimport org.mockito.internal.verification.api.VerificationMode;\nimport org.mockito.runners.MockitoJUnitRunner;\nimport org.mockito.stubbing.*;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Mockito extends Matchers { private static final MockitoCore MOCKITO_CORE = new MockitoCore(); public static final Answer<Object> RETURNS_DEFAULTS = new GloballyConfiguredAnswer(); public static final Answer<Object> RETURNS_SMART_NULLS = new ReturnsSmartNulls(); public static final Answer<Object> RETURNS_MOCKS = new ReturnsMocks(); public static final Answer<Object> CALLS_REAL_METHODS = new CallsRealMethods(); public static <T> T mock(Class<T> classToMock) {\n        return mock(classToMock, withSettings().defaultAnswer(RETURNS_DEFAULTS));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, String name) {\n        return mock(classToMock, withSettings()\n                .name(name)\n                .defaultAnswer(RETURNS_DEFAULTS));\n    }\n    \n    \n    @Deprecated\n    public static <T> T mock(Class<T> classToMock, ReturnValues returnValues) {\n        return mock(classToMock, withSettings().defaultAnswer(new AnswerReturnValuesAdapter(returnValues)));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, Answer defaultAnswer) {\n        return mock(classToMock, withSettings().defaultAnswer(defaultAnswer));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n        return MOCKITO_CORE.mock(classToMock, mockSettings);\n    }\n    \n    \n    public static <T> T spy(T object) {\n        return MOCKITO_CORE.mock((Class<T>) object.getClass(), withSettings()\n                .spiedInstance(object)\n                .defaultAnswer(CALLS_REAL_METHODS)); \n    }\n\n    \n    @Deprecated\n    public static <T> DeprecatedOngoingStubbing<T> stub(T methodCall) {\n        return MOCKITO_CORE.stub(methodCall);\n    }\n    \n    \n    public static <T> OngoingStubbing<T> when(T methodCall) {\n        return MOCKITO_CORE.when(methodCall);\n    }\n\n    \n    public static <T> T verify(T mock) {\n        return MOCKITO_CORE.verify(mock, times(1));\n    }\n\n    \n    public static <T> T verify(T mock, VerificationMode mode) {\n        return MOCKITO_CORE.verify(mock, mode);\n    }\n\n    \n    public static <T> void reset(T ... mocks) {\n        MOCKITO_CORE.reset(mocks);\n    }\n\n    \n    public static void verifyNoMoreInteractions(Object... mocks) {\n        MOCKITO_CORE.verifyNoMoreInteractions(mocks);\n    }\n\n    \n    public static void verifyZeroInteractions(Object... mocks) {\n        MOCKITO_CORE.verifyNoMoreInteractions(mocks);\n    }\n\n    \n    public static <T> VoidMethodStubbable<T> stubVoid(T mock) {\n        return MOCKITO_CORE.stubVoid(mock);\n    }\n    \n    \n    public static Stubber doThrow(Throwable toBeThrown) {\n        return MOCKITO_CORE.doAnswer(new ThrowsException(toBeThrown));\n    }\n\n    \n    public static Stubber doCallRealMethod() {\n        return MOCKITO_CORE.doAnswer(new CallsRealMethods());\n    }\n    \n    \n    public static Stubber doAnswer(Answer answer) {\n        return MOCKITO_CORE.doAnswer(answer);\n    }  \n    \n    \n    public static Stubber doNothing() {\n        return MOCKITO_CORE.doAnswer(new DoesNothing());\n    }    \n    \n    \n    public static Stubber doReturn(Object toBeReturned) {\n        return MOCKITO_CORE.doAnswer(new Returns(toBeReturned));\n    }\n \n    \n    public static InOrder inOrder(Object... mocks) {\n        return MOCKITO_CORE.inOrder(mocks);\n    }\n  \n    \n    public static VerificationMode times(int wantedNumberOfInvocations) {\n        return VerificationModeFactory.times(wantedNumberOfInvocations);\n    }\n    \n    \n    public static VerificationMode never() {\n        return times(0);\n    }\n    \n    \n    public static VerificationMode atLeastOnce() {\n        return VerificationModeFactory.atLeastOnce();\n    }\n\n    \n    public static VerificationMode atLeast(int minNumberOfInvocations) {\n        return VerificationModeFactory.atLeast(minNumberOfInvocations);\n    }\n\n    \n    public static VerificationMode atMost(int maxNumberOfInvocations) {\n        return VerificationModeFactory.atMost(maxNumberOfInvocations);\n    }\n\n    \n    public static VerificationMode only() {\n    \treturn VerificationModeFactory.only();\n    }\n    \n    \n    public static void validateMockitoUsage() {\n        MOCKITO_CORE.validateMockitoUsage();\n    }\n\n    \n    public static MockSettings withSettings() {\n        return new MockSettingsImpl().defaultAnswer(RETURNS_DEFAULTS);\n    }\n\n    \n    public static MockitoDebugger debug() {\n        return new MockitoDebuggerImpl();\n    }\n}",
+      "fixed_full_code": "\npackage org.mockito;\n\nimport org.mockito.internal.MockitoCore;\nimport org.mockito.internal.creation.MockSettingsImpl;\nimport org.mockito.internal.debugging.MockitoDebuggerImpl;\nimport org.mockito.internal.stubbing.answers.*;\nimport org.mockito.internal.stubbing.defaultanswers.*;\nimport org.mockito.internal.verification.VerificationModeFactory;\nimport org.mockito.internal.verification.api.VerificationMode;\nimport org.mockito.runners.MockitoJUnitRunner;\nimport org.mockito.stubbing.*;\n\n\n@SuppressWarnings(\"unchecked\")\npublic class Mockito extends Matchers { private static final MockitoCore MOCKITO_CORE = new MockitoCore(); public static final Answer<Object> RETURNS_DEFAULTS = new GloballyConfiguredAnswer(); public static final Answer<Object> RETURNS_SMART_NULLS = new ReturnsSmartNulls(); public static final Answer<Object> RETURNS_MOCKS = new ReturnsMocks(); public static final Answer<Object> CALLS_REAL_METHODS = new CallsRealMethods(); public static <T> T mock(Class<T> classToMock) {\n        return mock(classToMock, withSettings().defaultAnswer(RETURNS_DEFAULTS));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, String name) {\n        return mock(classToMock, withSettings()\n                .name(name)\n                .defaultAnswer(RETURNS_DEFAULTS));\n    }\n    \n    \n    @Deprecated\n    public static <T> T mock(Class<T> classToMock, ReturnValues returnValues) {\n        return mock(classToMock, withSettings().defaultAnswer(new AnswerReturnValuesAdapter(returnValues)));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, Answer defaultAnswer) {\n        return mock(classToMock, withSettings().defaultAnswer(defaultAnswer));\n    }\n    \n    \n    public static <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n        return MOCKITO_CORE.mock(classToMock, mockSettings, true);\n    }\n    \n    \n    public static <T> T spy(T object) {\n        return MOCKITO_CORE.mock((Class<T>) object.getClass(), withSettings()\n                .spiedInstance(object)\n                .defaultAnswer(CALLS_REAL_METHODS), true); \n    }\n\n    \n    @Deprecated\n    public static <T> DeprecatedOngoingStubbing<T> stub(T methodCall) {\n        return MOCKITO_CORE.stub(methodCall);\n    }\n    \n    \n    public static <T> OngoingStubbing<T> when(T methodCall) {\n        return MOCKITO_CORE.when(methodCall);\n    }\n\n    \n    public static <T> T verify(T mock) {\n        return MOCKITO_CORE.verify(mock, times(1));\n    }\n\n    \n    public static <T> T verify(T mock, VerificationMode mode) {\n        return MOCKITO_CORE.verify(mock, mode);\n    }\n\n    \n    public static <T> void reset(T ... mocks) {\n        MOCKITO_CORE.reset(mocks);\n    }\n\n    \n    public static void verifyNoMoreInteractions(Object... mocks) {\n        MOCKITO_CORE.verifyNoMoreInteractions(mocks);\n    }\n\n    \n    public static void verifyZeroInteractions(Object... mocks) {\n        MOCKITO_CORE.verifyNoMoreInteractions(mocks);\n    }\n\n    \n    public static <T> VoidMethodStubbable<T> stubVoid(T mock) {\n        return MOCKITO_CORE.stubVoid(mock);\n    }\n    \n    \n    public static Stubber doThrow(Throwable toBeThrown) {\n        return MOCKITO_CORE.doAnswer(new ThrowsException(toBeThrown));\n    }\n\n    \n    public static Stubber doCallRealMethod() {\n        return MOCKITO_CORE.doAnswer(new CallsRealMethods());\n    }\n    \n    \n    public static Stubber doAnswer(Answer answer) {\n        return MOCKITO_CORE.doAnswer(answer);\n    }  \n    \n    \n    public static Stubber doNothing() {\n        return MOCKITO_CORE.doAnswer(new DoesNothing());\n    }    \n    \n    \n    public static Stubber doReturn(Object toBeReturned) {\n        return MOCKITO_CORE.doAnswer(new Returns(toBeReturned));\n    }\n \n    \n    public static InOrder inOrder(Object... mocks) {\n        return MOCKITO_CORE.inOrder(mocks);\n    }\n  \n    \n    public static VerificationMode times(int wantedNumberOfInvocations) {\n        return VerificationModeFactory.times(wantedNumberOfInvocations);\n    }\n    \n    \n    public static VerificationMode never() {\n        return times(0);\n    }\n    \n    \n    public static VerificationMode atLeastOnce() {\n        return VerificationModeFactory.atLeastOnce();\n    }\n\n    \n    public static VerificationMode atLeast(int minNumberOfInvocations) {\n        return VerificationModeFactory.atLeast(minNumberOfInvocations);\n    }\n\n    \n    public static VerificationMode atMost(int maxNumberOfInvocations) {\n        return VerificationModeFactory.atMost(maxNumberOfInvocations);\n    }\n\n    \n    public static VerificationMode only() {\n    \treturn VerificationModeFactory.only();\n    }\n    \n    \n    public static void validateMockitoUsage() {\n        MOCKITO_CORE.validateMockitoUsage();\n    }\n\n    \n    public static MockSettings withSettings() {\n        return new MockSettingsImpl().defaultAnswer(RETURNS_DEFAULTS);\n    }\n\n    \n    public static MockitoDebugger debug() {\n        return new MockitoDebuggerImpl();\n    }\n}",
+      "buggy_signatures": [
+        "public static <T> T mock(Class<T> classToMock, String name)",
+        "public static <T> T mock(Class<T> classToMock, ReturnValues returnValues)",
+        "public static <T> T mock(Class<T> classToMock, Answer defaultAnswer)",
+        "public static <T> T mock(Class<T> classToMock, MockSettings mockSettings)",
+        "public static <T> T spy(T object)",
+        "public static <T> DeprecatedOngoingStubbing<T> stub(T methodCall)",
+        "public static <T> OngoingStubbing<T> when(T methodCall)",
+        "public static <T> T verify(T mock)",
+        "public static <T> T verify(T mock, VerificationMode mode)",
+        "public static <T> void reset(T ... mocks)",
+        "public static void verifyNoMoreInteractions(Object... mocks)",
+        "public static void verifyZeroInteractions(Object... mocks)",
+        "public static <T> VoidMethodStubbable<T> stubVoid(T mock)",
+        "public static Stubber doThrow(Throwable toBeThrown)",
+        "public static Stubber doCallRealMethod()",
+        "public static Stubber doAnswer(Answer answer)",
+        "public static Stubber doNothing()",
+        "public static Stubber doReturn(Object toBeReturned)",
+        "public static InOrder inOrder(Object... mocks)",
+        "public static VerificationMode times(int wantedNumberOfInvocations)",
+        "public static VerificationMode never()",
+        "public static VerificationMode atLeastOnce()",
+        "public static VerificationMode atLeast(int minNumberOfInvocations)",
+        "public static VerificationMode atMost(int maxNumberOfInvocations)",
+        "public static VerificationMode only()",
+        "public static void validateMockitoUsage()",
+        "public static MockSettings withSettings()",
+        "public static MockitoDebugger debug()"
+      ],
+      "fixed_signatures": [
+        "public static <T> T mock(Class<T> classToMock, String name)",
+        "public static <T> T mock(Class<T> classToMock, ReturnValues returnValues)",
+        "public static <T> T mock(Class<T> classToMock, Answer defaultAnswer)",
+        "public static <T> T mock(Class<T> classToMock, MockSettings mockSettings)",
+        "public static <T> T spy(T object)",
+        "public static <T> DeprecatedOngoingStubbing<T> stub(T methodCall)",
+        "public static <T> OngoingStubbing<T> when(T methodCall)",
+        "public static <T> T verify(T mock)",
+        "public static <T> T verify(T mock, VerificationMode mode)",
+        "public static <T> void reset(T ... mocks)",
+        "public static void verifyNoMoreInteractions(Object... mocks)",
+        "public static void verifyZeroInteractions(Object... mocks)",
+        "public static <T> VoidMethodStubbable<T> stubVoid(T mock)",
+        "public static Stubber doThrow(Throwable toBeThrown)",
+        "public static Stubber doCallRealMethod()",
+        "public static Stubber doAnswer(Answer answer)",
+        "public static Stubber doNothing()",
+        "public static Stubber doReturn(Object toBeReturned)",
+        "public static InOrder inOrder(Object... mocks)",
+        "public static VerificationMode times(int wantedNumberOfInvocations)",
+        "public static VerificationMode never()",
+        "public static VerificationMode atLeastOnce()",
+        "public static VerificationMode atLeast(int minNumberOfInvocations)",
+        "public static VerificationMode atMost(int maxNumberOfInvocations)",
+        "public static VerificationMode only()",
+        "public static void validateMockitoUsage()",
+        "public static MockSettings withSettings()",
+        "public static MockitoDebugger debug()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n  return MOCKITO_CORE.mock(classToMock, mockSettings);\n  }",
+          "fixed_method": "  public static <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n  return MOCKITO_CORE.mock(classToMock, mockSettings, true);\n  }",
+          "diff": [
+            "@@ -824,7 +824,7 @@",
+            "      * @return mock object\n",
+            "      */\n",
+            "     public static <T> T mock(Class<T> classToMock, MockSettings mockSettings) {\n",
+            "-        return MOCKITO_CORE.mock(classToMock, mockSettings);\n",
+            "+        return MOCKITO_CORE.mock(classToMock, mockSettings, true);\n",
+            "     }\n",
+            "     \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <T> T spy(T object) {\n  return MOCKITO_CORE.mock((Class<T>) object.getClass(), withSettings()\n  .spiedInstance(object)\n  .defaultAnswer(CALLS_REAL_METHODS)); \n  }",
+          "fixed_method": "  public static <T> T spy(T object) {\n  return MOCKITO_CORE.mock((Class<T>) object.getClass(), withSettings()\n  .spiedInstance(object)\n  .defaultAnswer(CALLS_REAL_METHODS), true); \n  }",
+          "diff": [
+            "@@ -896,7 +896,7 @@",
+            "     public static <T> T spy(T object) {\n",
+            "         return MOCKITO_CORE.mock((Class<T>) object.getClass(), withSettings()\n",
+            "                 .spiedInstance(object)\n",
+            "-                .defaultAnswer(CALLS_REAL_METHODS)); \n",
+            "+                .defaultAnswer(CALLS_REAL_METHODS), true); \n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

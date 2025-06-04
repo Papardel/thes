@@ -1,0 +1,114 @@
+{
+  "bug_id": "24",
+  "failed_tests": {
+    "org.apache.commons.collections4.collection.UnmodifiableBoundedCollectionTest": [
+      {
+        "methodName": "testDecorateFactory",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected same:<[, One, 2, Three, null, 4, One, 5.0, 6.0, Seven, Eight, Nine, 10, 11, 12, Thirteen, 14, 15, 16]> was not:<[, One, 2, Three, null, 4, One, 5.0, 6.0, Seven, Eight, Nine, 10, 11, 12, Thirteen, 14, 15, 16]>",
+        "fail_line": "        assertSame(coll, UnmodifiableBoundedCollection.unmodifiableBoundedCollection(coll));",
+        "test_source": "  public void testDecorateFactory() {\n  final BoundedCollection<E> coll = makeFullCollection();\n  assertSame(coll, UnmodifiableBoundedCollection.unmodifiableBoundedCollection(coll));\n\n  try {\n  UnmodifiableBoundedCollection.unmodifiableBoundedCollection(null);\n  fail();\n  } catch (final IllegalArgumentException ex) {}\n  }",
+        "stack": [
+          "UnmodifiableBoundedCollectionTest.testDecorateFactory line 94"
+        ]
+      },
+      {
+        "methodName": "testUnmodifiable",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "        assertTrue(makeObject() instanceof Unmodifiable);",
+        "test_source": "  public void testUnmodifiable() {\n  assertTrue(makeObject() instanceof Unmodifiable);\n  assertTrue(makeFullCollection() instanceof Unmodifiable);\n  }",
+        "stack": [
+          "UnmodifiableBoundedCollectionTest.testUnmodifiable line 88"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections4/collection/UnmodifiableBoundedCollection.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections4.collection;\n\nimport java.util.Collection;\nimport java.util.Iterator;\n\nimport org.apache.commons.collections4.BoundedCollection;\nimport org.apache.commons.collections4.iterators.UnmodifiableIterator;\n\n\npublic final class UnmodifiableBoundedCollection<E> extends AbstractCollectionDecorator<E> implements BoundedCollection<E> { private static final long serialVersionUID = -7112672385450340330L; public static <E> BoundedCollection<E> unmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n        return new UnmodifiableBoundedCollection<E>(coll);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static <E> BoundedCollection<E> unmodifiableBoundedCollection(Collection<? extends E> coll) {\n        if (coll == null) {\n            throw new IllegalArgumentException(\"The collection must not be null\");\n        }\n\n        \n        for (int i = 0; i < 1000; i++) {  \n            if (coll instanceof BoundedCollection) {\n                break;  \n            }\n            if (coll instanceof AbstractCollectionDecorator) {\n                coll = ((AbstractCollectionDecorator<E>) coll).decorated();\n            } else if (coll instanceof SynchronizedCollection) {\n                coll = ((SynchronizedCollection<E>) coll).decorated();\n            }\n        }\n\n        if (coll instanceof BoundedCollection == false) {\n            throw new IllegalArgumentException(\"The collection is not a bounded collection\");\n        }\n        return new UnmodifiableBoundedCollection<E>((BoundedCollection<E>) coll);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\") \n    private UnmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n        super((BoundedCollection<E>) coll);\n    }\n\n    \n    @Override\n    public Iterator<E> iterator() {\n        return UnmodifiableIterator.unmodifiableIterator(decorated().iterator());\n    }\n\n    @Override\n    public boolean add(final E object) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean addAll(final Collection<? extends E> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public void clear() {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean remove(final Object object) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean removeAll(final Collection<?> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean retainAll(final Collection<?> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    \n    public boolean isFull() {\n        return decorated().isFull();\n    }\n\n    public int maxSize() {\n        return decorated().maxSize();\n    }\n\n    @Override\n    protected BoundedCollection<E> decorated() {\n        return (BoundedCollection<E>) super.decorated();\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections4.collection;\n\nimport java.util.Collection;\nimport java.util.Iterator;\n\nimport org.apache.commons.collections4.BoundedCollection;\nimport org.apache.commons.collections4.Unmodifiable;\nimport org.apache.commons.collections4.iterators.UnmodifiableIterator;\n\n\npublic final class UnmodifiableBoundedCollection<E> extends AbstractCollectionDecorator<E> implements BoundedCollection<E>, Unmodifiable { private static final long serialVersionUID = -7112672385450340330L; public static <E> BoundedCollection<E> unmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n        if (coll instanceof Unmodifiable) {\n            @SuppressWarnings(\"unchecked\") \n            final BoundedCollection<E> tmpColl = (BoundedCollection<E>) coll;\n            return tmpColl;\n        }\n        return new UnmodifiableBoundedCollection<E>(coll);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static <E> BoundedCollection<E> unmodifiableBoundedCollection(Collection<? extends E> coll) {\n        if (coll == null) {\n            throw new IllegalArgumentException(\"The collection must not be null\");\n        }\n\n        \n        for (int i = 0; i < 1000; i++) {  \n            if (coll instanceof BoundedCollection) {\n                break;  \n            }\n            if (coll instanceof AbstractCollectionDecorator) {\n                coll = ((AbstractCollectionDecorator<E>) coll).decorated();\n            } else if (coll instanceof SynchronizedCollection) {\n                coll = ((SynchronizedCollection<E>) coll).decorated();\n            }\n        }\n\n        if (coll instanceof BoundedCollection == false) {\n            throw new IllegalArgumentException(\"The collection is not a bounded collection\");\n        }\n        return new UnmodifiableBoundedCollection<E>((BoundedCollection<E>) coll);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\") \n    private UnmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n        super((BoundedCollection<E>) coll);\n    }\n\n    \n    @Override\n    public Iterator<E> iterator() {\n        return UnmodifiableIterator.unmodifiableIterator(decorated().iterator());\n    }\n\n    @Override\n    public boolean add(final E object) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean addAll(final Collection<? extends E> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public void clear() {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean remove(final Object object) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean removeAll(final Collection<?> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    @Override\n    public boolean retainAll(final Collection<?> coll) {\n        throw new UnsupportedOperationException();\n    }\n\n    \n    public boolean isFull() {\n        return decorated().isFull();\n    }\n\n    public int maxSize() {\n        return decorated().maxSize();\n    }\n\n    @Override\n    protected BoundedCollection<E> decorated() {\n        return (BoundedCollection<E>) super.decorated();\n    }\n}\n",
+      "buggy_signatures": [
+        "public static <E> BoundedCollection<E> unmodifiableBoundedCollection(Collection<? extends E> coll)",
+        "private UnmodifiableBoundedCollection(final BoundedCollection<? extends E> coll)",
+        "public Iterator<E> iterator()",
+        "public boolean add(final E object)",
+        "public boolean addAll(final Collection<? extends E> coll)",
+        "public void clear()",
+        "public boolean remove(final Object object)",
+        "public boolean removeAll(final Collection<?> coll)",
+        "public boolean retainAll(final Collection<?> coll)",
+        "public boolean isFull()",
+        "public int maxSize()",
+        "protected BoundedCollection<E> decorated()"
+      ],
+      "fixed_signatures": [
+        "public static <E> BoundedCollection<E> unmodifiableBoundedCollection(Collection<? extends E> coll)",
+        "private UnmodifiableBoundedCollection(final BoundedCollection<? extends E> coll)",
+        "public Iterator<E> iterator()",
+        "public boolean add(final E object)",
+        "public boolean addAll(final Collection<? extends E> coll)",
+        "public void clear()",
+        "public boolean remove(final Object object)",
+        "public boolean removeAll(final Collection<?> coll)",
+        "public boolean retainAll(final Collection<?> coll)",
+        "public boolean isFull()",
+        "public int maxSize()",
+        "protected BoundedCollection<E> decorated()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -20,6 +20,7 @@",
+            " import java.util.Iterator;\n",
+            " \n",
+            " import org.apache.commons.collections4.BoundedCollection;\n",
+            "+import org.apache.commons.collections4.Unmodifiable;\n",
+            " import org.apache.commons.collections4.iterators.UnmodifiableIterator;\n",
+            " \n",
+            " /**\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -40,7 +41,7 @@",
+            "  * @version $Id$\n",
+            "  */\n",
+            " public final class UnmodifiableBoundedCollection<E> extends AbstractCollectionDecorator<E>\n",
+            "-        implements BoundedCollection<E> {\n",
+            "+        implements BoundedCollection<E>, Unmodifiable {\n",
+            " \n",
+            "     /** Serialization version */\n",
+            "     private static final long serialVersionUID = -7112672385450340330L;\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public static <E> BoundedCollection<E> unmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n  return new UnmodifiableBoundedCollection<E>(coll);\n  }",
+          "fixed_method": "  public static <E> BoundedCollection<E> unmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n  if (coll instanceof Unmodifiable) {\n  @SuppressWarnings(\"unchecked\") \n  final BoundedCollection<E> tmpColl = (BoundedCollection<E>) coll;\n  return tmpColl;\n  }\n  return new UnmodifiableBoundedCollection<E>(coll);\n  }",
+          "diff": [
+            "@@ -55,6 +56,11 @@",
+            "      * @since 4.0\n",
+            "      */\n",
+            "     public static <E> BoundedCollection<E> unmodifiableBoundedCollection(final BoundedCollection<? extends E> coll) {\n",
+            "+        if (coll instanceof Unmodifiable) {\n",
+            "+            @SuppressWarnings(\"unchecked\") // safe to upcast\n",
+            "+            final BoundedCollection<E> tmpColl = (BoundedCollection<E>) coll;\n",
+            "+            return tmpColl;\n",
+            "+        }\n",
+            "         return new UnmodifiableBoundedCollection<E>(coll);\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 5
+        }
+      ]
+    }
+  ]
+}

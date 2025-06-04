@@ -1,0 +1,56 @@
+{
+  "bug_id": "24",
+  "failed_tests": {
+    "org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValuesTest": [
+      {
+        "methodName": "should_return_zero_if_mock_is_compared_to_itself",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0> but was:<1>",
+        "fail_line": "        assertEquals(0, result);",
+        "test_source": "",
+        "stack": [
+          "ReturnsEmptyValuesTest.should_return_zero_if_mock_is_compared_to_itself line 77"
+        ]
+      }
+    ],
+    "org.mockitousage.bugs.ShouldMocksCompareToBeConsistentWithEqualsTest": [
+      {
+        "methodName": "should_compare_to_be_consistent_with_equals_when_comparing_the_same_reference",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<1> but was:<2>",
+        "fail_line": "        assertEquals(1, set.size());",
+        "test_source": "  public void should_compare_to_be_consistent_with_equals_when_comparing_the_same_reference() {\n  //given\n  Date today  = mock(Date.class);\n\n  //when\n  Set<Date> set = new TreeSet<Date>();\n  set.add(today);\n  set.add(today);\n\n  //then\n  assertEquals(1, set.size());\n  }",
+        "stack": [
+          "ShouldMocksCompareToBeConsistentWithEqualsTest.should_compare_to_be_consistent_with_equals_when_comparing_the_same_reference line 48"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java",
+      "buggy_full_code": "\n\npackage org.mockito.internal.stubbing.defaultanswers;\n\nimport org.mockito.internal.util.MockUtil;\nimport org.mockito.internal.util.ObjectMethodsGuru;\nimport org.mockito.internal.util.Primitives;\nimport org.mockito.invocation.InvocationOnMock;\nimport org.mockito.mock.MockName;\nimport org.mockito.stubbing.Answer;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.LinkedHashMap;\nimport java.util.LinkedHashSet;\nimport java.util.LinkedList;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.SortedMap;\nimport java.util.SortedSet;\nimport java.util.TreeMap;\nimport java.util.TreeSet;\n\n\npublic class ReturnsEmptyValues implements Answer<Object>, Serializable { private static final long serialVersionUID = 1998191268711234347L; ObjectMethodsGuru methodsGuru = new ObjectMethodsGuru(); MockUtil mockUtil = new MockUtil(); public Object answer(InvocationOnMock invocation) {\n        if (methodsGuru.isToString(invocation.getMethod())) {\n            Object mock = invocation.getMock();\n            MockName name = mockUtil.getMockName(mock);\n            if (name.isDefault()) {\n                return \"Mock for \" + mockUtil.getMockSettings(mock).getTypeToMock().getSimpleName() + \", hashCode: \" + mock.hashCode();\n            } else {\n                return name.toString();\n            }\n        } else if (methodsGuru.isCompareToMethod(invocation.getMethod())) {\n            \n            \n            \n            return 1;\n        }\n        \n        Class<?> returnType = invocation.getMethod().getReturnType();\n        return returnValueFor(returnType);\n    }\n    \n    Object returnValueFor(Class<?> type) {\n        if (Primitives.isPrimitiveOrWrapper(type)) {\n            return Primitives.defaultValueForPrimitiveOrWrapper(type);\n        \n        \n        } else if (type == Collection.class) {\n            return new LinkedList<Object>();\n        } else if (type == Set.class) {\n            return new HashSet<Object>();\n        } else if (type == HashSet.class) {\n            return new HashSet<Object>();\n        } else if (type == SortedSet.class) {\n            return new TreeSet<Object>();\n        } else if (type == TreeSet.class) {\n            return new TreeSet<Object>();\n        } else if (type == LinkedHashSet.class) {\n            return new LinkedHashSet<Object>();\n        } else if (type == List.class) {\n            return new LinkedList<Object>();\n        } else if (type == LinkedList.class) {\n            return new LinkedList<Object>();\n        } else if (type == ArrayList.class) {\n            return new ArrayList<Object>();\n        } else if (type == Map.class) {\n            return new HashMap<Object, Object>();\n        } else if (type == HashMap.class) {\n            return new HashMap<Object, Object>();\n        } else if (type == SortedMap.class) {\n            return new TreeMap<Object, Object>();\n        } else if (type == TreeMap.class) {\n            return new TreeMap<Object, Object>();\n        } else if (type == LinkedHashMap.class) {\n            return new LinkedHashMap<Object, Object>();\n        }\n        \n\n        \n        return null;\n    }\n\n}",
+      "fixed_full_code": "\n\npackage org.mockito.internal.stubbing.defaultanswers;\n\nimport org.mockito.internal.util.MockUtil;\nimport org.mockito.internal.util.ObjectMethodsGuru;\nimport org.mockito.internal.util.Primitives;\nimport org.mockito.invocation.InvocationOnMock;\nimport org.mockito.mock.MockName;\nimport org.mockito.stubbing.Answer;\n\nimport java.io.Serializable;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.LinkedHashMap;\nimport java.util.LinkedHashSet;\nimport java.util.LinkedList;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.SortedMap;\nimport java.util.SortedSet;\nimport java.util.TreeMap;\nimport java.util.TreeSet;\n\n\npublic class ReturnsEmptyValues implements Answer<Object>, Serializable { private static final long serialVersionUID = 1998191268711234347L; ObjectMethodsGuru methodsGuru = new ObjectMethodsGuru(); MockUtil mockUtil = new MockUtil(); public Object answer(InvocationOnMock invocation) {\n        if (methodsGuru.isToString(invocation.getMethod())) {\n            Object mock = invocation.getMock();\n            MockName name = mockUtil.getMockName(mock);\n            if (name.isDefault()) {\n                return \"Mock for \" + mockUtil.getMockSettings(mock).getTypeToMock().getSimpleName() + \", hashCode: \" + mock.hashCode();\n            } else {\n                return name.toString();\n            }\n        } else if (methodsGuru.isCompareToMethod(invocation.getMethod())) {\n            \n            \n            \n            return invocation.getMock() == invocation.getArguments()[0] ? 0 : 1;\n        }\n        \n        Class<?> returnType = invocation.getMethod().getReturnType();\n        return returnValueFor(returnType);\n    }\n    \n    Object returnValueFor(Class<?> type) {\n        if (Primitives.isPrimitiveOrWrapper(type)) {\n            return Primitives.defaultValueForPrimitiveOrWrapper(type);\n        \n        \n        } else if (type == Collection.class) {\n            return new LinkedList<Object>();\n        } else if (type == Set.class) {\n            return new HashSet<Object>();\n        } else if (type == HashSet.class) {\n            return new HashSet<Object>();\n        } else if (type == SortedSet.class) {\n            return new TreeSet<Object>();\n        } else if (type == TreeSet.class) {\n            return new TreeSet<Object>();\n        } else if (type == LinkedHashSet.class) {\n            return new LinkedHashSet<Object>();\n        } else if (type == List.class) {\n            return new LinkedList<Object>();\n        } else if (type == LinkedList.class) {\n            return new LinkedList<Object>();\n        } else if (type == ArrayList.class) {\n            return new ArrayList<Object>();\n        } else if (type == Map.class) {\n            return new HashMap<Object, Object>();\n        } else if (type == HashMap.class) {\n            return new HashMap<Object, Object>();\n        } else if (type == SortedMap.class) {\n            return new TreeMap<Object, Object>();\n        } else if (type == TreeMap.class) {\n            return new TreeMap<Object, Object>();\n        } else if (type == LinkedHashMap.class) {\n            return new LinkedHashMap<Object, Object>();\n        }\n        \n\n        \n        return null;\n    }\n\n}",
+      "buggy_signatures": [],
+      "fixed_signatures": [],
+      "methods": [
+        {
+          "buggy_method": "  public Object answer(InvocationOnMock invocation) {\n  if (methodsGuru.isToString(invocation.getMethod())) {\n  Object mock = invocation.getMock();\n  MockName name = mockUtil.getMockName(mock);\n  if (name.isDefault()) {\n  return \"Mock for \" + mockUtil.getMockSettings(mock).getTypeToMock().getSimpleName() + \", hashCode: \" + mock.hashCode();\n  } else {\n  return name.toString();\n  }\n  } else if (methodsGuru.isCompareToMethod(invocation.getMethod())) {\n  \n  \n  \n  return 1;\n  }\n  \n  Class<?> returnType = invocation.getMethod().getReturnType();\n  return returnValueFor(returnType);\n  }",
+          "fixed_method": "  public Object answer(InvocationOnMock invocation) {\n  if (methodsGuru.isToString(invocation.getMethod())) {\n  Object mock = invocation.getMock();\n  MockName name = mockUtil.getMockName(mock);\n  if (name.isDefault()) {\n  return \"Mock for \" + mockUtil.getMockSettings(mock).getTypeToMock().getSimpleName() + \", hashCode: \" + mock.hashCode();\n  } else {\n  return name.toString();\n  }\n  } else if (methodsGuru.isCompareToMethod(invocation.getMethod())) {\n  \n  \n  \n  return invocation.getMock() == invocation.getArguments()[0] ? 0 : 1;\n  }\n  \n  Class<?> returnType = invocation.getMethod().getReturnType();\n  return returnValueFor(returnType);\n  }",
+          "diff": [
+            "@@ -73,7 +73,7 @@",
+            "             //see issue 184.\n",
+            "             //mocks by default should return 0 if references are the same, otherwise some other value because they are not the same. Hence we return 1 (anything but 0 is good).\n",
+            "             //Only for compareTo() method by the Comparable interface\n",
+            "-            return 1;\n",
+            "+            return invocation.getMock() == invocation.getArguments()[0] ? 0 : 1;\n",
+            "         }\n",
+            "         \n",
+            "         Class<?> returnType = invocation.getMethod().getReturnType();\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

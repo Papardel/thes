@@ -1,0 +1,107 @@
+{
+  "bug_id": "12",
+  "failed_tests": {
+    "org.apache.commons.math3.distribution.GammaDistributionTest": [
+      {
+        "methodName": "testDistributionClone",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<10.688186123440644> but was:<13.675503685260901>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "RealDistributionAbstractTest.testDistributionClone line 394"
+        ]
+      }
+    ],
+    "org.apache.commons.math3.distribution.LogNormalDistributionTest": [
+      {
+        "methodName": "testDistributionClone",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<23.951334711900845> but was:<1.9236285029185378>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "RealDistributionAbstractTest.testDistributionClone line 394"
+        ]
+      }
+    ],
+    "org.apache.commons.math3.distribution.NormalDistributionTest": [
+      {
+        "methodName": "testDistributionClone",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<3.176024051402272> but was:<0.6542132477988758>",
+        "fail_line": "",
+        "test_source": "",
+        "stack": [
+          "RealDistributionAbstractTest.testDistributionClone line 394"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/random/BitsStreamGenerator.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.random;\n\n\nimport org.apache.commons.math3.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic abstract class BitsStreamGenerator implements RandomGenerator { private double nextGaussian; public BitsStreamGenerator() {\n        nextGaussian = Double.NaN;\n    }\n\n    \n    public abstract void setSeed(int seed); public abstract void setSeed(int[] seed); public abstract void setSeed(long seed); protected abstract int next(int bits); public boolean nextBoolean() {\n        return next(1) != 0;\n    }\n\n    \n    public void nextBytes(byte[] bytes) {\n        int i = 0;\n        final int iEnd = bytes.length - 3;\n        while (i < iEnd) {\n            final int random = next(32);\n            bytes[i]     = (byte) (random & 0xff);\n            bytes[i + 1] = (byte) ((random >>  8) & 0xff);\n            bytes[i + 2] = (byte) ((random >> 16) & 0xff);\n            bytes[i + 3] = (byte) ((random >> 24) & 0xff);\n            i += 4;\n        }\n        int random = next(32);\n        while (i < bytes.length) {\n            bytes[i++] = (byte) (random & 0xff);\n            random     = random >> 8;\n        }\n    }\n\n    \n    public double nextDouble() {\n        final long high = ((long) next(26)) << 26;\n        final int  low  = next(26);\n        return (high | low) * 0x1.0p-52d;\n    }\n\n    \n    public float nextFloat() {\n        return next(23) * 0x1.0p-23f;\n    }\n\n    \n    public double nextGaussian() {\n\n        final double random;\n        if (Double.isNaN(nextGaussian)) {\n            \n            final double x = nextDouble();\n            final double y = nextDouble();\n            final double alpha = 2 * FastMath.PI * x;\n            final double r      = FastMath.sqrt(-2 * FastMath.log(y));\n            random       = r * FastMath.cos(alpha);\n            nextGaussian = r * FastMath.sin(alpha);\n        } else {\n            \n            random = nextGaussian;\n            nextGaussian = Double.NaN;\n        }\n\n        return random;\n\n    }\n\n    \n    public int nextInt() {\n        return next(32);\n    }\n\n    \n    public int nextInt(int n) throws IllegalArgumentException {\n        if (n > 0) {\n            if ((n & -n) == n) {\n                return (int) ((n * (long) next(31)) >> 31);\n            }\n            int bits;\n            int val;\n            do {\n                bits = next(31);\n                val = bits % n;\n            } while (bits - val + (n - 1) < 0);\n            return val;\n        }\n        throw new NotStrictlyPositiveException(n);\n    }\n\n    \n    public long nextLong() {\n        final long high  = ((long) next(32)) << 32;\n        final long  low  = ((long) next(32)) & 0xffffffffL;\n        return high | low;\n    }\n\n    \n    public void clear() {\n        nextGaussian = Double.NaN;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.random;\n\nimport java.io.Serializable;\n\nimport org.apache.commons.math3.exception.NotStrictlyPositiveException;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic abstract class BitsStreamGenerator implements RandomGenerator, Serializable { private static final long serialVersionUID = 20130104L; private double nextGaussian; public BitsStreamGenerator() {\n        nextGaussian = Double.NaN;\n    }\n\n    \n    public abstract void setSeed(int seed); public abstract void setSeed(int[] seed); public abstract void setSeed(long seed); protected abstract int next(int bits); public boolean nextBoolean() {\n        return next(1) != 0;\n    }\n\n    \n    public void nextBytes(byte[] bytes) {\n        int i = 0;\n        final int iEnd = bytes.length - 3;\n        while (i < iEnd) {\n            final int random = next(32);\n            bytes[i]     = (byte) (random & 0xff);\n            bytes[i + 1] = (byte) ((random >>  8) & 0xff);\n            bytes[i + 2] = (byte) ((random >> 16) & 0xff);\n            bytes[i + 3] = (byte) ((random >> 24) & 0xff);\n            i += 4;\n        }\n        int random = next(32);\n        while (i < bytes.length) {\n            bytes[i++] = (byte) (random & 0xff);\n            random     = random >> 8;\n        }\n    }\n\n    \n    public double nextDouble() {\n        final long high = ((long) next(26)) << 26;\n        final int  low  = next(26);\n        return (high | low) * 0x1.0p-52d;\n    }\n\n    \n    public float nextFloat() {\n        return next(23) * 0x1.0p-23f;\n    }\n\n    \n    public double nextGaussian() {\n\n        final double random;\n        if (Double.isNaN(nextGaussian)) {\n            \n            final double x = nextDouble();\n            final double y = nextDouble();\n            final double alpha = 2 * FastMath.PI * x;\n            final double r      = FastMath.sqrt(-2 * FastMath.log(y));\n            random       = r * FastMath.cos(alpha);\n            nextGaussian = r * FastMath.sin(alpha);\n        } else {\n            \n            random = nextGaussian;\n            nextGaussian = Double.NaN;\n        }\n\n        return random;\n\n    }\n\n    \n    public int nextInt() {\n        return next(32);\n    }\n\n    \n    public int nextInt(int n) throws IllegalArgumentException {\n        if (n > 0) {\n            if ((n & -n) == n) {\n                return (int) ((n * (long) next(31)) >> 31);\n            }\n            int bits;\n            int val;\n            do {\n                bits = next(31);\n                val = bits % n;\n            } while (bits - val + (n - 1) < 0);\n            return val;\n        }\n        throw new NotStrictlyPositiveException(n);\n    }\n\n    \n    public long nextLong() {\n        final long high  = ((long) next(32)) << 32;\n        final long  low  = ((long) next(32)) & 0xffffffffL;\n        return high | low;\n    }\n\n    \n    public void clear() {\n        nextGaussian = Double.NaN;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public abstract class BitsStreamGenerator implements RandomGenerator { private double nextGaussian; public BitsStreamGenerator()",
+        "public abstract void setSeed(int seed); public abstract void setSeed(int[] seed); public abstract void setSeed(long seed); protected abstract int next(int bits); public boolean nextBoolean()",
+        "public void nextBytes(byte[] bytes)",
+        "public double nextDouble()",
+        "public float nextFloat()",
+        "public double nextGaussian()",
+        "public int nextInt()",
+        "public int nextInt(int n) throws IllegalArgumentException",
+        "public long nextLong()",
+        "public void clear()"
+      ],
+      "fixed_signatures": [
+        "public abstract void setSeed(int seed); public abstract void setSeed(int[] seed); public abstract void setSeed(long seed); protected abstract int next(int bits); public boolean nextBoolean()",
+        "public void nextBytes(byte[] bytes)",
+        "public double nextDouble()",
+        "public float nextFloat()",
+        "public double nextGaussian()",
+        "public int nextInt()",
+        "public int nextInt(int n) throws IllegalArgumentException",
+        "public long nextLong()",
+        "public void clear()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -16,6 +16,7 @@",
+            "  */\n",
+            " package org.apache.commons.math3.random;\n",
+            " \n",
+            "+import java.io.Serializable;\n",
+            " \n",
+            " import org.apache.commons.math3.exception.NotStrictlyPositiveException;\n",
+            " import org.apache.commons.math3.util.FastMath;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -26,8 +27,10 @@",
+            "  * @since 2.0\n",
+            "  */\n",
+            " public abstract class BitsStreamGenerator\n",
+            "-    implements RandomGenerator {\n",
+            "+    implements RandomGenerator,\n",
+            "+               Serializable {\n",
+            "     /** Serializable version identifier */\n",
+            "+    private static final long serialVersionUID = 20130104L;\n",
+            "     /** Next gaussian. */\n",
+            "     private double nextGaussian;\n",
+            " \n"
+          ],
+          "changed_lines": 4
+        }
+      ]
+    }
+  ]
+}

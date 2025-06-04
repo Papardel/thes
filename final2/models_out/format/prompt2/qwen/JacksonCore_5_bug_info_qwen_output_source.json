@@ -1,0 +1,10 @@
+{
+  "bug_id": "JacksonCore_5_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE:\n<signature-1>\n<signature-2>\n<signature-3>\n<signature-4>\n<signature-5>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 5\n--------------------\nSource:\npublic void testWonkyNumber173() throws Exception {\n  JsonPointer ptr = JsonPointer.compile(\"/1e0\");\n  assertFalse(ptr.matches());\n  }\nStack:\nNumberInput.parseInt line 91, JsonPointer._parseIndex line 204, JsonPointer.<init> line 70, JsonPointer._parseTail line 225, JsonPointer.compile line 98, TestJsonPointer.testWonkyNumber173 line 41\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### com.fasterxml.jackson.core.JsonPointer\n    - JsonPointer(String fullString, String segment, JsonPointer next)\n    - JsonPointer compile(String input) throws IllegalArgumentException\n    - JsonPointer valueOf(String input)\n    - boolean matches()\n    - String getMatchingProperty()\n    - int getMatchingIndex()\n    - boolean mayMatchProperty()\n    - boolean mayMatchElement()\n    - JsonPointer matchProperty(String name)\n    - JsonPointer matchElement (int index)\n    - JsonPointer tail()\n    - String toString()\n    - int hashCode()\n    - boolean equals(Object o)\n    - int _parseIndex(String str)\n    - JsonPointer _parseTail(String input)\n    - JsonPointer _parseQuotedTail(String input, int i)\n    - void _appendEscape(StringBuilder sb, char c)\n\nYour task:\nList the FIVE most suspicious method (or constructor)",
+      "response": "calls from the given stack trace that might cause the issue described.\n\n**Please respond exactly as requested above.**\n\n**No additional context or explanation is needed.**\n **Please respond exactly as requested above.**\n\n**No additional context or explanation is needed.**\n\n**Please respond exactly as requested above.**\n\n**No additional context or explanation is needed.**\n\n**Please respond exactly as requested above.**\n\n**No additional context or explanation is needed.**"
+    }
+  ]
+}

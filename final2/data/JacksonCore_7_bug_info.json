@@ -1,0 +1,89 @@
+{
+  "bug_id": "7",
+  "failed_tests": {
+    "com.fasterxml.jackson.core.json.GeneratorFailTest": [
+      {
+        "methodName": "testFailOnWritingStringNotFieldNameBytes",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Should not have let com.fasterxml.jackson.core.json.UTF8JsonGenerator.writeString() be used in place of 'writeFieldName()': output = {:\"a\"",
+        "fail_line": "        _testFailOnWritingStringNotFieldName(F, false);",
+        "test_source": "  public void testFailOnWritingStringNotFieldNameBytes() throws Exception {\n  _testFailOnWritingStringNotFieldName(F, false);\n  }",
+        "stack": [
+          "GeneratorFailTest._testFailOnWritingStringNotFieldName line 79, GeneratorFailTest.testFailOnWritingStringNotFieldNameBytes line 27"
+        ]
+      },
+      {
+        "methodName": "testFailOnWritingStringNotFieldNameChars",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Should not have let com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeString() be used in place of 'writeFieldName()': output = {:\"a\"",
+        "fail_line": "        _testFailOnWritingStringNotFieldName(F, true);        ",
+        "test_source": "  public void testFailOnWritingStringNotFieldNameChars() throws Exception {\n  _testFailOnWritingStringNotFieldName(F, true);  \n  }",
+        "stack": [
+          "GeneratorFailTest._testFailOnWritingStringNotFieldName line 79, GeneratorFailTest.testFailOnWritingStringNotFieldNameChars line 32"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/core/json/JsonWriteContext.java",
+      "buggy_full_code": "package com.fasterxml.jackson.core.json;\n\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonWriteContext extends JsonStreamContext { public final static int STATUS_OK_AS_IS = 0; public final static int STATUS_OK_AFTER_COMMA = 1; public final static int STATUS_OK_AFTER_COLON = 2; public final static int STATUS_OK_AFTER_SPACE = 3; public final static int STATUS_EXPECT_VALUE = 4; public final static int STATUS_EXPECT_NAME = 5; protected final JsonWriteContext _parent; protected DupDetector _dups; protected JsonWriteContext _child = null; protected String _currentName; protected Object _currentValue; protected boolean _gotName; protected JsonWriteContext(int type, JsonWriteContext parent, DupDetector dups) {\n        super();\n        _type = type;\n        _parent = parent;\n        _dups = dups;\n        _index = -1;\n    }\n\n    protected JsonWriteContext reset(int type) {\n        _type = type;\n        _index = -1;\n        _currentName = null;\n        _gotName = false;\n        _currentValue = null;\n        if (_dups != null) { _dups.reset(); }\n        return this;\n    }\n\n    public JsonWriteContext withDupDetector(DupDetector dups) {\n        _dups = dups;\n        return this;\n    }\n\n    @Override\n    public Object getCurrentValue() {\n        return _currentValue;\n    }\n\n    @Override\n    public void setCurrentValue(Object v) {\n        _currentValue = v;\n    }\n    \n    \n\n    \n    @Deprecated\n    public static JsonWriteContext createRootContext() { return createRootContext(null); }\n\n    public static JsonWriteContext createRootContext(DupDetector dd) {\n        return new JsonWriteContext(TYPE_ROOT, null, dd);\n    }\n\n    public JsonWriteContext createChildArrayContext() {\n        JsonWriteContext ctxt = _child;\n        if (ctxt == null) {\n            _child = ctxt = new JsonWriteContext(TYPE_ARRAY, this, (_dups == null) ? null : _dups.child());\n            return ctxt;\n        }\n        return ctxt.reset(TYPE_ARRAY);\n    }\n\n    public JsonWriteContext createChildObjectContext() {\n        JsonWriteContext ctxt = _child;\n        if (ctxt == null) {\n            _child = ctxt = new JsonWriteContext(TYPE_OBJECT, this, (_dups == null) ? null : _dups.child());\n            return ctxt;\n        }\n        return ctxt.reset(TYPE_OBJECT);\n    }\n\n    \n\n    @Override public final JsonWriteContext getParent() { return _parent; }\n    @Override public final String getCurrentName() { return _currentName; }\n\n    public DupDetector getDupDetector() {\n        return _dups;\n    }\n    \n    \n\n    \n    public int writeFieldName(String name) throws JsonProcessingException {\n        if (_gotName) {\n            return JsonWriteContext.STATUS_EXPECT_VALUE;\n        }\n        _gotName = true;\n        _currentName = name;\n        if (_dups != null) { _checkDup(_dups, name); }\n        return (_index < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n    }\n\n    private final void _checkDup(DupDetector dd, String name) throws JsonProcessingException {\n        if (dd.isDup(name)) { throw new JsonGenerationException(\"Duplicate field '\"+name+\"'\"); }\n    }\n    \n    public int writeValue() {\n        \n        if (_type == TYPE_OBJECT) {\n            _gotName = false;\n            ++_index;\n            return STATUS_OK_AFTER_COLON;\n        }\n\n        \n        if (_type == TYPE_ARRAY) {\n            int ix = _index;\n            ++_index;\n            return (ix < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n        }\n        \n        \n        \n        ++_index;\n        return (_index == 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_SPACE;\n    }\n\n    \n\n    protected void appendDesc(StringBuilder sb) {\n        if (_type == TYPE_OBJECT) {\n            sb.append('{');\n            if (_currentName != null) {\n                sb.append('\"');\n                \n                sb.append(_currentName);\n                sb.append('\"');\n            } else {\n                sb.append('?');\n            }\n            sb.append('}');\n        } else if (_type == TYPE_ARRAY) {\n            sb.append('[');\n            sb.append(getCurrentIndex());\n            sb.append(']');\n        } else {\n            \n            sb.append(\"/\");\n        }\n    }\n\n    \n\n    \n    @Override public String toString() {\n        StringBuilder sb = new StringBuilder(64);\n        appendDesc(sb);\n        return sb.toString();\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.core.json;\n\nimport com.fasterxml.jackson.core.*;\n\n\npublic class JsonWriteContext extends JsonStreamContext { public final static int STATUS_OK_AS_IS = 0; public final static int STATUS_OK_AFTER_COMMA = 1; public final static int STATUS_OK_AFTER_COLON = 2; public final static int STATUS_OK_AFTER_SPACE = 3; public final static int STATUS_EXPECT_VALUE = 4; public final static int STATUS_EXPECT_NAME = 5; protected final JsonWriteContext _parent; protected DupDetector _dups; protected JsonWriteContext _child = null; protected String _currentName; protected Object _currentValue; protected boolean _gotName; protected JsonWriteContext(int type, JsonWriteContext parent, DupDetector dups) {\n        super();\n        _type = type;\n        _parent = parent;\n        _dups = dups;\n        _index = -1;\n    }\n\n    protected JsonWriteContext reset(int type) {\n        _type = type;\n        _index = -1;\n        _currentName = null;\n        _gotName = false;\n        _currentValue = null;\n        if (_dups != null) { _dups.reset(); }\n        return this;\n    }\n\n    public JsonWriteContext withDupDetector(DupDetector dups) {\n        _dups = dups;\n        return this;\n    }\n\n    @Override\n    public Object getCurrentValue() {\n        return _currentValue;\n    }\n\n    @Override\n    public void setCurrentValue(Object v) {\n        _currentValue = v;\n    }\n    \n    \n\n    \n    @Deprecated\n    public static JsonWriteContext createRootContext() { return createRootContext(null); }\n\n    public static JsonWriteContext createRootContext(DupDetector dd) {\n        return new JsonWriteContext(TYPE_ROOT, null, dd);\n    }\n\n    public JsonWriteContext createChildArrayContext() {\n        JsonWriteContext ctxt = _child;\n        if (ctxt == null) {\n            _child = ctxt = new JsonWriteContext(TYPE_ARRAY, this, (_dups == null) ? null : _dups.child());\n            return ctxt;\n        }\n        return ctxt.reset(TYPE_ARRAY);\n    }\n\n    public JsonWriteContext createChildObjectContext() {\n        JsonWriteContext ctxt = _child;\n        if (ctxt == null) {\n            _child = ctxt = new JsonWriteContext(TYPE_OBJECT, this, (_dups == null) ? null : _dups.child());\n            return ctxt;\n        }\n        return ctxt.reset(TYPE_OBJECT);\n    }\n\n    \n\n    @Override public final JsonWriteContext getParent() { return _parent; }\n    @Override public final String getCurrentName() { return _currentName; }\n\n    public DupDetector getDupDetector() {\n        return _dups;\n    }\n    \n    \n\n    \n    public int writeFieldName(String name) throws JsonProcessingException {\n        if (_gotName) {\n            return JsonWriteContext.STATUS_EXPECT_VALUE;\n        }\n        _gotName = true;\n        _currentName = name;\n        if (_dups != null) { _checkDup(_dups, name); }\n        return (_index < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n    }\n\n    private final void _checkDup(DupDetector dd, String name) throws JsonProcessingException {\n        if (dd.isDup(name)) { throw new JsonGenerationException(\"Duplicate field '\"+name+\"'\"); }\n    }\n    \n    public int writeValue() {\n        \n        if (_type == TYPE_OBJECT) {\n            if (!_gotName) {\n                return STATUS_EXPECT_NAME;\n            }\n            _gotName = false;\n            ++_index;\n            return STATUS_OK_AFTER_COLON;\n        }\n\n        \n        if (_type == TYPE_ARRAY) {\n            int ix = _index;\n            ++_index;\n            return (ix < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n        }\n        \n        \n        \n        ++_index;\n        return (_index == 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_SPACE;\n    }\n\n    \n\n    protected void appendDesc(StringBuilder sb) {\n        if (_type == TYPE_OBJECT) {\n            sb.append('{');\n            if (_currentName != null) {\n                sb.append('\"');\n                \n                sb.append(_currentName);\n                sb.append('\"');\n            } else {\n                sb.append('?');\n            }\n            sb.append('}');\n        } else if (_type == TYPE_ARRAY) {\n            sb.append('[');\n            sb.append(getCurrentIndex());\n            sb.append(']');\n        } else {\n            \n            sb.append(\"/\");\n        }\n    }\n\n    \n\n    \n    @Override public String toString() {\n        StringBuilder sb = new StringBuilder(64);\n        appendDesc(sb);\n        return sb.toString();\n    }\n}\n",
+      "buggy_signatures": [
+        "protected JsonWriteContext reset(int type)",
+        "public JsonWriteContext withDupDetector(DupDetector dups)",
+        "public Object getCurrentValue()",
+        "public void setCurrentValue(Object v)",
+        "public static JsonWriteContext createRootContext()",
+        "public static JsonWriteContext createRootContext(DupDetector dd)",
+        "public JsonWriteContext createChildArrayContext()",
+        "public JsonWriteContext createChildObjectContext()",
+        "public final JsonWriteContext getParent()",
+        "public final String getCurrentName()",
+        "public DupDetector getDupDetector()",
+        "public int writeFieldName(String name) throws JsonProcessingException",
+        "private final void _checkDup(DupDetector dd, String name) throws JsonProcessingException",
+        "public int writeValue()",
+        "protected void appendDesc(StringBuilder sb)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "protected JsonWriteContext reset(int type)",
+        "public JsonWriteContext withDupDetector(DupDetector dups)",
+        "public Object getCurrentValue()",
+        "public void setCurrentValue(Object v)",
+        "public static JsonWriteContext createRootContext()",
+        "public static JsonWriteContext createRootContext(DupDetector dd)",
+        "public JsonWriteContext createChildArrayContext()",
+        "public JsonWriteContext createChildObjectContext()",
+        "public final JsonWriteContext getParent()",
+        "public final String getCurrentName()",
+        "public DupDetector getDupDetector()",
+        "public int writeFieldName(String name) throws JsonProcessingException",
+        "private final void _checkDup(DupDetector dd, String name) throws JsonProcessingException",
+        "public int writeValue()",
+        "protected void appendDesc(StringBuilder sb)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int writeValue() {\n  \n  if (_type == TYPE_OBJECT) {\n  _gotName = false;\n  ++_index;\n  return STATUS_OK_AFTER_COLON;\n  }\n\n  \n  if (_type == TYPE_ARRAY) {\n  int ix = _index;\n  ++_index;\n  return (ix < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n  }\n  \n  \n  \n  ++_index;\n  return (_index == 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_SPACE;\n  }",
+          "fixed_method": "  public int writeValue() {\n  \n  if (_type == TYPE_OBJECT) {\n  if (!_gotName) {\n  return STATUS_EXPECT_NAME;\n  }\n  _gotName = false;\n  ++_index;\n  return STATUS_OK_AFTER_COLON;\n  }\n\n  \n  if (_type == TYPE_ARRAY) {\n  int ix = _index;\n  ++_index;\n  return (ix < 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_COMMA;\n  }\n  \n  \n  \n  ++_index;\n  return (_index == 0) ? STATUS_OK_AS_IS : STATUS_OK_AFTER_SPACE;\n  }",
+          "diff": [
+            "@@ -166,6 +166,9 @@",
+            "     public int writeValue() {\n",
+            "         // Most likely, object:\n",
+            "         if (_type == TYPE_OBJECT) {\n",
+            "+            if (!_gotName) {\n",
+            "+                return STATUS_EXPECT_NAME;\n",
+            "+            }\n",
+            "             _gotName = false;\n",
+            "             ++_index;\n",
+            "             return STATUS_OK_AFTER_COLON;\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

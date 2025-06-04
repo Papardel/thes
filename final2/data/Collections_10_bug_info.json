@@ -1,0 +1,132 @@
+{
+  "bug_id": "10",
+  "failed_tests": {
+    "org.apache.commons.collections.map.TestMultiValueMap": [
+      {
+        "methodName": "testEmptyMapCompatibility",
+        "error": "java.io.InvalidClassException",
+        "message": "org.apache.commons.collections.map.MultiValueMap; class invalid for deserialization",
+        "fail_line": "        Map map2 = (Map) readExternalFormFromDisk(getCanonicalEmptyCollectionName(map));",
+        "test_source": "  public void testEmptyMapCompatibility() throws Exception {\n  Map map = makeEmptyMap();\n  Map map2 = (Map) readExternalFormFromDisk(getCanonicalEmptyCollectionName(map));\n  assertEquals(\"Map is empty\", 0, map2.size());\n  }",
+        "stack": [
+          "AbstractTestObject.readExternalFormFromStream line 326, AbstractTestObject.readExternalFormFromDisk line 301, TestMultiValueMap.testEmptyMapCompatibility line 394"
+        ]
+      },
+      {
+        "methodName": "testFullMapCompatibility",
+        "error": "java.io.InvalidClassException",
+        "message": "org.apache.commons.collections.map.MultiValueMap; class invalid for deserialization",
+        "fail_line": "        Map map2 = (Map) readExternalFormFromDisk(getCanonicalFullCollectionName(map));",
+        "test_source": "  public void testFullMapCompatibility() throws Exception {\n  Map map = (Map) makeObject();\n  Map map2 = (Map) readExternalFormFromDisk(getCanonicalFullCollectionName(map));\n  assertEquals(\"Map is the right size\", map.size(), map2.size());\n  for (Iterator it = map.keySet().iterator(); it.hasNext();) {\n  Object key = it.next();\n  assertEquals( \"Map had inequal elements\", map.get(key), map2.get(key) );\n  map2.remove(key);\n  }\n  assertEquals(\"Map had extra values\", 0, map2.size());\n  }",
+        "stack": [
+          "AbstractTestObject.readExternalFormFromStream line 326, AbstractTestObject.readExternalFormFromDisk line 301, TestMultiValueMap.testFullMapCompatibility line 399"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/map/MultiValueMap.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.map;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\n\nimport java.util.AbstractCollection;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.Map;\nimport java.util.Set;\n\nimport org.apache.commons.collections.Factory;\nimport org.apache.commons.collections.FunctorException;\nimport org.apache.commons.collections.MultiMap;\nimport org.apache.commons.collections.iterators.EmptyIterator;\nimport org.apache.commons.collections.iterators.IteratorChain;\n\n\npublic class MultiValueMap extends AbstractMapDecorator implements MultiMap { private final Factory collectionFactory; private transient Collection valuesView; public static MultiValueMap decorate(Map map) {\n        return new MultiValueMap(map, new ReflectionFactory(ArrayList.class));\n    }\n\n    \n    public static MultiValueMap decorate(Map map, Class collectionClass) {\n        return new MultiValueMap(map, new ReflectionFactory(collectionClass));\n    }\n\n    \n    public static MultiValueMap decorate(Map map, Factory collectionFactory) {\n        return new MultiValueMap(map, collectionFactory);\n    }\n\n    \n    \n    public MultiValueMap() {\n        this(new HashMap(), new ReflectionFactory(ArrayList.class));\n    }\n\n    \n    protected MultiValueMap(Map map, Factory collectionFactory) {\n        super(map);\n        if (collectionFactory == null) {\n            throw new IllegalArgumentException(\"The factory must not be null\");\n        }\n        this.collectionFactory = collectionFactory;\n    }\n\n    \n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        out.writeObject(map);\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        map = (Map) in.readObject();\n    }\n\n    \n    \n    public void clear() {\n        \n\n\n\n\n\n\n\n        getMap().clear();\n    }\n\n    \n    public Object removeMapping(Object key, Object value) {\n        Collection valuesForKey = getCollection(key);\n        if (valuesForKey == null) {\n            return null;\n        }\n        boolean removed = valuesForKey.remove(value);\n        if (removed == false) {\n            return null;\n        }\n        if (valuesForKey.isEmpty()) {\n            remove(key);\n        }\n        return value;\n    }\n\n    \n    public boolean containsValue(Object value) {\n        Set pairs = getMap().entrySet();\n        if (pairs == null) {\n            return false;\n        }\n        Iterator pairsIterator = pairs.iterator();\n        while (pairsIterator.hasNext()) {\n            Map.Entry keyValuePair = (Map.Entry) pairsIterator.next();\n            Collection coll = (Collection) keyValuePair.getValue();\n            if (coll.contains(value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    \n    public Object put(Object key, Object value) {\n        boolean result = false;\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            coll = createCollection(1);  \n            coll.add(value);\n            if (coll.size() > 0) {\n                \n                getMap().put(key, coll);\n                result = true;  \n            }\n        } else {\n            result = coll.add(value);\n        }\n        return (result ? value : null);\n    }\n\n    \n    public void putAll(Map map) {\n        if (map instanceof MultiMap) {\n            for (Iterator it = map.entrySet().iterator(); it.hasNext();) {\n                Map.Entry entry = (Map.Entry) it.next();\n                Collection coll = (Collection) entry.getValue();\n                putAll(entry.getKey(), coll);\n            }\n        } else {\n            for (Iterator it = map.entrySet().iterator(); it.hasNext();) {\n                Map.Entry entry = (Map.Entry) it.next();\n                put(entry.getKey(), entry.getValue());\n            }\n        }\n    }\n\n    \n    public Collection values() {\n        if (valuesView == null) {\n            valuesView = new Values();\n        }\n        return valuesView;\n    }\n\n    \n    public boolean containsValue(Object key, Object value) {\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            return false;\n        }\n        return coll.contains(value);\n    }\n\n    \n    public Collection getCollection(Object key) {\n        return (Collection) getMap().get(key);\n    }\n\n    \n    public int size(Object key) {\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            return 0;\n        }\n        return coll.size();\n    }\n\n    \n    public boolean putAll(Object key, Collection values) {\n        if (values == null || values.size() == 0) {\n            return false;\n        }\n        boolean result = false;\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            coll = createCollection(values.size());  \n            coll.addAll(values);\n            if (coll.size() > 0) {\n                \n                getMap().put(key, coll);\n                result = true;  \n            }\n        } else {\n            result = coll.addAll(values);\n        }\n        return result;\n    }\n\n    \n    public Iterator iterator(Object key) {\n        if (!containsKey(key)) {\n            return EmptyIterator.INSTANCE;\n        } else {\n            return new ValuesIterator(key);\n        }\n    }\n\n    \n    public int totalSize() {\n        int total = 0;\n        Collection values = getMap().values();\n        for (Iterator it = values.iterator(); it.hasNext();) {\n            Collection coll = (Collection) it.next();\n            total += coll.size();\n        }\n        return total;\n    }\n\n    \n    protected Collection createCollection(int size) {\n        return (Collection) collectionFactory.create();\n    }\n\n    \n    \n    private class Values extends AbstractCollection { public Iterator iterator() {\n            final IteratorChain chain = new IteratorChain();\n            for (Iterator it = keySet().iterator(); it.hasNext();) {\n                chain.addIterator(new ValuesIterator(it.next()));\n            }\n            return chain;\n        }\n\n        public int size() {\n            return totalSize();\n        }\n\n        public void clear() {\n            MultiValueMap.this.clear();\n        }\n    }\n\n    \n    private class ValuesIterator implements Iterator { private final Object key; private final Collection values; private final Iterator iterator; public ValuesIterator(Object key) {\n            this.key = key;\n            this.values = getCollection(key);\n            this.iterator = values.iterator();\n        }\n\n        public void remove() {\n            iterator.remove();\n            if (values.isEmpty()) {\n                MultiValueMap.this.remove(key);\n            }\n        }\n\n        public boolean hasNext() {\n            return iterator.hasNext();\n        }\n\n        public Object next() {\n            return iterator.next();\n        }\n    }\n\n    \n    private static class ReflectionFactory implements Factory { private final Class clazz; public ReflectionFactory(Class clazz) {\n            this.clazz = clazz;\n        }\n\n        public Object create() {\n            try {\n                return clazz.newInstance();\n            } catch (Exception ex) {\n                throw new FunctorException(\"Cannot instantiate class: \" + clazz, ex);\n            }\n        }\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.map;\n\nimport java.io.IOException;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.Serializable;\n\nimport java.util.AbstractCollection;\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashMap;\nimport java.util.Iterator;\nimport java.util.Map;\nimport java.util.Set;\n\nimport org.apache.commons.collections.Factory;\nimport org.apache.commons.collections.FunctorException;\nimport org.apache.commons.collections.MultiMap;\nimport org.apache.commons.collections.iterators.EmptyIterator;\nimport org.apache.commons.collections.iterators.IteratorChain;\n\n\npublic class MultiValueMap extends AbstractMapDecorator implements MultiMap, Serializable { private static final long serialVersionUID = -2214159910087182007L; private final Factory collectionFactory; private transient Collection valuesView; public static MultiValueMap decorate(Map map) {\n        return new MultiValueMap(map, new ReflectionFactory(ArrayList.class));\n    }\n\n    \n    public static MultiValueMap decorate(Map map, Class collectionClass) {\n        return new MultiValueMap(map, new ReflectionFactory(collectionClass));\n    }\n\n    \n    public static MultiValueMap decorate(Map map, Factory collectionFactory) {\n        return new MultiValueMap(map, collectionFactory);\n    }\n\n    \n    \n    public MultiValueMap() {\n        this(new HashMap(), new ReflectionFactory(ArrayList.class));\n    }\n\n    \n    protected MultiValueMap(Map map, Factory collectionFactory) {\n        super(map);\n        if (collectionFactory == null) {\n            throw new IllegalArgumentException(\"The factory must not be null\");\n        }\n        this.collectionFactory = collectionFactory;\n    }\n\n    \n    \n    private void writeObject(ObjectOutputStream out) throws IOException {\n        out.defaultWriteObject();\n        out.writeObject(map);\n    }\n\n    \n    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {\n        in.defaultReadObject();\n        map = (Map) in.readObject();\n    }\n\n    \n    \n    public void clear() {\n        \n\n\n\n\n\n\n\n        getMap().clear();\n    }\n\n    \n    public Object removeMapping(Object key, Object value) {\n        Collection valuesForKey = getCollection(key);\n        if (valuesForKey == null) {\n            return null;\n        }\n        boolean removed = valuesForKey.remove(value);\n        if (removed == false) {\n            return null;\n        }\n        if (valuesForKey.isEmpty()) {\n            remove(key);\n        }\n        return value;\n    }\n\n    \n    public boolean containsValue(Object value) {\n        Set pairs = getMap().entrySet();\n        if (pairs == null) {\n            return false;\n        }\n        Iterator pairsIterator = pairs.iterator();\n        while (pairsIterator.hasNext()) {\n            Map.Entry keyValuePair = (Map.Entry) pairsIterator.next();\n            Collection coll = (Collection) keyValuePair.getValue();\n            if (coll.contains(value)) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    \n    public Object put(Object key, Object value) {\n        boolean result = false;\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            coll = createCollection(1);  \n            coll.add(value);\n            if (coll.size() > 0) {\n                \n                getMap().put(key, coll);\n                result = true;  \n            }\n        } else {\n            result = coll.add(value);\n        }\n        return (result ? value : null);\n    }\n\n    \n    public void putAll(Map map) {\n        if (map instanceof MultiMap) {\n            for (Iterator it = map.entrySet().iterator(); it.hasNext();) {\n                Map.Entry entry = (Map.Entry) it.next();\n                Collection coll = (Collection) entry.getValue();\n                putAll(entry.getKey(), coll);\n            }\n        } else {\n            for (Iterator it = map.entrySet().iterator(); it.hasNext();) {\n                Map.Entry entry = (Map.Entry) it.next();\n                put(entry.getKey(), entry.getValue());\n            }\n        }\n    }\n\n    \n    public Collection values() {\n        if (valuesView == null) {\n            valuesView = new Values();\n        }\n        return valuesView;\n    }\n\n    \n    public boolean containsValue(Object key, Object value) {\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            return false;\n        }\n        return coll.contains(value);\n    }\n\n    \n    public Collection getCollection(Object key) {\n        return (Collection) getMap().get(key);\n    }\n\n    \n    public int size(Object key) {\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            return 0;\n        }\n        return coll.size();\n    }\n\n    \n    public boolean putAll(Object key, Collection values) {\n        if (values == null || values.size() == 0) {\n            return false;\n        }\n        boolean result = false;\n        Collection coll = getCollection(key);\n        if (coll == null) {\n            coll = createCollection(values.size());  \n            coll.addAll(values);\n            if (coll.size() > 0) {\n                \n                getMap().put(key, coll);\n                result = true;  \n            }\n        } else {\n            result = coll.addAll(values);\n        }\n        return result;\n    }\n\n    \n    public Iterator iterator(Object key) {\n        if (!containsKey(key)) {\n            return EmptyIterator.INSTANCE;\n        } else {\n            return new ValuesIterator(key);\n        }\n    }\n\n    \n    public int totalSize() {\n        int total = 0;\n        Collection values = getMap().values();\n        for (Iterator it = values.iterator(); it.hasNext();) {\n            Collection coll = (Collection) it.next();\n            total += coll.size();\n        }\n        return total;\n    }\n\n    \n    protected Collection createCollection(int size) {\n        return (Collection) collectionFactory.create();\n    }\n\n    \n    \n    private class Values extends AbstractCollection { public Iterator iterator() {\n            final IteratorChain chain = new IteratorChain();\n            for (Iterator it = keySet().iterator(); it.hasNext();) {\n                chain.addIterator(new ValuesIterator(it.next()));\n            }\n            return chain;\n        }\n\n        public int size() {\n            return totalSize();\n        }\n\n        public void clear() {\n            MultiValueMap.this.clear();\n        }\n    }\n\n    \n    private class ValuesIterator implements Iterator { private final Object key; private final Collection values; private final Iterator iterator; public ValuesIterator(Object key) {\n            this.key = key;\n            this.values = getCollection(key);\n            this.iterator = values.iterator();\n        }\n\n        public void remove() {\n            iterator.remove();\n            if (values.isEmpty()) {\n                MultiValueMap.this.remove(key);\n            }\n        }\n\n        public boolean hasNext() {\n            return iterator.hasNext();\n        }\n\n        public Object next() {\n            return iterator.next();\n        }\n    }\n\n    \n    private static class ReflectionFactory implements Factory, Serializable { private final Class clazz; public ReflectionFactory(Class clazz) {\n            this.clazz = clazz;\n        }\n\n        public Object create() {\n            try {\n                return clazz.newInstance();\n            } catch (Exception ex) {\n                throw new FunctorException(\"Cannot instantiate class: \" + clazz, ex);\n            }\n        }\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class MultiValueMap extends AbstractMapDecorator implements MultiMap { private final Factory collectionFactory; private transient Collection valuesView; public static MultiValueMap decorate(Map map)",
+        "public static MultiValueMap decorate(Map map, Class collectionClass)",
+        "public static MultiValueMap decorate(Map map, Factory collectionFactory)",
+        "public MultiValueMap()",
+        "protected MultiValueMap(Map map, Factory collectionFactory)",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException",
+        "public void clear()",
+        "public Object removeMapping(Object key, Object value)",
+        "public boolean containsValue(Object value)",
+        "public Object put(Object key, Object value)",
+        "public void putAll(Map map)",
+        "public Collection values()",
+        "public boolean containsValue(Object key, Object value)",
+        "public Collection getCollection(Object key)",
+        "public int size(Object key)",
+        "public boolean putAll(Object key, Collection values)",
+        "public Iterator iterator(Object key)",
+        "public int totalSize()",
+        "protected Collection createCollection(int size)",
+        "private class Values extends AbstractCollection { public Iterator iterator()",
+        "public int size()",
+        "public void clear()",
+        "private class ValuesIterator implements Iterator { private final Object key; private final Collection values; private final Iterator iterator; public ValuesIterator(Object key)",
+        "public void remove()",
+        "public boolean hasNext()",
+        "public Object next()",
+        "private static class ReflectionFactory implements Factory { private final Class clazz; public ReflectionFactory(Class clazz)",
+        "public Object create()"
+      ],
+      "fixed_signatures": [
+        "public static MultiValueMap decorate(Map map, Class collectionClass)",
+        "public static MultiValueMap decorate(Map map, Factory collectionFactory)",
+        "public MultiValueMap()",
+        "protected MultiValueMap(Map map, Factory collectionFactory)",
+        "private void writeObject(ObjectOutputStream out) throws IOException",
+        "private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException",
+        "public void clear()",
+        "public Object removeMapping(Object key, Object value)",
+        "public boolean containsValue(Object value)",
+        "public Object put(Object key, Object value)",
+        "public void putAll(Map map)",
+        "public Collection values()",
+        "public boolean containsValue(Object key, Object value)",
+        "public Collection getCollection(Object key)",
+        "public int size(Object key)",
+        "public boolean putAll(Object key, Collection values)",
+        "public Iterator iterator(Object key)",
+        "public int totalSize()",
+        "protected Collection createCollection(int size)",
+        "private class Values extends AbstractCollection { public Iterator iterator()",
+        "public int size()",
+        "public void clear()",
+        "private class ValuesIterator implements Iterator { private final Object key; private final Collection values; private final Iterator iterator; public ValuesIterator(Object key)",
+        "public void remove()",
+        "public boolean hasNext()",
+        "public Object next()",
+        "private static class ReflectionFactory implements Factory, Serializable { private final Class clazz; public ReflectionFactory(Class clazz)",
+        "public Object create()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -66,9 +66,10 @@",
+            "  * @version $Revision$ $Date$\n",
+            "  * @since Commons Collections 3.2\n",
+            "  */\n",
+            "-public class MultiValueMap extends AbstractMapDecorator implements MultiMap {\n",
+            "+public class MultiValueMap extends AbstractMapDecorator implements MultiMap, Serializable {\n",
+            " \n",
+            "     /** Serialization version */\n",
+            "+    private static final long serialVersionUID = -2214159910087182007L;\n",
+            " \n",
+            "     /** The factory for creating value collections. */\n",
+            "     private final Factory collectionFactory;\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  public ReflectionFactory(Class clazz) {\n  this.clazz = clazz;\n  }",
+          "fixed_method": "  public ReflectionFactory(Class clazz) {\n  this.clazz = clazz;\n  }",
+          "diff": [
+            "@@ -457,7 +458,7 @@",
+            "     /**\n",
+            "      * Inner class that provides a simple reflection factory.\n",
+            "      */\n",
+            "-    private static class ReflectionFactory implements Factory {\n",
+            "+    private static class ReflectionFactory implements Factory, Serializable {\n",
+            "         private final Class clazz;\n",
+            " \n",
+            "         public ReflectionFactory(Class clazz) {\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

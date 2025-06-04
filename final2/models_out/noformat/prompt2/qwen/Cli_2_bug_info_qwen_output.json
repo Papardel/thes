@@ -1,0 +1,10 @@
+{
+  "bug_id": "Cli_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 2\n--------------------\nSource:\npublic void test() throws Exception\n  {\n  Options options = buildCommandLineOptions();\n  CommandLineParser parser = new PosixParser();\n  String[] args = new String[] {\"-t\", \"-something\" };\n  CommandLine commandLine;\n  commandLine = parser.parse( options, args );\n  assertEquals(\"-something\", commandLine.getOptionValue( 't'));\n  }\nStack:\nParser.processOption line 368, Parser.parse line 185, Parser.parse line 70, BugCLI51Test.test line 40\n\nCandidate source classes and their method signatures (modifiers removed):\n\n### org.apache.commons.cli.PosixParser\n    - ArrayList tokens = new ArrayList()\n    - void init()\n    - String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)\n    - void gobble(Iterator iter)\n    - void process(String value)\n    - void processSingleHyphen(String hyphen)\n    - void processOptionToken(String token, boolean stopAtNonOption)\n    - void burstToken(String token, boolean stopAtNonOption)\n\nYour task:\nList the FIVE most suspicious method (or constructor)Output format (exactly):\nRESPONSE:\n<sig-1>\n<sig-2>\n<sig-3>\n<sig-4>\n<sig-5>",
+      "response": ""
+    }
+  ]
+}

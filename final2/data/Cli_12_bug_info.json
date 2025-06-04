@@ -1,0 +1,75 @@
+{
+  "bug_id": "12",
+  "failed_tests": {
+    "org.apache.commons.cli.GnuParserTest": [
+      {
+        "methodName": "testShortWithEqual",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<[]bar> but was:<[=]bar>",
+        "fail_line": "        assertEquals(\"bar\", cl.getOptionValue(\"foo\"));",
+        "test_source": "  public void testShortWithEqual() throws Exception {\n  String[] args = new String[] { \"-f=bar\" };\n\n  Options options = new Options();\n  options.addOption(OptionBuilder.withLongOpt(\"foo\").hasArg().create('f'));\n\n  Parser parser = new GnuParser();\n  CommandLine cl = parser.parse(options, args);\n\n  assertEquals(\"bar\", cl.getOptionValue(\"foo\"));\n  }",
+        "stack": [
+          "GnuParserTest.testShortWithEqual line 209"
+        ]
+      },
+      {
+        "methodName": "testLongWithEqualSingleDash",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<[]bar> but was:<[oo=]bar>",
+        "fail_line": "        assertEquals(\"bar\", cl.getOptionValue(\"foo\"));",
+        "test_source": "  public void testLongWithEqualSingleDash() throws Exception {\n  String[] args = new String[] { \"-foo=bar\" };\n\n  Options options = new Options();\n  options.addOption(OptionBuilder.withLongOpt(\"foo\").hasArg().create('f'));\n\n  Parser parser = new GnuParser();\n  CommandLine cl = parser.parse(options, args);\n\n  assertEquals(\"bar\", cl.getOptionValue(\"foo\"));\n  }",
+        "stack": [
+          "GnuParserTest.testLongWithEqualSingleDash line 248"
+        ]
+      },
+      {
+        "methodName": "testLongWithEqual",
+        "error": "org.apache.commons.cli.UnrecognizedOptionException",
+        "message": "Unrecognized option: --foo=bar",
+        "fail_line": "        CommandLine cl = parser.parse(options, args);",
+        "test_source": "  public void testLongWithEqual() throws Exception {\n  String[] args = new String[] { \"--foo=bar\" };\n\n  Options options = new Options();\n  options.addOption(OptionBuilder.withLongOpt(\"foo\").hasArg().create('f'));\n\n  Parser parser = new GnuParser();\n  CommandLine cl = parser.parse(options, args);\n\n  assertEquals(\"bar\", cl.getOptionValue(\"foo\"));\n  }",
+        "stack": [
+          "Parser.processOption line 394, Parser.parse line 207, Parser.parse line 86, GnuParserTest.testLongWithEqual line 233"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/GnuParser.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class GnuParser extends Parser { protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n        List tokens = new ArrayList();\n\n        boolean eatTheRest = false;\n\n        for (int i = 0; i < arguments.length; i++)\n        {\n            String arg = arguments[i];\n\n            if (\"--\".equals(arg))\n            {\n                eatTheRest = true;\n                tokens.add(\"--\");\n            }\n            else if (\"-\".equals(arg))\n            {\n                tokens.add(\"-\");\n            }\n            else if (arg.startsWith(\"-\"))\n            {\n                String opt = Util.stripLeadingHyphens(arg);\n\n                if (options.hasOption(opt))\n                {\n                    tokens.add(arg);\n                }\n                else\n                {\n                    if (options.hasOption(arg.substring(0, 2)))\n                    {\n                        \n                        \n                        tokens.add(arg.substring(0, 2)); \n                        tokens.add(arg.substring(2)); \n                    }\n                    else\n                    {\n                        eatTheRest = stopAtNonOption;\n                        tokens.add(arg);\n                    }\n                }\n            }\n            else\n            {\n                tokens.add(arg);\n            }\n\n            if (eatTheRest)\n            {\n                for (i++; i < arguments.length; i++)\n                {\n                    tokens.add(arguments[i]);\n                }\n            }\n        }\n\n        return (String[]) tokens.toArray(new String[tokens.size()]);\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class GnuParser extends Parser { protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n        List tokens = new ArrayList();\n\n        boolean eatTheRest = false;\n\n        for (int i = 0; i < arguments.length; i++)\n        {\n            String arg = arguments[i];\n\n            if (\"--\".equals(arg))\n            {\n                eatTheRest = true;\n                tokens.add(\"--\");\n            }\n            else if (\"-\".equals(arg))\n            {\n                tokens.add(\"-\");\n            }\n            else if (arg.startsWith(\"-\"))\n            {\n                String opt = Util.stripLeadingHyphens(arg);\n\n                if (options.hasOption(opt))\n                {\n                    tokens.add(arg);\n                }\n                else\n                {\n                    if (opt.indexOf('=') != -1 && options.hasOption(opt.substring(0, opt.indexOf('='))))\n                    {\n                        \n                        tokens.add(arg.substring(0, arg.indexOf('='))); \n                        tokens.add(arg.substring(arg.indexOf('=') + 1)); \n                    }\n                    else if (options.hasOption(arg.substring(0, 2)))\n                    {\n                        \n                        tokens.add(arg.substring(0, 2)); \n                        tokens.add(arg.substring(2)); \n                    }\n                    else\n                    {\n                        eatTheRest = stopAtNonOption;\n                        tokens.add(arg);\n                    }\n                }\n            }\n            else\n            {\n                tokens.add(arg);\n            }\n\n            if (eatTheRest)\n            {\n                for (i++; i < arguments.length; i++)\n                {\n                    tokens.add(arguments[i]);\n                }\n            }\n        }\n\n        return (String[]) tokens.toArray(new String[tokens.size()]);\n    }\n}\n",
+      "buggy_signatures": [
+        "public class GnuParser extends Parser { protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)"
+      ],
+      "fixed_signatures": [
+        "public class GnuParser extends Parser { protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n  List tokens = new ArrayList();\n\n  boolean eatTheRest = false;\n\n  for (int i = 0; i < arguments.length; i++)\n  {\n  String arg = arguments[i];\n\n  if (\"--\".equals(arg))\n  {\n  eatTheRest = true;\n  tokens.add(\"--\");\n  }\n  else if (\"-\".equals(arg))\n  {\n  tokens.add(\"-\");\n  }\n  else if (arg.startsWith(\"-\"))\n  {\n  String opt = Util.stripLeadingHyphens(arg);\n\n  if (options.hasOption(opt))\n  {\n  tokens.add(arg);\n  }\n  else\n  {\n  if (options.hasOption(arg.substring(0, 2)))\n  {\n  \n  \n  tokens.add(arg.substring(0, 2)); \n  tokens.add(arg.substring(2)); \n  }\n  else\n  {\n  eatTheRest = stopAtNonOption;\n  tokens.add(arg);\n  }\n  }\n  }\n  else\n  {\n  tokens.add(arg);\n  }\n\n  if (eatTheRest)\n  {\n  for (i++; i < arguments.length; i++)\n  {\n  tokens.add(arguments[i]);\n  }\n  }\n  }\n\n  return (String[]) tokens.toArray(new String[tokens.size()]);\n  }",
+          "fixed_method": "  protected String[] flatten(Options options, String[] arguments, boolean stopAtNonOption) {\n  List tokens = new ArrayList();\n\n  boolean eatTheRest = false;\n\n  for (int i = 0; i < arguments.length; i++)\n  {\n  String arg = arguments[i];\n\n  if (\"--\".equals(arg))\n  {\n  eatTheRest = true;\n  tokens.add(\"--\");\n  }\n  else if (\"-\".equals(arg))\n  {\n  tokens.add(\"-\");\n  }\n  else if (arg.startsWith(\"-\"))\n  {\n  String opt = Util.stripLeadingHyphens(arg);\n\n  if (options.hasOption(opt))\n  {\n  tokens.add(arg);\n  }\n  else\n  {\n  if (opt.indexOf('=') != -1 && options.hasOption(opt.substring(0, opt.indexOf('='))))\n  {\n  \n  tokens.add(arg.substring(0, arg.indexOf('='))); \n  tokens.add(arg.substring(arg.indexOf('=') + 1)); \n  }\n  else if (options.hasOption(arg.substring(0, 2)))\n  {\n  \n  tokens.add(arg.substring(0, 2)); \n  tokens.add(arg.substring(2)); \n  }\n  else\n  {\n  eatTheRest = stopAtNonOption;\n  tokens.add(arg);\n  }\n  }\n  }\n  else\n  {\n  tokens.add(arg);\n  }\n\n  if (eatTheRest)\n  {\n  for (i++; i < arguments.length; i++)\n  {\n  tokens.add(arguments[i]);\n  }\n  }\n  }\n\n  return (String[]) tokens.toArray(new String[tokens.size()]);\n  }",
+          "diff": [
+            "@@ -78,9 +78,14 @@",
+            "                 }\n",
+            "                 else\n",
+            "                 {\n",
+            "-                    if (options.hasOption(arg.substring(0, 2)))\n",
+            "+                    if (opt.indexOf('=') != -1 && options.hasOption(opt.substring(0, opt.indexOf('='))))\n",
+            "                     {\n",
+            "                         // the format is --foo=value or -foo=value\n",
+            "+                        tokens.add(arg.substring(0, arg.indexOf('='))); // --foo\n",
+            "+                        tokens.add(arg.substring(arg.indexOf('=') + 1)); // value\n",
+            "+                    }\n",
+            "+                    else if (options.hasOption(arg.substring(0, 2)))\n",
+            "+                    {\n",
+            "                         // the format is a special properties option (-Dproperty=value)\n",
+            "                         tokens.add(arg.substring(0, 2)); // -D\n",
+            "                         tokens.add(arg.substring(2)); // property=value\n"
+          ],
+          "changed_lines": 7
+        }
+      ]
+    }
+  ]
+}

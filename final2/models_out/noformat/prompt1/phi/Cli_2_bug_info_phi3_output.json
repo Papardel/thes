@@ -1,0 +1,13 @@
+{
+  "bug_id": "Cli_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 2\nTest Class: org.apache.commons.cli.bug.BugCLI51Test\nMethod: test\nError: org.apache.commons.cli.UnrecognizedOptionException\nMessage: Unrecognized option: -o\nFailing Line:         commandLine = parser.parse( options, args );\nTest Source:\npublic void test() throws Exception\n  {\n  Options options = buildCommandLineOptions();\n  CommandLineParser parser = new PosixParser();\n  String[] args = new String[] {\"-t\", \"-something\" };\n  CommandLine commandLine;\n  commandLine = parser.parse( options, args );\n  assertEquals(\"-something\", commandLine.getOptionValue( 't'));\n  }\nStack Trace:\nParser.processOption line 368, Parser.parse line 185, Parser.parse line 70, BugCLI51Test.test line 40\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name ends with \u201cTest\u201d, \u201cTests\u201d, \u201cTestUtil\u201d, \u201cTestUtils\u201d, or \u201cTestHelper\u201d,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line \u2014 nothing else.",
+      "response": "**Input:**\n\norg.apache.commons.cli.bug.BugCLI51Test\n\n**Output:**\n\norg.apache.commons.cli.Parser"
+    }
+  ],
+  "classes": [
+    "PosixParser"
+  ]
+}

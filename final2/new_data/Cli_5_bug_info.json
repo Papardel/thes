@@ -1,0 +1,63 @@
+{
+  "bug_id": "5",
+  "failed_tests": {
+    "org.apache.commons.cli.UtilTest": [
+      {
+        "methodName": "testStripLeadingHyphens",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        assertNull(Util.stripLeadingHyphens(null));",
+        "test_source": "  public void testStripLeadingHyphens() {\n  assertEquals(\"f\", Util.stripLeadingHyphens(\"-f\"));\n  assertEquals(\"foo\", Util.stripLeadingHyphens(\"--foo\"));\n  assertNull(Util.stripLeadingHyphens(null));\n  }",
+        "stack": [
+          "Util.stripLeadingHyphens line 36, UtilTest.testStripLeadingHyphens line 28"
+        ]
+      }
+    ],
+    "org.apache.commons.cli.bug.BugCLI133Test": [
+      {
+        "methodName": "testOrder",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        assertFalse(line.hasOption(null));",
+        "test_source": "  public void testOrder() throws ParseException {\n  Option optionA = new Option(\"a\", \"first\");\n  Options opts = new Options();\n  opts.addOption(optionA);\n  PosixParser posixParser = new PosixParser();\n  CommandLine line = posixParser.parse(opts, null);\n  assertFalse(line.hasOption(null));\n  }",
+        "stack": [
+          "Util.stripLeadingHyphens line 36, CommandLine.resolveOption line 166, CommandLine.hasOption line 68, BugCLI133Test.testOrder line 32"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/Util.java",
+      "buggy_full_code": "\npackage org.apache.commons.cli;\n\n\nclass Util {\n\n    \n    static String stripLeadingHyphens(String str)\n    {\n        if (str.startsWith(\"--\"))\n        {\n            return str.substring(2, str.length());\n        }\n        else if (str.startsWith(\"-\"))\n        {\n            return str.substring(1, str.length());\n        }\n\n        return str;\n    }\n\n    \n    static String stripLeadingAndTrailingQuotes(String str)\n    {\n        if (str.startsWith(\"\\\"\")) {\n            str = str.substring(1, str.length());\n        }\n        if (str.endsWith(\"\\\"\")) {\n            str = str.substring(0, str.length()-1);\n        }\n        return str;\n    }\n}",
+      "fixed_full_code": "\npackage org.apache.commons.cli;\n\n\nclass Util {\n\n    \n    static String stripLeadingHyphens(String str)\n    {\n        if (str == null) {\n            return null;\n        }\n        if (str.startsWith(\"--\"))\n        {\n            return str.substring(2, str.length());\n        }\n        else if (str.startsWith(\"-\"))\n        {\n            return str.substring(1, str.length());\n        }\n\n        return str;\n    }\n\n    \n    static String stripLeadingAndTrailingQuotes(String str)\n    {\n        if (str.startsWith(\"\\\"\")) {\n            str = str.substring(1, str.length());\n        }\n        if (str.endsWith(\"\\\"\")) {\n            str = str.substring(0, str.length()-1);\n        }\n        return str;\n    }\n}",
+      "buggy_signatures": [
+        "static String stripLeadingHyphens(String str)",
+        "static String stripLeadingAndTrailingQuotes(String str)"
+      ],
+      "fixed_signatures": [
+        "static String stripLeadingHyphens(String str)",
+        "static String stripLeadingAndTrailingQuotes(String str)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  static String stripLeadingHyphens(String str)\n  {\n  if (str.startsWith(\"--\"))\n  {\n  return str.substring(2, str.length());\n  }\n  else if (str.startsWith(\"-\"))\n  {\n  return str.substring(1, str.length());\n  }\n\n  return str;\n  }",
+          "fixed_method": "  static String stripLeadingHyphens(String str)\n  {\n  if (str == null) {\n  return null;\n  }\n  if (str.startsWith(\"--\"))\n  {\n  return str.substring(2, str.length());\n  }\n  else if (str.startsWith(\"-\"))\n  {\n  return str.substring(1, str.length());\n  }\n\n  return str;\n  }",
+          "diff": [
+            "@@ -33,6 +33,9 @@",
+            "      */\n",
+            "     static String stripLeadingHyphens(String str)\n",
+            "     {\n",
+            "+        if (str == null) {\n",
+            "+            return null;\n",
+            "+        }\n",
+            "         if (str.startsWith(\"--\"))\n",
+            "         {\n",
+            "             return str.substring(2, str.length());\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

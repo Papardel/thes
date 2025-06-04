@@ -1,0 +1,10 @@
+{
+  "bug_id": "JxPath_3_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 3\nTest Class: org.apache.commons.jxpath.ri.model.beans.BadlyImplementedFactoryTest\nMethod: testBadFactoryImplementation\nError: junit.framework.AssertionFailedError\nMessage: \nFailing Line:             assertTrue(e.getCause() instanceof JXPathAbstractFactoryException);\nTest Source:\npublic void testBadFactoryImplementation() {\n  try {\n  context.createPath(\"foo/bar\");\n  fail(\"should fail with JXPathException caused by JXPathAbstractFactoryException\");\n  } catch (JXPathException e) {\n  assertTrue(e.getCause() instanceof JXPathAbstractFactoryException);\n  }\n  }\nStack Trace:\nBadlyImplementedFactoryTest.testBadFactoryImplementation line 64\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- any internal JUnit or JVM classes like java.lang.reflect.Method.\n\nRESPONSE: org.apache.commons.jxpath.ri.model.beans.JXPathBeanInfoFactoryImpl"
+    }
+  ]
+}

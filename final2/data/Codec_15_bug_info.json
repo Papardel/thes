@@ -1,0 +1,78 @@
+{
+  "bug_id": "15",
+  "failed_tests": {
+    "org.apache.commons.codec.language.SoundexTest": [
+      {
+        "methodName": "testHWRuleEx1",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<Y3[3]0> but was:<Y3[0]0>",
+        "fail_line": "        Assert.assertEquals(\"Y330\", this.getStringEncoder().encode(\"yhwdyt\"));",
+        "test_source": "  public void testHWRuleEx1() {\n  // From\n  // http://www.archives.gov/research_room/genealogy/census/soundex.html:\n  // Ashcraft is coded A-261 (A, 2 for the S, C ignored, 6 for the R, 1\n  // for the F). It is not coded A-226.\n  Assert.assertEquals(\"A261\", this.getStringEncoder().encode(\"Ashcraft\"));\n  Assert.assertEquals(\"A261\", this.getStringEncoder().encode(\"Ashcroft\"));\n  Assert.assertEquals(\"Y330\", this.getStringEncoder().encode(\"yehudit\"));\n  Assert.assertEquals(\"Y330\", this.getStringEncoder().encode(\"yhwdyt\"));\n  }",
+        "stack": [
+          "SoundexTest.testHWRuleEx1 line 232"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/codec/language/Soundex.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.codec.language;\n\nimport org.apache.commons.codec.EncoderException;\nimport org.apache.commons.codec.StringEncoder;\n\n\npublic class Soundex implements StringEncoder { public static final String US_ENGLISH_MAPPING_STRING = \"01230120022455012623010202\"; private static final char[] US_ENGLISH_MAPPING = US_ENGLISH_MAPPING_STRING.toCharArray(); public static final Soundex US_ENGLISH = new Soundex(); @Deprecated private int maxLength = 4; private final char[] soundexMapping; public Soundex() {\n        this.soundexMapping = US_ENGLISH_MAPPING;\n    }\n\n    \n    public Soundex(final char[] mapping) {\n        this.soundexMapping = new char[mapping.length];\n        System.arraycopy(mapping, 0, this.soundexMapping, 0, mapping.length);\n    }\n\n    \n    public Soundex(final String mapping) {\n        this.soundexMapping = mapping.toCharArray();\n    }\n\n    \n    public int difference(final String s1, final String s2) throws EncoderException {\n        return SoundexUtils.difference(this, s1, s2);\n    }\n\n    \n    @Override\n    public Object encode(final Object obj) throws EncoderException {\n        if (!(obj instanceof String)) {\n            throw new EncoderException(\"Parameter supplied to Soundex encode is not of type java.lang.String\");\n        }\n        return soundex((String) obj);\n    }\n\n    \n    @Override\n    public String encode(final String str) {\n        return soundex(str);\n    }\n\n    \n    private char getMappingCode(final String str, final int index) {\n        \n        final char mappedChar = this.map(str.charAt(index));\n        \n        if (index > 1 && mappedChar != '0') {\n            final char hwChar = str.charAt(index - 1);\n            if ('H' == hwChar || 'W' == hwChar) {\n                final char preHWChar = str.charAt(index - 2);\n                final char firstCode = this.map(preHWChar);\n                if (firstCode == mappedChar || 'H' == preHWChar || 'W' == preHWChar) {\n                    return 0;\n                }\n            }\n        }\n        return mappedChar;\n    }\n\n    \n    @Deprecated\n    public int getMaxLength() {\n        return this.maxLength;\n    }\n\n    \n    private char[] getSoundexMapping() {\n        return this.soundexMapping;\n    }\n\n    \n    private char map(final char ch) {\n        final int index = ch - 'A';\n        if (index < 0 || index >= this.getSoundexMapping().length) {\n            throw new IllegalArgumentException(\"The character is not mapped: \" + ch);\n        }\n        return this.getSoundexMapping()[index];\n    }\n\n    \n    @Deprecated\n    public void setMaxLength(final int maxLength) {\n        this.maxLength = maxLength;\n    }\n\n    \n    public String soundex(String str) {\n        if (str == null) {\n            return null;\n        }\n        str = SoundexUtils.clean(str);\n        if (str.length() == 0) {\n            return str;\n        }\n        final char out[] = {'0', '0', '0', '0'};\n        char last, mapped;\n        int incount = 1, count = 1;\n        out[0] = str.charAt(0);\n        \n        last = getMappingCode(str, 0);\n        while (incount < str.length() && count < out.length) {\n            mapped = getMappingCode(str, incount++);\n            if (mapped != 0) {\n                if (mapped != '0' && mapped != last) {\n                    out[count++] = mapped;\n                }\n                last = mapped;\n            }\n        }\n        return new String(out);\n    }\n\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.codec.language;\n\nimport org.apache.commons.codec.EncoderException;\nimport org.apache.commons.codec.StringEncoder;\n\n\npublic class Soundex implements StringEncoder { public static final String US_ENGLISH_MAPPING_STRING = \"01230120022455012623010202\"; private static final char[] US_ENGLISH_MAPPING = US_ENGLISH_MAPPING_STRING.toCharArray(); public static final Soundex US_ENGLISH = new Soundex(); @Deprecated private int maxLength = 4; private final char[] soundexMapping; public Soundex() {\n        this.soundexMapping = US_ENGLISH_MAPPING;\n    }\n\n    \n    public Soundex(final char[] mapping) {\n        this.soundexMapping = new char[mapping.length];\n        System.arraycopy(mapping, 0, this.soundexMapping, 0, mapping.length);\n    }\n\n    \n    public Soundex(final String mapping) {\n        this.soundexMapping = mapping.toCharArray();\n    }\n\n    \n    public int difference(final String s1, final String s2) throws EncoderException {\n        return SoundexUtils.difference(this, s1, s2);\n    }\n\n    \n    @Override\n    public Object encode(final Object obj) throws EncoderException {\n        if (!(obj instanceof String)) {\n            throw new EncoderException(\"Parameter supplied to Soundex encode is not of type java.lang.String\");\n        }\n        return soundex((String) obj);\n    }\n\n    \n    @Override\n    public String encode(final String str) {\n        return soundex(str);\n    }\n\n    \n    private char getMappingCode(final String str, final int index) {\n        \n        final char mappedChar = this.map(str.charAt(index));\n        \n        if (index > 1 && mappedChar != '0') {\n            for (int i=index-1 ; i>=0 ; i--) {\n                final char prevChar = str.charAt(i);\n                if (this.map(prevChar)==mappedChar) {\n                    return 0;\n                }\n                if ('H'!=prevChar && 'W'!=prevChar) {\n                    break;\n                }\n            }\n        }\n        return mappedChar;\n    }\n\n    \n    @Deprecated\n    public int getMaxLength() {\n        return this.maxLength;\n    }\n\n    \n    private char[] getSoundexMapping() {\n        return this.soundexMapping;\n    }\n\n    \n    private char map(final char ch) {\n        final int index = ch - 'A';\n        if (index < 0 || index >= this.getSoundexMapping().length) {\n            throw new IllegalArgumentException(\"The character is not mapped: \" + ch);\n        }\n        return this.getSoundexMapping()[index];\n    }\n\n    \n    @Deprecated\n    public void setMaxLength(final int maxLength) {\n        this.maxLength = maxLength;\n    }\n\n    \n    public String soundex(String str) {\n        if (str == null) {\n            return null;\n        }\n        str = SoundexUtils.clean(str);\n        if (str.length() == 0) {\n            return str;\n        }\n        final char out[] = {'0', '0', '0', '0'};\n        char last, mapped;\n        int incount = 1, count = 1;\n        out[0] = str.charAt(0);\n        \n        last = getMappingCode(str, 0);\n        while (incount < str.length() && count < out.length) {\n            mapped = getMappingCode(str, incount++);\n            if (mapped != 0) {\n                if (mapped != '0' && mapped != last) {\n                    out[count++] = mapped;\n                }\n                last = mapped;\n            }\n        }\n        return new String(out);\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public Soundex(final char[] mapping)",
+        "public Soundex(final String mapping)",
+        "public int difference(final String s1, final String s2) throws EncoderException",
+        "public Object encode(final Object obj) throws EncoderException",
+        "public String encode(final String str)",
+        "private char getMappingCode(final String str, final int index)",
+        "public int getMaxLength()",
+        "private char[] getSoundexMapping()",
+        "private char map(final char ch)",
+        "public void setMaxLength(final int maxLength)",
+        "public String soundex(String str)"
+      ],
+      "fixed_signatures": [
+        "public Soundex(final char[] mapping)",
+        "public Soundex(final String mapping)",
+        "public int difference(final String s1, final String s2) throws EncoderException",
+        "public Object encode(final Object obj) throws EncoderException",
+        "public String encode(final String str)",
+        "private char getMappingCode(final String str, final int index)",
+        "public int getMaxLength()",
+        "private char[] getSoundexMapping()",
+        "private char map(final char ch)",
+        "public void setMaxLength(final int maxLength)",
+        "public String soundex(String str)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private char getMappingCode(final String str, final int index) {\n  \n  final char mappedChar = this.map(str.charAt(index));\n  \n  if (index > 1 && mappedChar != '0') {\n  final char hwChar = str.charAt(index - 1);\n  if ('H' == hwChar || 'W' == hwChar) {\n  final char preHWChar = str.charAt(index - 2);\n  final char firstCode = this.map(preHWChar);\n  if (firstCode == mappedChar || 'H' == preHWChar || 'W' == preHWChar) {\n  return 0;\n  }\n  }\n  }\n  return mappedChar;\n  }",
+          "fixed_method": "  private char getMappingCode(final String str, final int index) {\n  \n  final char mappedChar = this.map(str.charAt(index));\n  \n  if (index > 1 && mappedChar != '0') {\n  for (int i=index-1 ; i>=0 ; i--) {\n  final char prevChar = str.charAt(i);\n  if (this.map(prevChar)==mappedChar) {\n  return 0;\n  }\n  if ('H'!=prevChar && 'W'!=prevChar) {\n  break;\n  }\n  }\n  }\n  return mappedChar;\n  }",
+          "diff": [
+            "@@ -185,12 +185,13 @@",
+            "         final char mappedChar = this.map(str.charAt(index));\n",
+            "         // HW rule check\n",
+            "         if (index > 1 && mappedChar != '0') {\n",
+            "-            final char hwChar = str.charAt(index - 1);\n",
+            "-            if ('H' == hwChar || 'W' == hwChar) {\n",
+            "-                final char preHWChar = str.charAt(index - 2);\n",
+            "-                final char firstCode = this.map(preHWChar);\n",
+            "-                if (firstCode == mappedChar || 'H' == preHWChar || 'W' == preHWChar) {\n",
+            "+            for (int i=index-1 ; i>=0 ; i--) {\n",
+            "+                final char prevChar = str.charAt(i);\n",
+            "+                if (this.map(prevChar)==mappedChar) {\n",
+            "                     return 0;\n",
+            "+                }\n",
+            "+                if ('H'!=prevChar && 'W'!=prevChar) {\n",
+            "+                    break;\n",
+            "                 }\n",
+            "             }\n",
+            "         }\n"
+          ],
+          "changed_lines": 11
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+{
+  "bug_id": "52",
+  "failed_tests": {
+    "org.jsoup.nodes.DocumentTest": [
+      {
+        "methodName": "testMetaCharsetUpdateXmlNoCharset",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<....0\" encoding=\"UTF-8\"[?]>",
+        "fail_line": "        assertEquals(xmlCharsetUTF8, doc.toString());",
+        "test_source": "  public void testMetaCharsetUpdateXmlNoCharset() {\n  final Document doc = createXmlDocument(\"1.0\", \"none\", false);\n  doc.updateMetaCharsetElement(true);\n  doc.charset(Charset.forName(charsetUtf8));\n  \n  final String xmlCharsetUTF8 = \"<?xml version=\\\"1.0\\\" encoding=\\\"\" + charsetUtf8 + \"\\\"?>\\n\" +\n  \"<root>\\n\" +\n  \" node\\n\" +\n  \"</root>\";\n  assertEquals(xmlCharsetUTF8, doc.toString());\n  \n  XmlDeclaration selectedNode = (XmlDeclaration) doc.childNode(0);\n  assertEquals(charsetUtf8, selectedNode.attr(\"encoding\"));\n  }",
+        "stack": [
+          "DocumentTest.testMetaCharsetUpdateXmlNoCharset line 355"
+        ]
+      },
+      {
+        "methodName": "testMetaCharsetUpdateXmlIso8859",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...ncoding=\"ISO-8859-1\"[?]>",
+        "fail_line": "        assertEquals(xmlCharsetISO, doc.toString());",
+        "test_source": "  public void testMetaCharsetUpdateXmlIso8859() {\n  final Document doc = createXmlDocument(\"1.0\", \"changeThis\", true);\n  doc.updateMetaCharsetElement(true);\n  doc.charset(Charset.forName(charsetIso8859));\n  \n  final String xmlCharsetISO = \"<?xml version=\\\"1.0\\\" encoding=\\\"\" + charsetIso8859 + \"\\\"?>\\n\" +\n  \"<root>\\n\" +\n  \" node\\n\" +\n  \"</root>\";\n  assertEquals(xmlCharsetISO, doc.toString());\n  \n  XmlDeclaration selectedNode = (XmlDeclaration) doc.childNode(0);\n  assertEquals(charsetIso8859, doc.charset().name());\n  assertEquals(charsetIso8859, selectedNode.attr(\"encoding\"));\n  assertEquals(doc.charset(), doc.outputSettings().charset());\n  }",
+        "stack": [
+          "DocumentTest.testMetaCharsetUpdateXmlIso8859 line 337"
+        ]
+      },
+      {
+        "methodName": "testMetaCharsetUpdateXmlUtf8",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<....0\" encoding=\"UTF-8\"[?]>",
+        "fail_line": "        assertEquals(xmlCharsetUTF8, doc.toString());",
+        "test_source": "  public void testMetaCharsetUpdateXmlUtf8() {\n  final Document doc = createXmlDocument(\"1.0\", \"changeThis\", true);\n  doc.updateMetaCharsetElement(true);\n  doc.charset(Charset.forName(charsetUtf8));\n  \n  final String xmlCharsetUTF8 = \"<?xml version=\\\"1.0\\\" encoding=\\\"\" + charsetUtf8 + \"\\\"?>\\n\" +\n  \"<root>\\n\" +\n  \" node\\n\" +\n  \"</root>\";\n  assertEquals(xmlCharsetUTF8, doc.toString());\n\n  XmlDeclaration selectedNode = (XmlDeclaration) doc.childNode(0);\n  assertEquals(charsetUtf8, doc.charset().name());\n  assertEquals(charsetUtf8, selectedNode.attr(\"encoding\"));\n  assertEquals(doc.charset(), doc.outputSettings().charset());\n  }",
+        "stack": [
+          "DocumentTest.testMetaCharsetUpdateXmlUtf8 line 319"
+        ]
+      },
+      {
+        "methodName": "testMetaCharsetUpdateXmlDisabledNoChanges",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...encoding=\"dontTouch\"[?]>",
+        "fail_line": "        assertEquals(xmlCharset, doc.toString());",
+        "test_source": "  public void testMetaCharsetUpdateXmlDisabledNoChanges() {\n  final Document doc = createXmlDocument(\"dontTouch\", \"dontTouch\", true);\n  \n  final String xmlCharset = \"<?xml version=\\\"dontTouch\\\" encoding=\\\"dontTouch\\\"?>\\n\" +\n  \"<root>\\n\" +\n  \" node\\n\" +\n  \"</root>\";\n  assertEquals(xmlCharset, doc.toString());\n  \n  XmlDeclaration selectedNode = (XmlDeclaration) doc.childNode(0);\n  assertEquals(\"dontTouch\", selectedNode.attr(\"encoding\"));\n  assertEquals(\"dontTouch\", selectedNode.attr(\"version\"));\n  }",
+        "stack": [
+          "DocumentTest.testMetaCharsetUpdateXmlDisabledNoChanges line 379"
+        ]
+      }
+    ],
+    "org.jsoup.parser.XmlTreeBuilderTest": [
+      {
+        "methodName": "handlesXmlDeclarationAsDeclaration",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<<?xml encoding=[\"UTF-8\"]?> <body> One </body...> but was:<<?xml encoding=['UTF-8' ]?> <body> One </body...>",
+        "fail_line": "        assertEquals(\"<?xml encoding=\\\"UTF-8\\\"?> <body> One </body> <!-- comment -->\",",
+        "test_source": "",
+        "stack": [
+          "XmlTreeBuilderTest.handlesXmlDeclarationAsDeclaration line 108"
+        ]
+      },
+      {
+        "methodName": "testDetectCharsetEncodingDeclaration",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[ISO-8859-1]> but was:<[UTF-8]>",
+        "fail_line": "        assertEquals(\"ISO-8859-1\", doc.charset().name());",
+        "test_source": "  public void testDetectCharsetEncodingDeclaration() throws IOException, URISyntaxException {\n  File xmlFile = new File(XmlTreeBuilder.class.getResource(\"/htmltests/xml-charset.xml\").toURI());\n  InputStream inStream = new FileInputStream(xmlFile);\n  Document doc = Jsoup.parse(inStream, null, \"http://example.com/\", Parser.xmlParser());\n  assertEquals(\"ISO-8859-1\", doc.charset().name());\n  assertEquals(\"<?xml version=\\\"1.0\\\" encoding=\\\"ISO-8859-1\\\"?> <data>äöåéü</data>\",\n  TextUtil.stripNewlines(doc.html()));\n  }",
+        "stack": [
+          "XmlTreeBuilderTest.testDetectCharsetEncodingDeclaration line 141"
+        ]
+      },
+      {
+        "methodName": "testParseDeclarationAttributes",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[1]> but was:<[]>",
+        "fail_line": "        assertEquals(\"1\", decl.attr(\"version\"));",
+        "test_source": "  public void testParseDeclarationAttributes() {\n  String xml = \"<?xml version='1' encoding='UTF-8' something='else'?><val>One</val>\";\n  Document doc = Jsoup.parse(xml, \"\", Parser.xmlParser());\n  XmlDeclaration decl = (XmlDeclaration) doc.childNode(0);\n  assertEquals(\"1\", decl.attr(\"version\"));\n  assertEquals(\"UTF-8\", decl.attr(\"encoding\"));\n  assertEquals(\"else\", decl.attr(\"something\"));\n  assertEquals(\"version=\\\"1\\\" encoding=\\\"UTF-8\\\" something=\\\"else\\\"\", decl.getWholeDeclaration());\n  assertEquals(\"<?xml version=\\\"1\\\" encoding=\\\"UTF-8\\\" something=\\\"else\\\"?>\", decl.outerHtml());\n  }",
+        "stack": [
+          "XmlTreeBuilderTest.testParseDeclarationAttributes line 151"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/helper/DataUtil.java",
+      "buggy_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Document;\nimport org.jsoup.nodes.Element;\nimport org.jsoup.nodes.XmlDeclaration;\nimport org.jsoup.parser.Parser;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.File;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.OutputStream;\nimport java.io.RandomAccessFile;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\nimport java.nio.charset.IllegalCharsetNameException;\nimport java.util.Locale;\nimport java.util.Random;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\n\n\npublic final class DataUtil { private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*(?:\\\"|')?([^\\\\s,;\\\"']*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private static final int UNICODE_BOM = 0xFEFF; private static final char[] mimeBoundaryChars = \"-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\".toCharArray(); static final int boundaryLength = 32; private DataUtil() {}\n\n    \n    public static Document load(File in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readFileToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, parser);\n    }\n\n    \n    static void crossStreams(final InputStream in, final OutputStream out) throws IOException {\n        final byte[] buffer = new byte[bufferSize];\n        int len;\n        while ((len = in.read(buffer)) != -1) {\n            out.write(buffer, 0, len);\n        }\n    }\n\n    \n    \n    \n    static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n        String docData;\n        Document doc = null;\n\n        \n        charsetName = detectCharsetFromBom(byteData, charsetName);\n\n        if (charsetName == null) { \n            \n            docData = Charset.forName(defaultCharset).decode(byteData).toString();\n            doc = parser.parseInput(docData, baseUri);\n            Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n            String foundCharset = null; \n            if (meta != null) {\n                if (meta.hasAttr(\"http-equiv\")) {\n                    foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n                }\n                if (foundCharset == null && meta.hasAttr(\"charset\")) {\n                    try {\n                        if (Charset.isSupported(meta.attr(\"charset\"))) {\n                    foundCharset = meta.attr(\"charset\");\n                        }\n                    } catch (IllegalCharsetNameException e) {\n                        foundCharset = null;\n                    }\n                }\n            }\n            \n            if (foundCharset == null && doc.childNode(0) instanceof XmlDeclaration) {\n                XmlDeclaration prolog = (XmlDeclaration) doc.childNode(0);\n                if (prolog.name().equals(\"xml\")) {\n                    foundCharset = prolog.attr(\"encoding\");\n                }\n            }\n            foundCharset = validateCharset(foundCharset);\n\n            if (foundCharset != null && !foundCharset.equals(defaultCharset)) { \n                foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n                charsetName = foundCharset;\n                byteData.rewind();\n                docData = Charset.forName(foundCharset).decode(byteData).toString();\n                doc = null;\n            }\n        } else { \n            Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n            docData = Charset.forName(charsetName).decode(byteData).toString();\n        }\n        if (doc == null) {\n            doc = parser.parseInput(docData, baseUri);\n            doc.outputSettings().charset(charsetName);\n        }\n        return doc;\n    }\n\n    \n    static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException {\n        Validate.isTrue(maxSize >= 0, \"maxSize must be 0 (unlimited) or larger\");\n        final boolean capped = maxSize > 0;\n        byte[] buffer = new byte[bufferSize];\n        ByteArrayOutputStream outStream = new ByteArrayOutputStream(bufferSize);\n        int read;\n        int remaining = maxSize;\n\n        while (true) {\n            read = inStream.read(buffer);\n            if (read == -1) break;\n            if (capped) {\n                if (read > remaining) {\n                    outStream.write(buffer, 0, remaining);\n                    break;\n                }\n                remaining -= read;\n            }\n            outStream.write(buffer, 0, read);\n        }\n        return ByteBuffer.wrap(outStream.toByteArray());\n    }\n\n    static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException {\n        return readToByteBuffer(inStream, 0);\n    }\n\n    static ByteBuffer readFileToByteBuffer(File file) throws IOException {\n        RandomAccessFile randomAccessFile = null;\n        try {\n            randomAccessFile = new RandomAccessFile(file, \"r\");\n            byte[] bytes = new byte[(int) randomAccessFile.length()];\n            randomAccessFile.readFully(bytes);\n            return ByteBuffer.wrap(bytes);\n        } finally {\n            if (randomAccessFile != null)\n                randomAccessFile.close();\n        }\n    }\n\n    static ByteBuffer emptyByteBuffer() {\n        return ByteBuffer.allocate(0);\n    }\n\n    \n    static String getCharsetFromContentType(String contentType) {\n        if (contentType == null) return null;\n        Matcher m = charsetPattern.matcher(contentType);\n        if (m.find()) {\n            String charset = m.group(1).trim();\n            charset = charset.replace(\"charset=\", \"\");\n            return validateCharset(charset);\n        }\n        return null;\n    }\n\n    private static String validateCharset(String cs) {\n        if (cs == null || cs.length() == 0) return null;\n        cs = cs.trim().replaceAll(\"[\\\"']\", \"\");\n        try {\n            if (Charset.isSupported(cs)) return cs;\n            cs = cs.toUpperCase(Locale.ENGLISH);\n            if (Charset.isSupported(cs)) return cs;\n        } catch (IllegalCharsetNameException e) {\n            \n        }\n        return null;\n    }\n\n    \n    static String mimeBoundary() {\n        final StringBuilder mime = new StringBuilder(boundaryLength);\n        final Random rand = new Random();\n        for (int i = 0; i < boundaryLength; i++) {\n            mime.append(mimeBoundaryChars[rand.nextInt(mimeBoundaryChars.length)]);\n        }\n        return mime.toString();\n    }\n\n    private static String detectCharsetFromBom(ByteBuffer byteData, String charsetName) {\n        byteData.mark();\n        byte[] bom = new byte[4];\n        if (byteData.remaining() >= bom.length) {\n            byteData.get(bom);\n            byteData.rewind();\n        }\n        if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == (byte) 0xFE && bom[3] == (byte) 0xFF || \n            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE && bom[2] == 0x00 && bom[3] == 0x00) { \n            charsetName = \"UTF-32\"; \n        } else if (bom[0] == (byte) 0xFE && bom[1] == (byte) 0xFF || \n            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {\n            charsetName = \"UTF-16\"; \n        } else if (bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {\n            charsetName = \"UTF-8\"; \n            byteData.position(3); \n        }\n        return charsetName;\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Document;\nimport org.jsoup.nodes.Element;\nimport org.jsoup.nodes.XmlDeclaration;\nimport org.jsoup.parser.Parser;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.File;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.OutputStream;\nimport java.io.RandomAccessFile;\nimport java.nio.ByteBuffer;\nimport java.nio.charset.Charset;\nimport java.nio.charset.IllegalCharsetNameException;\nimport java.util.Locale;\nimport java.util.Random;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\n\n\npublic final class DataUtil { private static final Pattern charsetPattern = Pattern.compile(\"(?i)\\\\bcharset=\\\\s*(?:\\\"|')?([^\\\\s,;\\\"']*)\"); static final String defaultCharset = \"UTF-8\"; private static final int bufferSize = 0x20000; private static final int UNICODE_BOM = 0xFEFF; private static final char[] mimeBoundaryChars = \"-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\".toCharArray(); static final int boundaryLength = 32; private DataUtil() {}\n\n    \n    public static Document load(File in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readFileToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, Parser.htmlParser());\n    }\n\n    \n    public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException {\n        ByteBuffer byteData = readToByteBuffer(in);\n        return parseByteData(byteData, charsetName, baseUri, parser);\n    }\n\n    \n    static void crossStreams(final InputStream in, final OutputStream out) throws IOException {\n        final byte[] buffer = new byte[bufferSize];\n        int len;\n        while ((len = in.read(buffer)) != -1) {\n            out.write(buffer, 0, len);\n        }\n    }\n\n    \n    \n    \n    static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n        String docData;\n        Document doc = null;\n\n        \n        charsetName = detectCharsetFromBom(byteData, charsetName);\n\n        if (charsetName == null) { \n            \n            docData = Charset.forName(defaultCharset).decode(byteData).toString();\n            doc = parser.parseInput(docData, baseUri);\n            Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n            String foundCharset = null; \n            if (meta != null) {\n                if (meta.hasAttr(\"http-equiv\")) {\n                    foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n                }\n                if (foundCharset == null && meta.hasAttr(\"charset\")) {\n                    foundCharset = meta.attr(\"charset\");\n                }\n            }\n            \n            if (foundCharset == null && doc.childNode(0) instanceof XmlDeclaration) {\n                XmlDeclaration prolog = (XmlDeclaration) doc.childNode(0);\n                if (prolog.name().equals(\"xml\")) {\n                    foundCharset = prolog.attr(\"encoding\");\n                }\n            }\n            foundCharset = validateCharset(foundCharset);\n\n            if (foundCharset != null && !foundCharset.equals(defaultCharset)) { \n                foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n                charsetName = foundCharset;\n                byteData.rewind();\n                docData = Charset.forName(foundCharset).decode(byteData).toString();\n                doc = null;\n            }\n        } else { \n            Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n            docData = Charset.forName(charsetName).decode(byteData).toString();\n        }\n        if (doc == null) {\n            doc = parser.parseInput(docData, baseUri);\n            doc.outputSettings().charset(charsetName);\n        }\n        return doc;\n    }\n\n    \n    static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException {\n        Validate.isTrue(maxSize >= 0, \"maxSize must be 0 (unlimited) or larger\");\n        final boolean capped = maxSize > 0;\n        byte[] buffer = new byte[bufferSize];\n        ByteArrayOutputStream outStream = new ByteArrayOutputStream(bufferSize);\n        int read;\n        int remaining = maxSize;\n\n        while (true) {\n            read = inStream.read(buffer);\n            if (read == -1) break;\n            if (capped) {\n                if (read > remaining) {\n                    outStream.write(buffer, 0, remaining);\n                    break;\n                }\n                remaining -= read;\n            }\n            outStream.write(buffer, 0, read);\n        }\n        return ByteBuffer.wrap(outStream.toByteArray());\n    }\n\n    static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException {\n        return readToByteBuffer(inStream, 0);\n    }\n\n    static ByteBuffer readFileToByteBuffer(File file) throws IOException {\n        RandomAccessFile randomAccessFile = null;\n        try {\n            randomAccessFile = new RandomAccessFile(file, \"r\");\n            byte[] bytes = new byte[(int) randomAccessFile.length()];\n            randomAccessFile.readFully(bytes);\n            return ByteBuffer.wrap(bytes);\n        } finally {\n            if (randomAccessFile != null)\n                randomAccessFile.close();\n        }\n    }\n\n    static ByteBuffer emptyByteBuffer() {\n        return ByteBuffer.allocate(0);\n    }\n\n    \n    static String getCharsetFromContentType(String contentType) {\n        if (contentType == null) return null;\n        Matcher m = charsetPattern.matcher(contentType);\n        if (m.find()) {\n            String charset = m.group(1).trim();\n            charset = charset.replace(\"charset=\", \"\");\n            return validateCharset(charset);\n        }\n        return null;\n    }\n\n    private static String validateCharset(String cs) {\n        if (cs == null || cs.length() == 0) return null;\n        cs = cs.trim().replaceAll(\"[\\\"']\", \"\");\n        try {\n            if (Charset.isSupported(cs)) return cs;\n            cs = cs.toUpperCase(Locale.ENGLISH);\n            if (Charset.isSupported(cs)) return cs;\n        } catch (IllegalCharsetNameException e) {\n            \n        }\n        return null;\n    }\n\n    \n    static String mimeBoundary() {\n        final StringBuilder mime = new StringBuilder(boundaryLength);\n        final Random rand = new Random();\n        for (int i = 0; i < boundaryLength; i++) {\n            mime.append(mimeBoundaryChars[rand.nextInt(mimeBoundaryChars.length)]);\n        }\n        return mime.toString();\n    }\n\n    private static String detectCharsetFromBom(ByteBuffer byteData, String charsetName) {\n        byteData.mark();\n        byte[] bom = new byte[4];\n        if (byteData.remaining() >= bom.length) {\n            byteData.get(bom);\n            byteData.rewind();\n        }\n        if (bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == (byte) 0xFE && bom[3] == (byte) 0xFF || \n            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE && bom[2] == 0x00 && bom[3] == 0x00) { \n            charsetName = \"UTF-32\"; \n        } else if (bom[0] == (byte) 0xFE && bom[1] == (byte) 0xFF || \n            bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {\n            charsetName = \"UTF-16\"; \n        } else if (bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {\n            charsetName = \"UTF-8\"; \n            byteData.position(3); \n        }\n        return charsetName;\n    }\n}\n",
+      "buggy_signatures": [
+        "public static Document load(File in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException",
+        "static void crossStreams(final InputStream in, final OutputStream out) throws IOException",
+        "static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser)",
+        "static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException",
+        "static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException",
+        "static ByteBuffer readFileToByteBuffer(File file) throws IOException",
+        "static ByteBuffer emptyByteBuffer()",
+        "static String getCharsetFromContentType(String contentType)",
+        "private static String validateCharset(String cs)",
+        "static String mimeBoundary()",
+        "private static String detectCharsetFromBom(ByteBuffer byteData, String charsetName)"
+      ],
+      "fixed_signatures": [
+        "public static Document load(File in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri) throws IOException",
+        "public static Document load(InputStream in, String charsetName, String baseUri, Parser parser) throws IOException",
+        "static void crossStreams(final InputStream in, final OutputStream out) throws IOException",
+        "static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser)",
+        "static ByteBuffer readToByteBuffer(InputStream inStream, int maxSize) throws IOException",
+        "static ByteBuffer readToByteBuffer(InputStream inStream) throws IOException",
+        "static ByteBuffer readFileToByteBuffer(File file) throws IOException",
+        "static ByteBuffer emptyByteBuffer()",
+        "static String getCharsetFromContentType(String contentType)",
+        "private static String validateCharset(String cs)",
+        "static String mimeBoundary()",
+        "private static String detectCharsetFromBom(ByteBuffer byteData, String charsetName)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n  String docData;\n  Document doc = null;\n\n  \n  charsetName = detectCharsetFromBom(byteData, charsetName);\n\n  if (charsetName == null) { \n  \n  docData = Charset.forName(defaultCharset).decode(byteData).toString();\n  doc = parser.parseInput(docData, baseUri);\n  Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n  String foundCharset = null; \n  if (meta != null) {\n  if (meta.hasAttr(\"http-equiv\")) {\n  foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n  }\n  if (foundCharset == null && meta.hasAttr(\"charset\")) {\n  try {\n  if (Charset.isSupported(meta.attr(\"charset\"))) {\n  foundCharset = meta.attr(\"charset\");\n  }\n  } catch (IllegalCharsetNameException e) {\n  foundCharset = null;\n  }\n  }\n  }\n  \n  if (foundCharset == null && doc.childNode(0) instanceof XmlDeclaration) {\n  XmlDeclaration prolog = (XmlDeclaration) doc.childNode(0);\n  if (prolog.name().equals(\"xml\")) {\n  foundCharset = prolog.attr(\"encoding\");\n  }\n  }\n  foundCharset = validateCharset(foundCharset);\n\n  if (foundCharset != null && !foundCharset.equals(defaultCharset)) { \n  foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n  charsetName = foundCharset;\n  byteData.rewind();\n  docData = Charset.forName(foundCharset).decode(byteData).toString();\n  doc = null;\n  }\n  } else { \n  Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n  docData = Charset.forName(charsetName).decode(byteData).toString();\n  }\n  if (doc == null) {\n  doc = parser.parseInput(docData, baseUri);\n  doc.outputSettings().charset(charsetName);\n  }\n  return doc;\n  }",
+          "fixed_method": "  static Document parseByteData(ByteBuffer byteData, String charsetName, String baseUri, Parser parser) {\n  String docData;\n  Document doc = null;\n\n  \n  charsetName = detectCharsetFromBom(byteData, charsetName);\n\n  if (charsetName == null) { \n  \n  docData = Charset.forName(defaultCharset).decode(byteData).toString();\n  doc = parser.parseInput(docData, baseUri);\n  Element meta = doc.select(\"meta[http-equiv=content-type], meta[charset]\").first();\n  String foundCharset = null; \n  if (meta != null) {\n  if (meta.hasAttr(\"http-equiv\")) {\n  foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n  }\n  if (foundCharset == null && meta.hasAttr(\"charset\")) {\n  foundCharset = meta.attr(\"charset\");\n  }\n  }\n  \n  if (foundCharset == null && doc.childNode(0) instanceof XmlDeclaration) {\n  XmlDeclaration prolog = (XmlDeclaration) doc.childNode(0);\n  if (prolog.name().equals(\"xml\")) {\n  foundCharset = prolog.attr(\"encoding\");\n  }\n  }\n  foundCharset = validateCharset(foundCharset);\n\n  if (foundCharset != null && !foundCharset.equals(defaultCharset)) { \n  foundCharset = foundCharset.trim().replaceAll(\"[\\\"']\", \"\");\n  charsetName = foundCharset;\n  byteData.rewind();\n  docData = Charset.forName(foundCharset).decode(byteData).toString();\n  doc = null;\n  }\n  } else { \n  Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n  docData = Charset.forName(charsetName).decode(byteData).toString();\n  }\n  if (doc == null) {\n  doc = parser.parseInput(docData, baseUri);\n  doc.outputSettings().charset(charsetName);\n  }\n  return doc;\n  }",
+          "diff": [
+            "@@ -109,13 +109,7 @@",
+            "                     foundCharset = getCharsetFromContentType(meta.attr(\"content\"));\n",
+            "                 }\n",
+            "                 if (foundCharset == null && meta.hasAttr(\"charset\")) {\n",
+            "-                    try {\n",
+            "-                        if (Charset.isSupported(meta.attr(\"charset\"))) {\n",
+            "                     foundCharset = meta.attr(\"charset\");\n",
+            "-                        }\n",
+            "-                    } catch (IllegalCharsetNameException e) {\n",
+            "-                        foundCharset = null;\n",
+            "-                    }\n",
+            "                 }\n",
+            "             }\n",
+            "             // look for <?xml encoding='ISO-8859-1'?>\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    },
+    {
+      "name": "org/jsoup/nodes/XmlDeclaration.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\n\nimport java.io.IOException;\n\n\npublic class XmlDeclaration extends Node { private final String name; private final boolean isProcessingInstruction; public XmlDeclaration(String name, String baseUri, boolean isProcessingInstruction) {\n        super(baseUri);\n        Validate.notNull(name);\n        this.name = name;\n        this.isProcessingInstruction = isProcessingInstruction;\n    }\n\n    public String nodeName() {\n        return \"#declaration\";\n    }\n\n\n    \n    public String name() {\n        return name;\n    }\n\n    \n    public String getWholeDeclaration() {\n        final String decl = this.name;\n        if(decl.equals(\"xml\") && attributes.size() > 1 ) {\n            StringBuilder sb = new StringBuilder(decl);\n            final String version = attributes.get(\"version\");\n            if( version != null ) {\n                sb.append(\" version=\\\"\").append(version).append(\"\\\"\");\n            }\n            final String encoding = attributes.get(\"encoding\");\n            if( encoding != null ) {\n                sb.append(\" encoding=\\\"\").append(encoding).append(\"\\\"\");\n            }\n            return sb.toString();\n        }\n        else {\n            return this.name;\n        }\n    }\n\n\tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n        accum\n            .append(\"<\")\n            .append(isProcessingInstruction ? \"!\" : \"?\")\n                .append(getWholeDeclaration())\n            .append(\">\");\n    }\n\n\tvoid outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}\n\n    @Override\n    public String toString() {\n        return outerHtml();\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\n\nimport java.io.IOException;\n\n\npublic class XmlDeclaration extends Node { private final String name; private final boolean isProcessingInstruction; public XmlDeclaration(String name, String baseUri, boolean isProcessingInstruction) {\n        super(baseUri);\n        Validate.notNull(name);\n        this.name = name;\n        this.isProcessingInstruction = isProcessingInstruction;\n    }\n\n    public String nodeName() {\n        return \"#declaration\";\n    }\n\n\n    \n    public String name() {\n        return name;\n    }\n\n    \n    public String getWholeDeclaration() {\n        return attributes.html().trim(); \n    }\n\n\tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n        accum\n            .append(\"<\")\n            .append(isProcessingInstruction ? \"!\" : \"?\")\n            .append(name);\n        attributes.html(accum, out);\n        accum\n            .append(isProcessingInstruction ? \"!\" : \"?\")\n            .append(\">\");\n    }\n\n\tvoid outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}\n\n    @Override\n    public String toString() {\n        return outerHtml();\n    }\n}\n",
+      "buggy_signatures": [
+        "public class XmlDeclaration extends Node { private final String name; private final boolean isProcessingInstruction; public XmlDeclaration(String name, String baseUri, boolean isProcessingInstruction)",
+        "public String nodeName()",
+        "public String name()",
+        "public String getWholeDeclaration()",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "public class XmlDeclaration extends Node { private final String name; private final boolean isProcessingInstruction; public XmlDeclaration(String name, String baseUri, boolean isProcessingInstruction)",
+        "public String nodeName()",
+        "public String name()",
+        "public String getWholeDeclaration()",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public String getWholeDeclaration() {\n  final String decl = this.name;\n  if(decl.equals(\"xml\") && attributes.size() > 1 ) {\n  StringBuilder sb = new StringBuilder(decl);\n  final String version = attributes.get(\"version\");\n  if( version != null ) {\n  sb.append(\" version=\\\"\").append(version).append(\"\\\"\");\n  }\n  final String encoding = attributes.get(\"encoding\");\n  if( encoding != null ) {\n  sb.append(\" encoding=\\\"\").append(encoding).append(\"\\\"\");\n  }\n  return sb.toString();\n  }\n  else {\n  return this.name;\n  }\n  }",
+          "fixed_method": "  public String getWholeDeclaration() {\n  return attributes.html().trim(); \n  }",
+          "diff": [
+            "@@ -43,29 +43,17 @@",
+            "      @return XML declaration\n",
+            "      */\n",
+            "     public String getWholeDeclaration() {\n",
+            "-        final String decl = this.name;\n",
+            "-        if(decl.equals(\"xml\") && attributes.size() > 1 ) {\n",
+            "-            StringBuilder sb = new StringBuilder(decl);\n",
+            "-            final String version = attributes.get(\"version\");\n",
+            "-            if( version != null ) {\n",
+            "-                sb.append(\" version=\\\"\").append(version).append(\"\\\"\");\n",
+            "-            }\n",
+            "-            final String encoding = attributes.get(\"encoding\");\n",
+            "-            if( encoding != null ) {\n",
+            "-                sb.append(\" encoding=\\\"\").append(encoding).append(\"\\\"\");\n",
+            "-            }\n",
+            "-            return sb.toString();\n",
+            "-        }\n",
+            "-        else {\n",
+            "-            return this.name;\n",
+            "-        }\n",
+            "+        return attributes.html().trim(); // attr html starts with a \" \"\n",
+            "     }\n",
+            " \n",
+            " \tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n",
+            "         accum\n",
+            "             .append(\"<\")\n",
+            "             .append(isProcessingInstruction ? \"!\" : \"?\")\n",
+            "-                .append(getWholeDeclaration())\n",
+            "+            .append(name);\n",
+            "+        attributes.html(accum, out);\n",
+            "+        accum\n",
+            "+            .append(isProcessingInstruction ? \"!\" : \"?\")\n",
+            "             .append(\">\");\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 22
+        }
+      ]
+    },
+    {
+      "name": "org/jsoup/parser/XmlTreeBuilder.java",
+      "buggy_full_code": "package org.jsoup.parser;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\n\nimport java.util.List;\n\n\npublic class XmlTreeBuilder extends TreeBuilder { @Override protected void initialiseParse(String input, String baseUri, ParseErrorList errors) {\n        super.initialiseParse(input, baseUri, errors);\n        stack.add(doc); \n        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);\n    }\n\n    @Override\n    protected boolean process(Token token) {\n        \n        switch (token.type) {\n            case StartTag:\n                insert(token.asStartTag());\n                break;\n            case EndTag:\n                popStackToClose(token.asEndTag());\n                break;\n            case Comment:\n                insert(token.asComment());\n                break;\n            case Character:\n                insert(token.asCharacter());\n                break;\n            case Doctype:\n                insert(token.asDoctype());\n                break;\n            case EOF: \n                break;\n            default:\n                Validate.fail(\"Unexpected token type: \" + token.type);\n        }\n        return true;\n    }\n\n    private void insertNode(Node node) {\n        currentElement().appendChild(node);\n    }\n\n    Element insert(Token.StartTag startTag) {\n        Tag tag = Tag.valueOf(startTag.name());\n        \n        Element el = new Element(tag, baseUri, startTag.attributes);\n        insertNode(el);\n        if (startTag.isSelfClosing()) {\n            tokeniser.acknowledgeSelfClosingFlag();\n            if (!tag.isKnownTag()) \n                tag.setSelfClosing();\n        } else {\n            stack.add(el);\n        }\n        return el;\n    }\n\n    void insert(Token.Comment commentToken) {\n        Comment comment = new Comment(commentToken.getData(), baseUri);\n        Node insert = comment;\n        if (commentToken.bogus) { \n            \n            String data = comment.getData();\n            if (data.length() > 1 && (data.startsWith(\"!\") || data.startsWith(\"?\"))) {\n                String declaration = data.substring(1);\n                insert = new XmlDeclaration(declaration, comment.baseUri(), data.startsWith(\"!\"));\n            }\n        }\n        insertNode(insert);\n    }\n\n    void insert(Token.Character characterToken) {\n        Node node = new TextNode(characterToken.getData(), baseUri);\n        insertNode(node);\n    }\n\n    void insert(Token.Doctype d) {\n        DocumentType doctypeNode = new DocumentType(d.getName(), d.getPublicIdentifier(), d.getSystemIdentifier(), baseUri);\n        insertNode(doctypeNode);\n    }\n\n    \n    private void popStackToClose(Token.EndTag endTag) {\n        String elName = endTag.name();\n        Element firstFound = null;\n\n        for (int pos = stack.size() -1; pos >= 0; pos--) {\n            Element next = stack.get(pos);\n            if (next.nodeName().equals(elName)) {\n                firstFound = next;\n                break;\n            }\n        }\n        if (firstFound == null)\n            return; \n\n        for (int pos = stack.size() -1; pos >= 0; pos--) {\n            Element next = stack.get(pos);\n            stack.remove(pos);\n            if (next == firstFound)\n                break;\n        }\n    }\n\n    List<Node> parseFragment(String inputFragment, String baseUri, ParseErrorList errors) {\n        initialiseParse(inputFragment, baseUri, errors);\n        runParser();\n        return doc.childNodes();\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.parser;\n\nimport org.jsoup.Jsoup;\nimport org.jsoup.helper.Validate;\nimport org.jsoup.nodes.*;\n\nimport java.util.List;\n\n\npublic class XmlTreeBuilder extends TreeBuilder { @Override protected void initialiseParse(String input, String baseUri, ParseErrorList errors) {\n        super.initialiseParse(input, baseUri, errors);\n        stack.add(doc); \n        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);\n    }\n\n    @Override\n    protected boolean process(Token token) {\n        \n        switch (token.type) {\n            case StartTag:\n                insert(token.asStartTag());\n                break;\n            case EndTag:\n                popStackToClose(token.asEndTag());\n                break;\n            case Comment:\n                insert(token.asComment());\n                break;\n            case Character:\n                insert(token.asCharacter());\n                break;\n            case Doctype:\n                insert(token.asDoctype());\n                break;\n            case EOF: \n                break;\n            default:\n                Validate.fail(\"Unexpected token type: \" + token.type);\n        }\n        return true;\n    }\n\n    private void insertNode(Node node) {\n        currentElement().appendChild(node);\n    }\n\n    Element insert(Token.StartTag startTag) {\n        Tag tag = Tag.valueOf(startTag.name());\n        \n        Element el = new Element(tag, baseUri, startTag.attributes);\n        insertNode(el);\n        if (startTag.isSelfClosing()) {\n            tokeniser.acknowledgeSelfClosingFlag();\n            if (!tag.isKnownTag()) \n                tag.setSelfClosing();\n        } else {\n            stack.add(el);\n        }\n        return el;\n    }\n\n    void insert(Token.Comment commentToken) {\n        Comment comment = new Comment(commentToken.getData(), baseUri);\n        Node insert = comment;\n        if (commentToken.bogus) { \n            \n            String data = comment.getData();\n            if (data.length() > 1 && (data.startsWith(\"!\") || data.startsWith(\"?\"))) {\n                Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri, Parser.xmlParser());\n                Element el = doc.child(0);\n                insert = new XmlDeclaration(el.tagName(), comment.baseUri(), data.startsWith(\"!\"));\n                insert.attributes().addAll(el.attributes());\n            }\n        }\n        insertNode(insert);\n    }\n\n    void insert(Token.Character characterToken) {\n        Node node = new TextNode(characterToken.getData(), baseUri);\n        insertNode(node);\n    }\n\n    void insert(Token.Doctype d) {\n        DocumentType doctypeNode = new DocumentType(d.getName(), d.getPublicIdentifier(), d.getSystemIdentifier(), baseUri);\n        insertNode(doctypeNode);\n    }\n\n    \n    private void popStackToClose(Token.EndTag endTag) {\n        String elName = endTag.name();\n        Element firstFound = null;\n\n        for (int pos = stack.size() -1; pos >= 0; pos--) {\n            Element next = stack.get(pos);\n            if (next.nodeName().equals(elName)) {\n                firstFound = next;\n                break;\n            }\n        }\n        if (firstFound == null)\n            return; \n\n        for (int pos = stack.size() -1; pos >= 0; pos--) {\n            Element next = stack.get(pos);\n            stack.remove(pos);\n            if (next == firstFound)\n                break;\n        }\n    }\n\n    List<Node> parseFragment(String inputFragment, String baseUri, ParseErrorList errors) {\n        initialiseParse(inputFragment, baseUri, errors);\n        runParser();\n        return doc.childNodes();\n    }\n}\n",
+      "buggy_signatures": [
+        "public class XmlTreeBuilder extends TreeBuilder { @Override protected void initialiseParse(String input, String baseUri, ParseErrorList errors)",
+        "protected boolean process(Token token)",
+        "private void insertNode(Node node)",
+        "private void popStackToClose(Token.EndTag endTag)"
+      ],
+      "fixed_signatures": [
+        "public class XmlTreeBuilder extends TreeBuilder { @Override protected void initialiseParse(String input, String baseUri, ParseErrorList errors)",
+        "protected boolean process(Token token)",
+        "private void insertNode(Node node)",
+        "private void popStackToClose(Token.EndTag endTag)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -1,5 +1,6 @@",
+            " package org.jsoup.parser;\n",
+            " \n",
+            "+import org.jsoup.Jsoup;\n",
+            " import org.jsoup.helper.Validate;\n",
+            " import org.jsoup.nodes.*;\n",
+            " \n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  private void insertNode(Node node) {\n  currentElement().appendChild(node);\n  }",
+          "fixed_method": "  private void insertNode(Node node) {\n  currentElement().appendChild(node);\n  }",
+          "diff": [
+            "@@ -73,8 +74,10 @@",
+            "             // so we do a bit of a hack and parse the data as an element to pull the attributes out\n",
+            "             String data = comment.getData();\n",
+            "             if (data.length() > 1 && (data.startsWith(\"!\") || data.startsWith(\"?\"))) {\n",
+            "-                String declaration = data.substring(1);\n",
+            "-                insert = new XmlDeclaration(declaration, comment.baseUri(), data.startsWith(\"!\"));\n",
+            "+                Document doc = Jsoup.parse(\"<\" + data.substring(1, data.length() -1) + \">\", baseUri, Parser.xmlParser());\n",
+            "+                Element el = doc.child(0);\n",
+            "+                insert = new XmlDeclaration(el.tagName(), comment.baseUri(), data.startsWith(\"!\"));\n",
+            "+                insert.attributes().addAll(el.attributes());\n",
+            "             }\n",
+            "         }\n",
+            "         insertNode(insert);\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

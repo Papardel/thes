@@ -1,0 +1,95 @@
+{
+  "bug_id": "34",
+  "failed_tests": {
+    "org.apache.commons.compress.archivers.zip.X7875_NewUnixTest": [
+      {
+        "methodName": "testParseReparse",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<0> but was:<5>",
+        "fail_line": "        parseReparse(0, 0, ZERO_LEN, 0, 0);",
+        "test_source": "  public void testParseReparse() throws ZipException {\n\n  // Version=1, Len=0, Len=0.\n  final byte[] ZERO_LEN = {1, 0, 0};\n\n  // Version=1, Len=1, zero, Len=1, zero.\n  final byte[] ZERO_UID_GID = {1, 1, 0, 1, 0};\n\n  // Version=1, Len=1, one, Len=1, one\n  final byte[] ONE_UID_GID = {1, 1, 1, 1, 1};\n\n  // Version=1, Len=2, one thousand, Len=2, one thousand\n  final byte[] ONE_THOUSAND_UID_GID = {1, 2, -24, 3, 2, -24, 3};\n\n  // (2^32 - 2).  I guess they avoid (2^32 - 1) since it's identical to -1 in\n  // two's complement, and -1 often has a special meaning.\n  final byte[] UNIX_MAX_UID_GID = {1, 4, -2, -1, -1, -1, 4, -2, -1, -1, -1};\n\n  // Version=1, Len=5, 2^32, Len=5, 2^32 + 1\n  // Esoteric test:  can we handle 40 bit numbers?\n  final byte[] LENGTH_5 = {1, 5, 0, 0, 0, 0, 1, 5, 1, 0, 0, 0, 1};\n\n  // Version=1, Len=8, 2^63 - 2, Len=8, 2^63 - 1\n  // Esoteric test:  can we handle 64 bit numbers?\n  final byte[] LENGTH_8 = {1, 8, -2, -1, -1, -1, -1, -1, -1, 127, 8, -1, -1, -1, -1, -1, -1, -1, 127};\n\n  final long TWO_TO_32 = 0x100000000L;\n  final long MAX = TWO_TO_32 - 2;\n\n  parseReparse(0, 0, ZERO_LEN, 0, 0);\n  parseReparse(0, 0, ZERO_UID_GID, 0, 0);\n  parseReparse(1, 1, ONE_UID_GID, 1, 1);\n  parseReparse(1000, 1000, ONE_THOUSAND_UID_GID, 1000, 1000);\n  parseReparse(MAX, MAX, UNIX_MAX_UID_GID, MAX, MAX);\n  parseReparse(-2, -2, UNIX_MAX_UID_GID, MAX, MAX);\n  parseReparse(TWO_TO_32, TWO_TO_32 + 1, LENGTH_5, TWO_TO_32, TWO_TO_32 + 1);\n  parseReparse(Long.MAX_VALUE - 1, Long.MAX_VALUE, LENGTH_8, Long.MAX_VALUE - 1, Long.MAX_VALUE);\n\n  // We never emit this, but we should be able to parse it:\n  final byte[] SPURIOUS_ZEROES_1 = {1, 4, -1, 0, 0, 0, 4, -128, 0, 0, 0};\n  final byte[] EXPECTED_1 = {1, 1, -1, 1, -128};\n  xf.parseFromLocalFileData(SPURIOUS_ZEROES_1, 0, SPURIOUS_ZEROES_1.length);\n\n  assertEquals(255, xf.getUID());\n  assertEquals(128, xf.getGID());\n  assertTrue(Arrays.equals(EXPECTED_1, xf.getLocalFileDataData()));\n\n  final byte[] SPURIOUS_ZEROES_2 = {1, 4, -1, -1, 0, 0, 4, 1, 2, 0, 0};\n  final byte[] EXPECTED_2 = {1, 2, -1, -1, 2, 1, 2};\n  xf.parseFromLocalFileData(SPURIOUS_ZEROES_2, 0, SPURIOUS_ZEROES_2.length);\n\n  assertEquals(65535, xf.getUID());\n  assertEquals(513, xf.getGID());\n  assertTrue(Arrays.equals(EXPECTED_2, xf.getLocalFileDataData()));\n  }",
+        "stack": [
+          "X7875_NewUnixTest.parseReparse line 236, X7875_NewUnixTest.testParseReparse line 168"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/archivers/zip/X7875_NewUnix.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.archivers.zip;\n\nimport java.io.Serializable;\nimport java.math.BigInteger;\nimport java.util.zip.ZipException;\n\nimport static org.apache.commons.compress.archivers.zip.ZipUtil.reverse; import static org.apache.commons.compress.archivers.zip.ZipUtil.signedByteToUnsignedInt; import static org.apache.commons.compress.archivers.zip.ZipUtil.unsignedIntToSignedByte; public class X7875_NewUnix implements ZipExtraField, Cloneable, Serializable { private static final ZipShort HEADER_ID = new ZipShort(0x7875); private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1000); private static final long serialVersionUID = 1L; private int version = 1; private BigInteger uid; private BigInteger gid; public X7875_NewUnix() {\n        reset();\n    }\n\n    \n    public ZipShort getHeaderId() {\n        return HEADER_ID;\n    }\n\n    \n    public long getUID() { return ZipUtil.bigToLong(uid); }\n\n    \n    public long getGID() { return ZipUtil.bigToLong(gid); }\n\n    \n    public void setUID(long l) {\n        this.uid = ZipUtil.longToBig(l);\n    }\n\n    \n    public void setGID(long l) {\n        this.gid = ZipUtil.longToBig(l);\n    }\n\n    \n    public ZipShort getLocalFileDataLength() {\n        int uidSize = trimLeadingZeroesForceMinLength(uid.toByteArray()).length;\n        int gidSize = trimLeadingZeroesForceMinLength(gid.toByteArray()).length;\n\n        \n        return new ZipShort(3 + uidSize + gidSize);\n    }\n\n    \n    public ZipShort getCentralDirectoryLength() {\n        return getLocalFileDataLength();\n    }\n\n    \n    public byte[] getLocalFileDataData() {\n        byte[] uidBytes = uid.toByteArray();\n        byte[] gidBytes = gid.toByteArray();\n\n        \n        \n        \n        uidBytes = trimLeadingZeroesForceMinLength(uidBytes);\n        gidBytes = trimLeadingZeroesForceMinLength(gidBytes);\n\n        \n        \n        \n        \n        \n        byte[] data = new byte[3 + uidBytes.length + gidBytes.length];\n\n        \n        reverse(uidBytes);\n        reverse(gidBytes);\n\n        int pos = 0;\n        data[pos++] = unsignedIntToSignedByte(version);\n        data[pos++] = unsignedIntToSignedByte(uidBytes.length);\n        System.arraycopy(uidBytes, 0, data, pos, uidBytes.length);\n        pos += uidBytes.length;\n        data[pos++] = unsignedIntToSignedByte(gidBytes.length);\n        System.arraycopy(gidBytes, 0, data, pos, gidBytes.length);\n        return data;\n    }\n\n    \n    public byte[] getCentralDirectoryData() {\n        return new byte[0];\n    }\n\n    \n    public void parseFromLocalFileData( byte[] data, int offset, int length ) throws ZipException {\n        reset();\n        this.version = signedByteToUnsignedInt(data[offset++]);\n        int uidSize = signedByteToUnsignedInt(data[offset++]);\n        byte[] uidBytes = new byte[uidSize];\n        System.arraycopy(data, offset, uidBytes, 0, uidSize);\n        offset += uidSize;\n        this.uid = new BigInteger(1, reverse(uidBytes)); \n\n        int gidSize = signedByteToUnsignedInt(data[offset++]);\n        byte[] gidBytes = new byte[gidSize];\n        System.arraycopy(data, offset, gidBytes, 0, gidSize);\n        this.gid = new BigInteger(1, reverse(gidBytes)); \n    }\n\n    \n    public void parseFromCentralDirectoryData( byte[] buffer, int offset, int length ) throws ZipException {\n    }\n\n    \n    private void reset() {\n        \n        uid = ONE_THOUSAND;\n        gid = ONE_THOUSAND;\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"0x7875 Zip Extra Field: UID=\" + uid + \" GID=\" + gid;\n    }\n\n    @Override\n    public Object clone() throws CloneNotSupportedException {\n        return super.clone();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o instanceof X7875_NewUnix) {\n            X7875_NewUnix xf = (X7875_NewUnix) o;\n            \n            return version == xf.version && uid.equals(xf.uid) && gid.equals(xf.gid);\n        }\n        return false;\n    }\n\n    @Override\n    public int hashCode() {\n        int hc = -1234567 * version;\n        \n        \n        \n        hc ^= Integer.rotateLeft(uid.hashCode(), 16);\n        hc ^= gid.hashCode();\n        return hc;\n    }\n\n    \n    static byte[] trimLeadingZeroesForceMinLength(byte[] array) {\n        if (array == null) {\n            return array;\n        }\n\n        int pos = 0;\n        for (byte b : array) {\n            if (b == 0) {\n                pos++;\n            } else {\n                break;\n            }\n        }\n\n        \n        final int MIN_LENGTH = 1;\n\n        byte[] trimmedArray = new byte[Math.max(MIN_LENGTH, array.length - pos)];\n        int startPos = trimmedArray.length - (array.length - pos);\n        System.arraycopy(array, pos, trimmedArray, startPos, trimmedArray.length - startPos);\n        return trimmedArray;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.archivers.zip;\n\nimport java.io.Serializable;\nimport java.math.BigInteger;\nimport java.util.zip.ZipException;\n\nimport static org.apache.commons.compress.archivers.zip.ZipUtil.reverse; import static org.apache.commons.compress.archivers.zip.ZipUtil.signedByteToUnsignedInt; import static org.apache.commons.compress.archivers.zip.ZipUtil.unsignedIntToSignedByte; public class X7875_NewUnix implements ZipExtraField, Cloneable, Serializable { private static final ZipShort HEADER_ID = new ZipShort(0x7875); private static final ZipShort ZERO = new ZipShort(0); private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1000); private static final long serialVersionUID = 1L; private int version = 1; private BigInteger uid; private BigInteger gid; public X7875_NewUnix() {\n        reset();\n    }\n\n    \n    public ZipShort getHeaderId() {\n        return HEADER_ID;\n    }\n\n    \n    public long getUID() { return ZipUtil.bigToLong(uid); }\n\n    \n    public long getGID() { return ZipUtil.bigToLong(gid); }\n\n    \n    public void setUID(long l) {\n        this.uid = ZipUtil.longToBig(l);\n    }\n\n    \n    public void setGID(long l) {\n        this.gid = ZipUtil.longToBig(l);\n    }\n\n    \n    public ZipShort getLocalFileDataLength() {\n        int uidSize = trimLeadingZeroesForceMinLength(uid.toByteArray()).length;\n        int gidSize = trimLeadingZeroesForceMinLength(gid.toByteArray()).length;\n\n        \n        return new ZipShort(3 + uidSize + gidSize);\n    }\n\n    \n    public ZipShort getCentralDirectoryLength() {\n        return ZERO;\n    }\n\n    \n    public byte[] getLocalFileDataData() {\n        byte[] uidBytes = uid.toByteArray();\n        byte[] gidBytes = gid.toByteArray();\n\n        \n        \n        \n        uidBytes = trimLeadingZeroesForceMinLength(uidBytes);\n        gidBytes = trimLeadingZeroesForceMinLength(gidBytes);\n\n        \n        \n        \n        \n        \n        byte[] data = new byte[3 + uidBytes.length + gidBytes.length];\n\n        \n        reverse(uidBytes);\n        reverse(gidBytes);\n\n        int pos = 0;\n        data[pos++] = unsignedIntToSignedByte(version);\n        data[pos++] = unsignedIntToSignedByte(uidBytes.length);\n        System.arraycopy(uidBytes, 0, data, pos, uidBytes.length);\n        pos += uidBytes.length;\n        data[pos++] = unsignedIntToSignedByte(gidBytes.length);\n        System.arraycopy(gidBytes, 0, data, pos, gidBytes.length);\n        return data;\n    }\n\n    \n    public byte[] getCentralDirectoryData() {\n        return new byte[0];\n    }\n\n    \n    public void parseFromLocalFileData( byte[] data, int offset, int length ) throws ZipException {\n        reset();\n        this.version = signedByteToUnsignedInt(data[offset++]);\n        int uidSize = signedByteToUnsignedInt(data[offset++]);\n        byte[] uidBytes = new byte[uidSize];\n        System.arraycopy(data, offset, uidBytes, 0, uidSize);\n        offset += uidSize;\n        this.uid = new BigInteger(1, reverse(uidBytes)); \n\n        int gidSize = signedByteToUnsignedInt(data[offset++]);\n        byte[] gidBytes = new byte[gidSize];\n        System.arraycopy(data, offset, gidBytes, 0, gidSize);\n        this.gid = new BigInteger(1, reverse(gidBytes)); \n    }\n\n    \n    public void parseFromCentralDirectoryData( byte[] buffer, int offset, int length ) throws ZipException {\n    }\n\n    \n    private void reset() {\n        \n        uid = ONE_THOUSAND;\n        gid = ONE_THOUSAND;\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"0x7875 Zip Extra Field: UID=\" + uid + \" GID=\" + gid;\n    }\n\n    @Override\n    public Object clone() throws CloneNotSupportedException {\n        return super.clone();\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        if (o instanceof X7875_NewUnix) {\n            X7875_NewUnix xf = (X7875_NewUnix) o;\n            \n            return version == xf.version && uid.equals(xf.uid) && gid.equals(xf.gid);\n        }\n        return false;\n    }\n\n    @Override\n    public int hashCode() {\n        int hc = -1234567 * version;\n        \n        \n        \n        hc ^= Integer.rotateLeft(uid.hashCode(), 16);\n        hc ^= gid.hashCode();\n        return hc;\n    }\n\n    \n    static byte[] trimLeadingZeroesForceMinLength(byte[] array) {\n        if (array == null) {\n            return array;\n        }\n\n        int pos = 0;\n        for (byte b : array) {\n            if (b == 0) {\n                pos++;\n            } else {\n                break;\n            }\n        }\n\n        \n        final int MIN_LENGTH = 1;\n\n        byte[] trimmedArray = new byte[Math.max(MIN_LENGTH, array.length - pos)];\n        int startPos = trimmedArray.length - (array.length - pos);\n        System.arraycopy(array, pos, trimmedArray, startPos, trimmedArray.length - startPos);\n        return trimmedArray;\n    }\n}\n",
+      "buggy_signatures": [
+        "public ZipShort getHeaderId()",
+        "public long getUID()",
+        "public long getGID()",
+        "public void setUID(long l)",
+        "public void setGID(long l)",
+        "public ZipShort getLocalFileDataLength()",
+        "public ZipShort getCentralDirectoryLength()",
+        "public byte[] getLocalFileDataData()",
+        "public byte[] getCentralDirectoryData()",
+        "public void parseFromLocalFileData( byte[] data, int offset, int length ) throws ZipException",
+        "public void parseFromCentralDirectoryData( byte[] buffer, int offset, int length ) throws ZipException",
+        "private void reset()",
+        "public String toString()",
+        "public Object clone() throws CloneNotSupportedException",
+        "public boolean equals(Object o)",
+        "public int hashCode()",
+        "static byte[] trimLeadingZeroesForceMinLength(byte[] array)"
+      ],
+      "fixed_signatures": [
+        "public ZipShort getHeaderId()",
+        "public long getUID()",
+        "public long getGID()",
+        "public void setUID(long l)",
+        "public void setGID(long l)",
+        "public ZipShort getLocalFileDataLength()",
+        "public ZipShort getCentralDirectoryLength()",
+        "public byte[] getLocalFileDataData()",
+        "public byte[] getCentralDirectoryData()",
+        "public void parseFromLocalFileData( byte[] data, int offset, int length ) throws ZipException",
+        "public void parseFromCentralDirectoryData( byte[] buffer, int offset, int length ) throws ZipException",
+        "private void reset()",
+        "public String toString()",
+        "public Object clone() throws CloneNotSupportedException",
+        "public boolean equals(Object o)",
+        "public int hashCode()",
+        "static byte[] trimLeadingZeroesForceMinLength(byte[] array)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1000); private static final long serialVersionUID = 1L; private int version = 1; private BigInteger uid; private BigInteger gid; public X7875_NewUnix() {\n  reset();\n  }",
+          "fixed_method": "  private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1000); private static final long serialVersionUID = 1L; private int version = 1; private BigInteger uid; private BigInteger gid; public X7875_NewUnix() {\n  reset();\n  }",
+          "diff": [
+            "@@ -55,6 +55,7 @@",
+            "  */\n",
+            " public class X7875_NewUnix implements ZipExtraField, Cloneable, Serializable {\n",
+            "     private static final ZipShort HEADER_ID = new ZipShort(0x7875);\n",
+            "+    private static final ZipShort ZERO = new ZipShort(0);\n",
+            "     private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1000);\n",
+            "     private static final long serialVersionUID = 1L;\n",
+            " \n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public ZipShort getCentralDirectoryLength() {\n  return getLocalFileDataLength();\n  }",
+          "fixed_method": "  public ZipShort getCentralDirectoryLength() {\n  return ZERO;\n  }",
+          "diff": [
+            "@@ -143,7 +144,7 @@",
+            "      * @return a <code>ZipShort</code> for the length of the data of this extra field\n",
+            "      */\n",
+            "     public ZipShort getCentralDirectoryLength() {\n",
+            "-        return getLocalFileDataLength();\n",
+            "+        return ZERO;\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

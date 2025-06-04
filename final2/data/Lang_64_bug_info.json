@@ -1,0 +1,84 @@
+{
+  "bug_id": "64",
+  "failed_tests": {
+    "org.apache.commons.lang.enums.ValuedEnumTest": [
+      {
+        "methodName": "testCompareTo_otherEnumType",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "            fail();",
+        "test_source": "  public void testCompareTo_otherEnumType() {\n  try {\n  ValuedColorEnum.BLUE.compareTo(ValuedLanguageEnum.ENGLISH);\n  fail();\n  } catch (ClassCastException ex) {\n  // expected\n  }\n  }",
+        "stack": [
+          "ValuedEnumTest.testCompareTo_otherEnumType line 108"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang/enums/ValuedEnum.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang.enums;\n\nimport java.lang.reflect.InvocationTargetException;\nimport java.lang.reflect.Method;\nimport java.util.Iterator;\nimport java.util.List;\n\nimport org.apache.commons.lang.ClassUtils;\n\n\npublic abstract class ValuedEnum extends Enum { private static final long serialVersionUID = -7129650521543789085L; private final int iValue; protected ValuedEnum(String name, int value) {\n        super(name);\n        iValue = value;\n    }\n\n    \n    protected static Enum getEnum(Class enumClass, int value) {\n        if (enumClass == null) {\n            throw new IllegalArgumentException(\"The Enum Class must not be null\");\n        }\n        List list = Enum.getEnumList(enumClass);\n        for (Iterator it = list.iterator(); it.hasNext();) {\n            ValuedEnum enumeration = (ValuedEnum) it.next();\n            if (enumeration.getValue() == value) {\n                return enumeration;\n            }\n        }\n        return null;\n    }\n\n    \n    public final int getValue() {\n        return iValue;\n    }\n\n    \n    public int compareTo(Object other) {\n        return iValue - ((ValuedEnum) other).iValue;\n    }\n\n    \n            \n            \n            \n\n    \n    public String toString() {\n        if (iToString == null) {\n            String shortName = ClassUtils.getShortClassName(getEnumClass());\n            iToString = shortName + \"[\" + getName() + \"=\" + getValue() + \"]\";\n        }\n        return iToString;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang.enums;\n\nimport java.lang.reflect.InvocationTargetException;\nimport java.lang.reflect.Method;\nimport java.util.Iterator;\nimport java.util.List;\n\nimport org.apache.commons.lang.ClassUtils;\n\n\npublic abstract class ValuedEnum extends Enum { private static final long serialVersionUID = -7129650521543789085L; private final int iValue; protected ValuedEnum(String name, int value) {\n        super(name);\n        iValue = value;\n    }\n\n    \n    protected static Enum getEnum(Class enumClass, int value) {\n        if (enumClass == null) {\n            throw new IllegalArgumentException(\"The Enum Class must not be null\");\n        }\n        List list = Enum.getEnumList(enumClass);\n        for (Iterator it = list.iterator(); it.hasNext();) {\n            ValuedEnum enumeration = (ValuedEnum) it.next();\n            if (enumeration.getValue() == value) {\n                return enumeration;\n            }\n        }\n        return null;\n    }\n\n    \n    public final int getValue() {\n        return iValue;\n    }\n\n    \n    public int compareTo(Object other) {\n        if (other == this) {\n            return 0;\n        }\n        if (other.getClass() != this.getClass()) {\n            if (other.getClass().getName().equals(this.getClass().getName())) {\n                return iValue - getValueInOtherClassLoader(other);\n            }\n            throw new ClassCastException(\n                    \"Different enum class '\" + ClassUtils.getShortClassName(other.getClass()) + \"'\");\n        }\n        return iValue - ((ValuedEnum) other).iValue;\n    }\n\n    \n    private int getValueInOtherClassLoader(Object other) {\n        try {\n            Method mth = other.getClass().getMethod(\"getValue\", null);\n            Integer value = (Integer) mth.invoke(other, null);\n            return value.intValue();\n        } catch (NoSuchMethodException e) {\n            \n        } catch (IllegalAccessException e) {\n            \n        } catch (InvocationTargetException e) {\n            \n        }\n        throw new IllegalStateException(\"This should not happen\");\n    }\n\n    \n    public String toString() {\n        if (iToString == null) {\n            String shortName = ClassUtils.getShortClassName(getEnumClass());\n            iToString = shortName + \"[\" + getName() + \"=\" + getValue() + \"]\";\n        }\n        return iToString;\n    }\n}\n",
+      "buggy_signatures": [
+        "protected static Enum getEnum(Class enumClass, int value)",
+        "public final int getValue()",
+        "public int compareTo(Object other)",
+        "public String toString()"
+      ],
+      "fixed_signatures": [
+        "protected static Enum getEnum(Class enumClass, int value)",
+        "public final int getValue()",
+        "public int compareTo(Object other)",
+        "private int getValueInOtherClassLoader(Object other)",
+        "public String toString()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public int compareTo(Object other) {\n  return iValue - ((ValuedEnum) other).iValue;\n  }",
+          "fixed_method": "  public int compareTo(Object other) {\n  if (other == this) {\n  return 0;\n  }\n  if (other.getClass() != this.getClass()) {\n  if (other.getClass().getName().equals(this.getClass().getName())) {\n  return iValue - getValueInOtherClassLoader(other);\n  }\n  throw new ClassCastException(\n  \"Different enum class '\" + ClassUtils.getShortClassName(other.getClass()) + \"'\");\n  }\n  return iValue - ((ValuedEnum) other).iValue;\n  }",
+          "diff": [
+            "@@ -180,6 +180,16 @@",
+            "      * @throws NullPointerException if other is <code>null</code>\n",
+            "      */\n",
+            "     public int compareTo(Object other) {\n",
+            "+        if (other == this) {\n",
+            "+            return 0;\n",
+            "+        }\n",
+            "+        if (other.getClass() != this.getClass()) {\n",
+            "+            if (other.getClass().getName().equals(this.getClass().getName())) {\n",
+            "+                return iValue - getValueInOtherClassLoader(other);\n",
+            "+            }\n",
+            "+            throw new ClassCastException(\n",
+            "+                    \"Different enum class '\" + ClassUtils.getShortClassName(other.getClass()) + \"'\");\n",
+            "+        }\n",
+            "         return iValue - ((ValuedEnum) other).iValue;\n",
+            "     }\n",
+            " \n",
+            "@@ -189,9 +199,20 @@",
+            "      * @param other  the object to determine the value for\n",
+            "      * @return the value\n",
+            "      */\n",
+            "+    private int getValueInOtherClassLoader(Object other) {\n",
+            "+        try {\n",
+            "+            Method mth = other.getClass().getMethod(\"getValue\", null);\n",
+            "+            Integer value = (Integer) mth.invoke(other, null);\n",
+            "+            return value.intValue();\n",
+            "+        } catch (NoSuchMethodException e) {\n",
+            "             // ignore - should never happen\n",
+            "+        } catch (IllegalAccessException e) {\n",
+            "             // ignore - should never happen\n",
+            "+        } catch (InvocationTargetException e) {\n",
+            "             // ignore - should never happen\n",
+            "+        }\n",
+            "+        throw new IllegalStateException(\"This should not happen\");\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * <p>Human readable description of this <code>Enum</code> item.</p>\n"
+          ],
+          "changed_lines": 21
+        }
+      ]
+    }
+  ]
+}

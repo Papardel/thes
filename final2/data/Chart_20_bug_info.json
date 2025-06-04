@@ -1,0 +1,58 @@
+{
+  "bug_id": "20",
+  "failed_tests": {
+    "org.jfree.chart.plot.junit.ValueMarkerTests": [
+      {
+        "methodName": "test1808376",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<java.awt.Color[r=0,g=0,b=255]> but was:<java.awt.Color[r=255,g=0,b=0]>",
+        "fail_line": "        assertEquals(Color.blue, m.getOutlinePaint());",
+        "test_source": "  public void test1808376() {\n  Stroke stroke = new BasicStroke(1.0f);\n  Stroke outlineStroke = new BasicStroke(2.0f);\n  ValueMarker m = new ValueMarker(1.0, Color.red, stroke, Color.blue, \n  outlineStroke, 0.5f);\n  assertEquals(1.0, m.getValue(), EPSILON);\n  assertEquals(Color.red, m.getPaint());\n  assertEquals(stroke, m.getStroke());\n  assertEquals(Color.blue, m.getOutlinePaint());\n  assertEquals(outlineStroke, m.getOutlineStroke());\n  assertEquals(0.5f, m.getAlpha(), EPSILON);\n  }",
+        "stack": [
+          "ValueMarkerTests.test1808376 line 297"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jfree/chart/plot/ValueMarker.java",
+      "buggy_full_code": "\n\npackage org.jfree.chart.plot;\n\nimport java.awt.Paint;\nimport java.awt.Stroke;\n\nimport org.jfree.chart.event.MarkerChangeEvent;\n\n\npublic class ValueMarker extends Marker { private double value; public ValueMarker(double value) {\n        super();\n        this.value = value;\n    }\n    \n    \n    public ValueMarker(double value, Paint paint, Stroke stroke) {\n        this(value, paint, stroke, paint, stroke, 1.0f);\n    }\n    \n    \n    public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha) {\n        super(paint, stroke, paint, stroke, alpha);\n        this.value = value;\n    }\n    \n    \n    public double getValue() {\n        return this.value;\n    }\n    \n    \n    public void setValue(double value) { \n        this.value = value;\n        notifyListeners(new MarkerChangeEvent(this));\n    }\n\n    \n    public boolean equals(Object obj) {\n        if (obj == this) {\n            return true;\n        }\n        if (!super.equals(obj)) {\n            return false;\n        }\n        if (!(obj instanceof ValueMarker)) {\n            return false;\n        }\n        ValueMarker that = (ValueMarker) obj;\n        if (this.value != that.value) {\n            return false;\n        }\n        return true;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.jfree.chart.plot;\n\nimport java.awt.Paint;\nimport java.awt.Stroke;\n\nimport org.jfree.chart.event.MarkerChangeEvent;\n\n\npublic class ValueMarker extends Marker { private double value; public ValueMarker(double value) {\n        super();\n        this.value = value;\n    }\n    \n    \n    public ValueMarker(double value, Paint paint, Stroke stroke) {\n        this(value, paint, stroke, paint, stroke, 1.0f);\n    }\n    \n    \n    public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha) {\n        super(paint, stroke, outlinePaint, outlineStroke, alpha);\n        this.value = value;\n    }\n    \n    \n    public double getValue() {\n        return this.value;\n    }\n    \n    \n    public void setValue(double value) { \n        this.value = value;\n        notifyListeners(new MarkerChangeEvent(this));\n    }\n\n    \n    public boolean equals(Object obj) {\n        if (obj == this) {\n            return true;\n        }\n        if (!super.equals(obj)) {\n            return false;\n        }\n        if (!(obj instanceof ValueMarker)) {\n            return false;\n        }\n        ValueMarker that = (ValueMarker) obj;\n        if (this.value != that.value) {\n            return false;\n        }\n        return true;\n    }\n}\n",
+      "buggy_signatures": [
+        "public class ValueMarker extends Marker { private double value; public ValueMarker(double value)",
+        "public ValueMarker(double value, Paint paint, Stroke stroke)",
+        "public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha)",
+        "public double getValue()",
+        "public void setValue(double value)",
+        "public boolean equals(Object obj)"
+      ],
+      "fixed_signatures": [
+        "public class ValueMarker extends Marker { private double value; public ValueMarker(double value)",
+        "public ValueMarker(double value, Paint paint, Stroke stroke)",
+        "public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha)",
+        "public double getValue()",
+        "public void setValue(double value)",
+        "public boolean equals(Object obj)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha) {\n  super(paint, stroke, paint, stroke, alpha);\n  this.value = value;\n  }",
+          "fixed_method": "  public ValueMarker(double value, Paint paint, Stroke stroke, Paint outlinePaint, Stroke outlineStroke, float alpha) {\n  super(paint, stroke, outlinePaint, outlineStroke, alpha);\n  this.value = value;\n  }",
+          "diff": [
+            "@@ -92,7 +92,7 @@",
+            "      */\n",
+            "     public ValueMarker(double value, Paint paint, Stroke stroke, \n",
+            "                        Paint outlinePaint, Stroke outlineStroke, float alpha) {\n",
+            "-        super(paint, stroke, paint, stroke, alpha);\n",
+            "+        super(paint, stroke, outlinePaint, outlineStroke, alpha);\n",
+            "         this.value = value;\n",
+            "     }\n",
+            "     \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

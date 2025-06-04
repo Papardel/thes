@@ -1,0 +1,119 @@
+{
+  "bug_id": "73",
+  "failed_tests": {
+    "org.jsoup.helper.W3CDomTest": [
+      {
+        "methodName": "namespacePreservation",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<http://[www.w3.org/1999/xhtml]> but was:<http://[example.com/clip]>",
+        "fail_line": "        assertEquals(\"http://www.w3.org/1999/xhtml\", picture.getNamespaceURI());",
+        "test_source": "  public void namespacePreservation() throws IOException {\n  File in = ParseTest.getFile(\"/htmltests/namespaces.xhtml\");\n  org.jsoup.nodes.Document jsoupDoc;\n  jsoupDoc = Jsoup.parse(in, \"UTF-8\");\n\n  Document doc;\n  org.jsoup.helper.W3CDom jDom = new org.jsoup.helper.W3CDom();\n  doc = jDom.fromJsoup(jsoupDoc);\n\n  Node htmlEl = doc.getChildNodes().item(0);\n  assertEquals(\"http://www.w3.org/1999/xhtml\", htmlEl.getNamespaceURI());\n  assertEquals(\"html\", htmlEl.getLocalName());\n  assertEquals(\"html\", htmlEl.getNodeName());\n\n  // inherits default namespace\n  Node head = htmlEl.getFirstChild();\n  assertEquals(\"http://www.w3.org/1999/xhtml\", head.getNamespaceURI());\n  assertEquals(\"head\", head.getLocalName());\n  assertEquals(\"head\", head.getNodeName());\n\n  Node epubTitle = htmlEl.getChildNodes().item(2).getChildNodes().item(3);\n  assertEquals(\"Check\", epubTitle.getTextContent());\n  assertEquals(\"http://www.idpf.org/2007/ops\", epubTitle.getNamespaceURI());\n  assertEquals(\"title\", epubTitle.getLocalName());\n  assertEquals(\"epub:title\", epubTitle.getNodeName());\n\n  Node xSection = epubTitle.getNextSibling().getNextSibling();\n  assertEquals(\"urn:test\", xSection.getNamespaceURI());\n  assertEquals(\"section\", xSection.getLocalName());\n  assertEquals(\"x:section\", xSection.getNodeName());\n\n  // https://github.com/jhy/jsoup/issues/977\n  // does not keep last set namespace\n  Node svg = xSection.getNextSibling().getNextSibling();\n  assertEquals(\"http://www.w3.org/2000/svg\", svg.getNamespaceURI());\n  assertEquals(\"svg\", svg.getLocalName());\n  assertEquals(\"svg\", svg.getNodeName());\n\n  Node path = svg.getChildNodes().item(1);\n  assertEquals(\"http://www.w3.org/2000/svg\", path.getNamespaceURI());\n  assertEquals(\"path\", path.getLocalName());\n  assertEquals(\"path\", path.getNodeName());\n\n  Node clip = path.getChildNodes().item(1);\n  assertEquals(\"http://example.com/clip\", clip.getNamespaceURI());\n  assertEquals(\"clip\", clip.getLocalName());\n  assertEquals(\"clip\", clip.getNodeName());\n  assertEquals(\"456\", clip.getTextContent());\n\n  Node picture = svg.getNextSibling().getNextSibling();\n  assertEquals(\"http://www.w3.org/1999/xhtml\", picture.getNamespaceURI());\n  assertEquals(\"picture\", picture.getLocalName());\n  assertEquals(\"picture\", picture.getNodeName());\n\n  Node img = picture.getFirstChild();\n  assertEquals(\"http://www.w3.org/1999/xhtml\", img.getNamespaceURI());\n  assertEquals(\"img\", img.getLocalName());\n  assertEquals(\"img\", img.getNodeName());\n\n  }",
+        "stack": [
+          "W3CDomTest.namespacePreservation line 116"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/helper/W3CDom.java",
+      "buggy_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Attribute;\nimport org.jsoup.nodes.Attributes;\nimport org.jsoup.select.NodeTraversor;\nimport org.jsoup.select.NodeVisitor;\nimport org.w3c.dom.Comment;\nimport org.w3c.dom.Document;\nimport org.w3c.dom.Element;\nimport org.w3c.dom.Text;\n\nimport javax.xml.parsers.DocumentBuilder;\nimport javax.xml.parsers.DocumentBuilderFactory;\nimport javax.xml.parsers.ParserConfigurationException;\nimport javax.xml.transform.Transformer;\nimport javax.xml.transform.TransformerException;\nimport javax.xml.transform.TransformerFactory;\nimport javax.xml.transform.dom.DOMSource;\nimport javax.xml.transform.stream.StreamResult;\nimport java.io.StringWriter;\nimport java.util.HashMap;\n\n\npublic class W3CDom { protected DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(); public Document fromJsoup(org.jsoup.nodes.Document in) {\n        Validate.notNull(in);\n        DocumentBuilder builder;\n        try {\n        \t\n        \tfactory.setNamespaceAware(true);\n            builder = factory.newDocumentBuilder();\n            Document out = builder.newDocument();\n            convert(in, out);\n            return out;\n        } catch (ParserConfigurationException e) {\n            throw new IllegalStateException(e);\n        }\n    }\n\n    \n    public void convert(org.jsoup.nodes.Document in, Document out) {\n        if (!StringUtil.isBlank(in.location()))\n            out.setDocumentURI(in.location());\n\n        org.jsoup.nodes.Element rootEl = in.child(0); \n        NodeTraversor.traverse(new W3CBuilder(out), rootEl);\n    }\n\n    \n    protected static class W3CBuilder implements NodeVisitor { private static final String xmlnsKey = \"xmlns\"; private static final String xmlnsPrefix = \"xmlns:\"; private final Document doc; private final HashMap<String, String> namespaces = new HashMap<>(); private Element dest; public W3CBuilder(Document doc) {\n            this.doc = doc;\n        }\n\n        public void head(org.jsoup.nodes.Node source, int depth) {\n            if (source instanceof org.jsoup.nodes.Element) {\n                org.jsoup.nodes.Element sourceEl = (org.jsoup.nodes.Element) source;\n\n                String prefix = updateNamespaces(sourceEl);\n                String namespace = namespaces.get(prefix);\n\n                Element el = doc.createElementNS(namespace, sourceEl.tagName());\n                copyAttributes(sourceEl, el);\n                if (dest == null) { \n                    doc.appendChild(el);\n                } else {\n                    dest.appendChild(el);\n                }\n                dest = el; \n            } else if (source instanceof org.jsoup.nodes.TextNode) {\n                org.jsoup.nodes.TextNode sourceText = (org.jsoup.nodes.TextNode) source;\n                Text text = doc.createTextNode(sourceText.getWholeText());\n                dest.appendChild(text);\n            } else if (source instanceof org.jsoup.nodes.Comment) {\n                org.jsoup.nodes.Comment sourceComment = (org.jsoup.nodes.Comment) source;\n                Comment comment = doc.createComment(sourceComment.getData());\n                dest.appendChild(comment);\n            } else if (source instanceof org.jsoup.nodes.DataNode) {\n                org.jsoup.nodes.DataNode sourceData = (org.jsoup.nodes.DataNode) source;\n                Text node = doc.createTextNode(sourceData.getWholeData());\n                dest.appendChild(node);\n            } else {\n                \n            }\n        }\n\n        public void tail(org.jsoup.nodes.Node source, int depth) {\n            if (source instanceof org.jsoup.nodes.Element && dest.getParentNode() instanceof Element) {\n                dest = (Element) dest.getParentNode(); \n            }\n        }\n\n        private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n            for (Attribute attribute : source.attributes()) {\n                \n                String key = attribute.getKey().replaceAll(\"[^-a-zA-Z0-9_:.]\", \"\");\n                if (key.matches(\"[a-zA-Z_:][-a-zA-Z0-9_:.]*\"))\n                    el.setAttribute(key, attribute.getValue());\n            }\n        }\n\n        \n        private String updateNamespaces(org.jsoup.nodes.Element el) {\n            \n            \n            Attributes attributes = el.attributes();\n            for (Attribute attr : attributes) {\n                String key = attr.getKey();\n                String prefix;\n                if (key.equals(xmlnsKey)) {\n                    prefix = \"\";\n                } else if (key.startsWith(xmlnsPrefix)) {\n                    prefix = key.substring(xmlnsPrefix.length());\n                } else {\n                    continue;\n                }\n                namespaces.put(prefix, attr.getValue());\n            }\n\n            \n            int pos = el.tagName().indexOf(\":\");\n            return pos > 0 ? el.tagName().substring(0, pos) : \"\";\n        }\n\n    }\n\n    \n    public String asString(Document doc) {\n        try {\n            DOMSource domSource = new DOMSource(doc);\n            StringWriter writer = new StringWriter();\n            StreamResult result = new StreamResult(writer);\n            TransformerFactory tf = TransformerFactory.newInstance();\n            Transformer transformer = tf.newTransformer();\n            transformer.transform(domSource, result);\n            return writer.toString();\n        } catch (TransformerException e) {\n            throw new IllegalStateException(e);\n        }\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.helper;\n\nimport org.jsoup.nodes.Attribute;\nimport org.jsoup.nodes.Attributes;\nimport org.jsoup.select.NodeTraversor;\nimport org.jsoup.select.NodeVisitor;\nimport org.w3c.dom.Comment;\nimport org.w3c.dom.Document;\nimport org.w3c.dom.Element;\nimport org.w3c.dom.Text;\n\nimport javax.xml.parsers.DocumentBuilder;\nimport javax.xml.parsers.DocumentBuilderFactory;\nimport javax.xml.parsers.ParserConfigurationException;\nimport javax.xml.transform.Transformer;\nimport javax.xml.transform.TransformerException;\nimport javax.xml.transform.TransformerFactory;\nimport javax.xml.transform.dom.DOMSource;\nimport javax.xml.transform.stream.StreamResult;\nimport java.io.StringWriter;\nimport java.util.HashMap;\nimport java.util.Stack;\n\n\npublic class W3CDom { protected DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(); public Document fromJsoup(org.jsoup.nodes.Document in) {\n        Validate.notNull(in);\n        DocumentBuilder builder;\n        try {\n        \t\n        \tfactory.setNamespaceAware(true);\n            builder = factory.newDocumentBuilder();\n            Document out = builder.newDocument();\n            convert(in, out);\n            return out;\n        } catch (ParserConfigurationException e) {\n            throw new IllegalStateException(e);\n        }\n    }\n\n    \n    public void convert(org.jsoup.nodes.Document in, Document out) {\n        if (!StringUtil.isBlank(in.location()))\n            out.setDocumentURI(in.location());\n\n        org.jsoup.nodes.Element rootEl = in.child(0); \n        NodeTraversor.traverse(new W3CBuilder(out), rootEl);\n    }\n\n    \n    protected static class W3CBuilder implements NodeVisitor { private static final String xmlnsKey = \"xmlns\"; private static final String xmlnsPrefix = \"xmlns:\"; private final Document doc; private final Stack<HashMap<String, String>> namespacesStack = new Stack<>(); private Element dest; public W3CBuilder(Document doc) {\n            this.doc = doc;\n            this.namespacesStack.push(new HashMap<String, String>());\n        }\n\n        public void head(org.jsoup.nodes.Node source, int depth) {\n            namespacesStack.push(new HashMap<>(namespacesStack.peek())); \n            if (source instanceof org.jsoup.nodes.Element) {\n                org.jsoup.nodes.Element sourceEl = (org.jsoup.nodes.Element) source;\n\n                String prefix = updateNamespaces(sourceEl);\n                String namespace = namespacesStack.peek().get(prefix);\n\n                Element el = doc.createElementNS(namespace, sourceEl.tagName());\n                copyAttributes(sourceEl, el);\n                if (dest == null) { \n                    doc.appendChild(el);\n                } else {\n                    dest.appendChild(el);\n                }\n                dest = el; \n            } else if (source instanceof org.jsoup.nodes.TextNode) {\n                org.jsoup.nodes.TextNode sourceText = (org.jsoup.nodes.TextNode) source;\n                Text text = doc.createTextNode(sourceText.getWholeText());\n                dest.appendChild(text);\n            } else if (source instanceof org.jsoup.nodes.Comment) {\n                org.jsoup.nodes.Comment sourceComment = (org.jsoup.nodes.Comment) source;\n                Comment comment = doc.createComment(sourceComment.getData());\n                dest.appendChild(comment);\n            } else if (source instanceof org.jsoup.nodes.DataNode) {\n                org.jsoup.nodes.DataNode sourceData = (org.jsoup.nodes.DataNode) source;\n                Text node = doc.createTextNode(sourceData.getWholeData());\n                dest.appendChild(node);\n            } else {\n                \n            }\n        }\n\n        public void tail(org.jsoup.nodes.Node source, int depth) {\n            if (source instanceof org.jsoup.nodes.Element && dest.getParentNode() instanceof Element) {\n                dest = (Element) dest.getParentNode(); \n            }\n            namespacesStack.pop();\n        }\n\n        private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n            for (Attribute attribute : source.attributes()) {\n                \n                String key = attribute.getKey().replaceAll(\"[^-a-zA-Z0-9_:.]\", \"\");\n                if (key.matches(\"[a-zA-Z_:][-a-zA-Z0-9_:.]*\"))\n                    el.setAttribute(key, attribute.getValue());\n            }\n        }\n\n        \n        private String updateNamespaces(org.jsoup.nodes.Element el) {\n            \n            \n            Attributes attributes = el.attributes();\n            for (Attribute attr : attributes) {\n                String key = attr.getKey();\n                String prefix;\n                if (key.equals(xmlnsKey)) {\n                    prefix = \"\";\n                } else if (key.startsWith(xmlnsPrefix)) {\n                    prefix = key.substring(xmlnsPrefix.length());\n                } else {\n                    continue;\n                }\n                namespacesStack.peek().put(prefix, attr.getValue());\n            }\n\n            \n            int pos = el.tagName().indexOf(\":\");\n            return pos > 0 ? el.tagName().substring(0, pos) : \"\";\n        }\n\n    }\n\n    \n    public String asString(Document doc) {\n        try {\n            DOMSource domSource = new DOMSource(doc);\n            StringWriter writer = new StringWriter();\n            StreamResult result = new StreamResult(writer);\n            TransformerFactory tf = TransformerFactory.newInstance();\n            Transformer transformer = tf.newTransformer();\n            transformer.transform(domSource, result);\n            return writer.toString();\n        } catch (TransformerException e) {\n            throw new IllegalStateException(e);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public void convert(org.jsoup.nodes.Document in, Document out)",
+        "public void head(org.jsoup.nodes.Node source, int depth)",
+        "public void tail(org.jsoup.nodes.Node source, int depth)",
+        "private void copyAttributes(org.jsoup.nodes.Node source, Element el)",
+        "private String updateNamespaces(org.jsoup.nodes.Element el)",
+        "public String asString(Document doc)"
+      ],
+      "fixed_signatures": [
+        "public void convert(org.jsoup.nodes.Document in, Document out)",
+        "public void head(org.jsoup.nodes.Node source, int depth)",
+        "public void tail(org.jsoup.nodes.Node source, int depth)",
+        "private void copyAttributes(org.jsoup.nodes.Node source, Element el)",
+        "private String updateNamespaces(org.jsoup.nodes.Element el)",
+        "public String asString(Document doc)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -19,6 +19,7 @@",
+            " import javax.xml.transform.stream.StreamResult;\n",
+            " import java.io.StringWriter;\n",
+            " import java.util.HashMap;\n",
+            "+import java.util.Stack;\n",
+            " \n",
+            " /**\n",
+            "  * Helper class to transform a {@link org.jsoup.nodes.Document} to a {@link org.w3c.dom.Document org.w3c.dom.Document},\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public void head(org.jsoup.nodes.Node source, int depth) {\n  if (source instanceof org.jsoup.nodes.Element) {\n  org.jsoup.nodes.Element sourceEl = (org.jsoup.nodes.Element) source;\n\n  String prefix = updateNamespaces(sourceEl);\n  String namespace = namespaces.get(prefix);\n\n  Element el = doc.createElementNS(namespace, sourceEl.tagName());\n  copyAttributes(sourceEl, el);\n  if (dest == null) { \n  doc.appendChild(el);\n  } else {\n  dest.appendChild(el);\n  }\n  dest = el; \n  } else if (source instanceof org.jsoup.nodes.TextNode) {\n  org.jsoup.nodes.TextNode sourceText = (org.jsoup.nodes.TextNode) source;\n  Text text = doc.createTextNode(sourceText.getWholeText());\n  dest.appendChild(text);\n  } else if (source instanceof org.jsoup.nodes.Comment) {\n  org.jsoup.nodes.Comment sourceComment = (org.jsoup.nodes.Comment) source;\n  Comment comment = doc.createComment(sourceComment.getData());\n  dest.appendChild(comment);\n  } else if (source instanceof org.jsoup.nodes.DataNode) {\n  org.jsoup.nodes.DataNode sourceData = (org.jsoup.nodes.DataNode) source;\n  Text node = doc.createTextNode(sourceData.getWholeData());\n  dest.appendChild(node);\n  } else {\n  \n  }\n  }",
+          "fixed_method": "  public void head(org.jsoup.nodes.Node source, int depth) {\n  namespacesStack.push(new HashMap<>(namespacesStack.peek())); \n  if (source instanceof org.jsoup.nodes.Element) {\n  org.jsoup.nodes.Element sourceEl = (org.jsoup.nodes.Element) source;\n\n  String prefix = updateNamespaces(sourceEl);\n  String namespace = namespacesStack.peek().get(prefix);\n\n  Element el = doc.createElementNS(namespace, sourceEl.tagName());\n  copyAttributes(sourceEl, el);\n  if (dest == null) { \n  doc.appendChild(el);\n  } else {\n  dest.appendChild(el);\n  }\n  dest = el; \n  } else if (source instanceof org.jsoup.nodes.TextNode) {\n  org.jsoup.nodes.TextNode sourceText = (org.jsoup.nodes.TextNode) source;\n  Text text = doc.createTextNode(sourceText.getWholeText());\n  dest.appendChild(text);\n  } else if (source instanceof org.jsoup.nodes.Comment) {\n  org.jsoup.nodes.Comment sourceComment = (org.jsoup.nodes.Comment) source;\n  Comment comment = doc.createComment(sourceComment.getData());\n  dest.appendChild(comment);\n  } else if (source instanceof org.jsoup.nodes.DataNode) {\n  org.jsoup.nodes.DataNode sourceData = (org.jsoup.nodes.DataNode) source;\n  Text node = doc.createTextNode(sourceData.getWholeData());\n  dest.appendChild(node);\n  } else {\n  \n  }\n  }",
+          "diff": [
+            "@@ -70,19 +71,21 @@",
+            "         private static final String xmlnsPrefix = \"xmlns:\";\n",
+            " \n",
+            "         private final Document doc;\n",
+            "-        private final HashMap<String, String> namespaces = new HashMap<>();\n",
+            "+        private final Stack<HashMap<String, String>> namespacesStack = new Stack<>(); // stack of namespaces, prefix => urn\n",
+            "         private Element dest;\n",
+            " \n",
+            "         public W3CBuilder(Document doc) {\n",
+            "             this.doc = doc;\n",
+            "+            this.namespacesStack.push(new HashMap<String, String>());\n",
+            "         }\n",
+            " \n",
+            "         public void head(org.jsoup.nodes.Node source, int depth) {\n",
+            "+            namespacesStack.push(new HashMap<>(namespacesStack.peek())); // inherit from above on the stack\n",
+            "             if (source instanceof org.jsoup.nodes.Element) {\n",
+            "                 org.jsoup.nodes.Element sourceEl = (org.jsoup.nodes.Element) source;\n",
+            " \n",
+            "                 String prefix = updateNamespaces(sourceEl);\n",
+            "-                String namespace = namespaces.get(prefix);\n",
+            "+                String namespace = namespacesStack.peek().get(prefix);\n",
+            " \n",
+            "                 Element el = doc.createElementNS(namespace, sourceEl.tagName());\n",
+            "                 copyAttributes(sourceEl, el);\n"
+          ],
+          "changed_lines": 6
+        },
+        {
+          "buggy_method": "  private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n  for (Attribute attribute : source.attributes()) {\n  \n  String key = attribute.getKey().replaceAll(\"[^-a-zA-Z0-9_:.]\", \"\");\n  if (key.matches(\"[a-zA-Z_:][-a-zA-Z0-9_:.]*\"))\n  el.setAttribute(key, attribute.getValue());\n  }\n  }",
+          "fixed_method": "  private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n  for (Attribute attribute : source.attributes()) {\n  \n  String key = attribute.getKey().replaceAll(\"[^-a-zA-Z0-9_:.]\", \"\");\n  if (key.matches(\"[a-zA-Z_:][-a-zA-Z0-9_:.]*\"))\n  el.setAttribute(key, attribute.getValue());\n  }\n  }",
+          "diff": [
+            "@@ -113,6 +116,7 @@",
+            "             if (source instanceof org.jsoup.nodes.Element && dest.getParentNode() instanceof Element) {\n",
+            "                 dest = (Element) dest.getParentNode(); // undescend. cromulent.\n",
+            "             }\n",
+            "+            namespacesStack.pop();\n",
+            "         }\n",
+            " \n",
+            "         private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  private String updateNamespaces(org.jsoup.nodes.Element el) {\n  \n  \n  Attributes attributes = el.attributes();\n  for (Attribute attr : attributes) {\n  String key = attr.getKey();\n  String prefix;\n  if (key.equals(xmlnsKey)) {\n  prefix = \"\";\n  } else if (key.startsWith(xmlnsPrefix)) {\n  prefix = key.substring(xmlnsPrefix.length());\n  } else {\n  continue;\n  }\n  namespaces.put(prefix, attr.getValue());\n  }\n\n  \n  int pos = el.tagName().indexOf(\":\");\n  return pos > 0 ? el.tagName().substring(0, pos) : \"\";\n  }",
+          "fixed_method": "  private String updateNamespaces(org.jsoup.nodes.Element el) {\n  \n  \n  Attributes attributes = el.attributes();\n  for (Attribute attr : attributes) {\n  String key = attr.getKey();\n  String prefix;\n  if (key.equals(xmlnsKey)) {\n  prefix = \"\";\n  } else if (key.startsWith(xmlnsPrefix)) {\n  prefix = key.substring(xmlnsPrefix.length());\n  } else {\n  continue;\n  }\n  namespacesStack.peek().put(prefix, attr.getValue());\n  }\n\n  \n  int pos = el.tagName().indexOf(\":\");\n  return pos > 0 ? el.tagName().substring(0, pos) : \"\";\n  }",
+          "diff": [
+            "@@ -141,7 +145,7 @@",
+            "                 } else {\n",
+            "                     continue;\n",
+            "                 }\n",
+            "-                namespaces.put(prefix, attr.getValue());\n",
+            "+                namespacesStack.peek().put(prefix, attr.getValue());\n",
+            "             }\n",
+            " \n",
+            "             // get the element prefix if any\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

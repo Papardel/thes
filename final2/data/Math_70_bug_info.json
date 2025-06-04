@@ -1,0 +1,58 @@
+{
+  "bug_id": "70",
+  "failed_tests": {
+    "org.apache.commons.math.analysis.solvers.BisectionSolverTest": [
+      {
+        "methodName": "testMath369",
+        "error": "java.lang.NullPointerException",
+        "message": "",
+        "fail_line": "        assertEquals(Math.PI, solver.solve(f, 3.0, 3.2, 3.1), solver.getAbsoluteAccuracy());",
+        "test_source": "  public void testMath369() throws Exception {\n  UnivariateRealFunction f = new SinFunction();\n  UnivariateRealSolver solver = new BisectionSolver();\n  assertEquals(Math.PI, solver.solve(f, 3.0, 3.2, 3.1), solver.getAbsoluteAccuracy());\n  }",
+        "stack": [
+          "BisectionSolver.solve line 88, BisectionSolver.solve line 66, BisectionSolver.solve line 72, BisectionSolverTest.testMath369 line 101"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/analysis/solvers/BisectionSolver.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.analysis.solvers;\n\nimport org.apache.commons.math.FunctionEvaluationException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.analysis.UnivariateRealFunction;\n\n\npublic class BisectionSolver extends UnivariateRealSolverImpl { @Deprecated public BisectionSolver(UnivariateRealFunction f) {\n        super(f, 100, 1E-6);\n    }\n\n    \n    public BisectionSolver() {\n        super(100, 1E-6);\n    }\n\n    \n    @Deprecated\n    public double solve(double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(f, min, max);\n    }\n\n    \n    @Deprecated\n    public double solve(double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(f, min, max);\n    }\n\n    \n    public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(min, max);\n    }\n\n    \n    public double solve(final UnivariateRealFunction f, double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException {\n\n        clearResult();\n        verifyInterval(min,max);\n        double m;\n        double fm;\n        double fmin;\n\n        int i = 0;\n        while (i < maximalIterationCount) {\n            m = UnivariateRealSolverUtils.midpoint(min, max);\n           fmin = f.value(min);\n           fm = f.value(m);\n\n            if (fm * fmin > 0.0) {\n                \n                min = m;\n            } else {\n                \n                max = m;\n            }\n\n            if (Math.abs(max - min) <= absoluteAccuracy) {\n                m = UnivariateRealSolverUtils.midpoint(min, max);\n                setResult(m, i);\n                return m;\n            }\n            ++i;\n        }\n\n        throw new MaxIterationsExceededException(maximalIterationCount);\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.analysis.solvers;\n\nimport org.apache.commons.math.FunctionEvaluationException;\nimport org.apache.commons.math.MaxIterationsExceededException;\nimport org.apache.commons.math.analysis.UnivariateRealFunction;\n\n\npublic class BisectionSolver extends UnivariateRealSolverImpl { @Deprecated public BisectionSolver(UnivariateRealFunction f) {\n        super(f, 100, 1E-6);\n    }\n\n    \n    public BisectionSolver() {\n        super(100, 1E-6);\n    }\n\n    \n    @Deprecated\n    public double solve(double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(f, min, max);\n    }\n\n    \n    @Deprecated\n    public double solve(double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(f, min, max);\n    }\n\n    \n    public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n        return solve(f, min, max);\n    }\n\n    \n    public double solve(final UnivariateRealFunction f, double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException {\n\n        clearResult();\n        verifyInterval(min,max);\n        double m;\n        double fm;\n        double fmin;\n\n        int i = 0;\n        while (i < maximalIterationCount) {\n            m = UnivariateRealSolverUtils.midpoint(min, max);\n           fmin = f.value(min);\n           fm = f.value(m);\n\n            if (fm * fmin > 0.0) {\n                \n                min = m;\n            } else {\n                \n                max = m;\n            }\n\n            if (Math.abs(max - min) <= absoluteAccuracy) {\n                m = UnivariateRealSolverUtils.midpoint(min, max);\n                setResult(m, i);\n                return m;\n            }\n            ++i;\n        }\n\n        throw new MaxIterationsExceededException(maximalIterationCount);\n    }\n}\n",
+      "buggy_signatures": [
+        "public class BisectionSolver extends UnivariateRealSolverImpl { @Deprecated public BisectionSolver(UnivariateRealFunction f)",
+        "public BisectionSolver()",
+        "public double solve(double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(final UnivariateRealFunction f, double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException"
+      ],
+      "fixed_signatures": [
+        "public class BisectionSolver extends UnivariateRealSolverImpl { @Deprecated public BisectionSolver(UnivariateRealFunction f)",
+        "public BisectionSolver()",
+        "public double solve(double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException",
+        "public double solve(final UnivariateRealFunction f, double min, double max) throws MaxIterationsExceededException, FunctionEvaluationException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n  return solve(min, max);\n  }",
+          "fixed_method": "  public double solve(final UnivariateRealFunction f, double min, double max, double initial) throws MaxIterationsExceededException, FunctionEvaluationException {\n  return solve(f, min, max);\n  }",
+          "diff": [
+            "@@ -69,7 +69,7 @@",
+            "     /** {@inheritDoc} */\n",
+            "     public double solve(final UnivariateRealFunction f, double min, double max, double initial)\n",
+            "         throws MaxIterationsExceededException, FunctionEvaluationException {\n",
+            "-        return solve(min, max);\n",
+            "+        return solve(f, min, max);\n",
+            "     }\n",
+            " \n",
+            "     /** {@inheritDoc} */\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

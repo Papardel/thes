@@ -1,0 +1,52 @@
+{
+  "bug_id": "29",
+  "failed_tests": {
+    "org.mockitousage.bugs.NPEWithCertainMatchersTest": [
+      {
+        "methodName": "shouldNotThrowNPEWhenNullPassedToSame",
+        "error": "java.lang.Exception",
+        "message": "Unexpected exception, expected<java.lang.AssertionError> but was<java.lang.NullPointerException>",
+        "fail_line": "        verify(mock).objectArgMethod(same(null));",
+        "test_source": "  public void shouldNotThrowNPEWhenNullPassedToSame() {\n  mock.objectArgMethod(\"not null\");\n\n  verify(mock).objectArgMethod(same(null));\n  }",
+        "stack": [
+          "Same.describeTo line 29, LocalizedMatcher.describeTo line 33, BaseDescription.appendDescriptionOf line 24, StringDescription.toString line 28, ArgumentMatchingTool.toStringEquals line 48, ArgumentMatchingTool.getSuspiciouslyNotMatchingArgsIndexes line 30, MissingInvocationChecker.check line 37, Times.verify line 35, MockAwareVerificationMode.verify line 21, MockHandler.handle line 80, MethodInterceptorFilter.intercept line 47, NPEWithCertainMatchersTest.shouldNotThrowNPEWhenNullPassedToSame line 65"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/mockito/internal/matchers/Same.java",
+      "buggy_full_code": "\npackage org.mockito.internal.matchers;\n\nimport org.hamcrest.Description;\nimport org.mockito.ArgumentMatcher;\n\nimport java.io.Serializable;\n\n\npublic class Same extends ArgumentMatcher<Object> implements Serializable { private static final long serialVersionUID = -1226959355938572597L; private final Object wanted; public Same(Object wanted) {\n        this.wanted = wanted;\n    }\n\n    public boolean matches(Object actual) {\n        return wanted == actual;\n    }\n\n    public void describeTo(Description description) {\n        description.appendText(\"same(\");\n        appendQuoting(description);\n        description.appendText(wanted.toString());\n        appendQuoting(description);\n        description.appendText(\")\");\n    }\n\n    private void appendQuoting(Description description) {\n        if (wanted instanceof String) {\n            description.appendText(\"\\\"\");\n        } else if (wanted instanceof Character) {\n            description.appendText(\"'\");\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.mockito.internal.matchers;\n\nimport org.hamcrest.Description;\nimport org.mockito.ArgumentMatcher;\n\nimport java.io.Serializable;\n\n\npublic class Same extends ArgumentMatcher<Object> implements Serializable { private static final long serialVersionUID = -1226959355938572597L; private final Object wanted; public Same(Object wanted) {\n        this.wanted = wanted;\n    }\n\n    public boolean matches(Object actual) {\n        return wanted == actual;\n    }\n\n    public void describeTo(Description description) {\n        description.appendText(\"same(\");\n        appendQuoting(description);\n        description.appendText(wanted == null ? \"null\" : wanted.toString());\n        appendQuoting(description);\n        description.appendText(\")\");\n    }\n\n    private void appendQuoting(Description description) {\n        if (wanted instanceof String) {\n            description.appendText(\"\\\"\");\n        } else if (wanted instanceof Character) {\n            description.appendText(\"'\");\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public boolean matches(Object actual)",
+        "public void describeTo(Description description)",
+        "private void appendQuoting(Description description)"
+      ],
+      "fixed_signatures": [
+        "public boolean matches(Object actual)",
+        "public void describeTo(Description description)",
+        "private void appendQuoting(Description description)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public void describeTo(Description description) {\n  description.appendText(\"same(\");\n  appendQuoting(description);\n  description.appendText(wanted.toString());\n  appendQuoting(description);\n  description.appendText(\")\");\n  }",
+          "fixed_method": "  public void describeTo(Description description) {\n  description.appendText(\"same(\");\n  appendQuoting(description);\n  description.appendText(wanted == null ? \"null\" : wanted.toString());\n  appendQuoting(description);\n  description.appendText(\")\");\n  }",
+          "diff": [
+            "@@ -26,7 +26,7 @@",
+            "     public void describeTo(Description description) {\n",
+            "         description.appendText(\"same(\");\n",
+            "         appendQuoting(description);\n",
+            "-        description.appendText(wanted.toString());\n",
+            "+        description.appendText(wanted == null ? \"null\" : wanted.toString());\n",
+            "         appendQuoting(description);\n",
+            "         description.appendText(\")\");\n",
+            "     }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

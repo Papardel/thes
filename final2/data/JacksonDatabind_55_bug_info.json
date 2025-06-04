@@ -1,0 +1,124 @@
+{
+  "bug_id": "55",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.ser.TestEnumSerialization": [
+      {
+        "methodName": "testEnumsWithJsonPropertyAsKey",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{\"[aleph]\":\"b\"}> but was:<{\"[A]\":\"b\"}>",
+        "fail_line": "        assertEquals(\"{\\\"aleph\\\":\\\"b\\\"}\", MAPPER.writeValueAsString(input));",
+        "test_source": "  public void testEnumsWithJsonPropertyAsKey() throws Exception {\n  EnumMap<EnumWithJsonProperty,String> input = new EnumMap<EnumWithJsonProperty,String>(EnumWithJsonProperty.class);\n  input.put(EnumWithJsonProperty.A, \"b\");\n  assertEquals(\"{\\\"aleph\\\":\\\"b\\\"}\", MAPPER.writeValueAsString(input));\n  }",
+        "stack": [
+          "TestEnumSerialization.testEnumsWithJsonPropertyAsKey line 441"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.util.Calendar;\nimport java.util.Date;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.ser.impl.PropertySerializerMap;\n\n@SuppressWarnings(\"serial\")\npublic class StdKeySerializers { protected final static JsonSerializer<Object> DEFAULT_KEY_SERIALIZER = new StdKeySerializer(); protected final static JsonSerializer<Object> DEFAULT_STRING_SERIALIZER = new StringKeySerializer(); private StdKeySerializers() { }\n\n    \n    public static JsonSerializer<Object> getStdKeySerializer(SerializationConfig config, Class<?> rawKeyType, boolean useDefault) {\n        \n        \n        \n\n        \n        \n        if ((rawKeyType == null) || (rawKeyType == Object.class)) {\n            return new Dynamic();\n        }\n        if (rawKeyType == String.class) {\n            return DEFAULT_STRING_SERIALIZER;\n        }\n        if (rawKeyType.isPrimitive() || Number.class.isAssignableFrom(rawKeyType)) {\n            return DEFAULT_KEY_SERIALIZER;\n        }\n        if (rawKeyType == Class.class) {\n            return new Default(Default.TYPE_CLASS, rawKeyType);\n        }\n        if (Date.class.isAssignableFrom(rawKeyType)) {\n            return new Default(Default.TYPE_DATE, rawKeyType);\n        }\n        if (Calendar.class.isAssignableFrom(rawKeyType)) {\n            return new Default(Default.TYPE_CALENDAR, rawKeyType);\n        }\n        \n        if (rawKeyType == java.util.UUID.class) {\n            return new Default(Default.TYPE_TO_STRING, rawKeyType);\n        }\n        return useDefault ? DEFAULT_KEY_SERIALIZER : null;\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType) {\n        if (rawKeyType != null) {\n            \n            \n            \n            \n            \n            \n            if (rawKeyType == Enum.class) {\n                return new Dynamic();\n            }\n            if (rawKeyType.isEnum()) {\n                return new Default(Default.TYPE_ENUM, rawKeyType);\n            }\n        }\n        return DEFAULT_KEY_SERIALIZER;\n    }\n\n    \n    @Deprecated\n    public static JsonSerializer<Object> getDefault() {\n        return DEFAULT_KEY_SERIALIZER;\n    }\n\n    \n\n    \n    public static class Default extends StdSerializer<Object> { final static int TYPE_DATE = 1; final static int TYPE_CALENDAR = 2; final static int TYPE_CLASS = 3; final static int TYPE_ENUM = 4; final static int TYPE_TO_STRING = 5; protected final int _typeId; public Default(int typeId, Class<?> type) {\n            super(type, false);\n            _typeId = typeId;\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            switch (_typeId) {\n            case TYPE_DATE:\n                provider.defaultSerializeDateKey((Date)value, g);\n                break;\n            case TYPE_CALENDAR:\n                provider.defaultSerializeDateKey(((Calendar) value).getTimeInMillis(), g);\n                break;\n            case TYPE_CLASS:\n                g.writeFieldName(((Class<?>)value).getName());\n                break;\n            case TYPE_ENUM:\n                {\n                    String str = provider.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)\n                            ? value.toString() : ((Enum<?>) value).name();\n                    g.writeFieldName(str);\n                }\n                break;\n            case TYPE_TO_STRING:\n            default:\n                g.writeFieldName(value.toString());\n            }\n        }\n    }\n\n    \n    public static class Dynamic extends StdSerializer<Object> { protected transient PropertySerializerMap _dynamicSerializers; public Dynamic() {\n            super(String.class, false);\n            _dynamicSerializers = PropertySerializerMap.emptyForProperties();\n        }\n\n        Object readResolve() {\n            \n            _dynamicSerializers = PropertySerializerMap.emptyForProperties();\n            return this;\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            Class<?> cls = value.getClass();\n            PropertySerializerMap m = _dynamicSerializers;\n            JsonSerializer<Object> ser = m.serializerFor(cls);\n            if (ser == null) {\n                ser = _findAndAddDynamic(m, cls, provider);\n            }\n            ser.serialize(value, g, provider);\n        }\n\n        protected JsonSerializer<Object> _findAndAddDynamic(PropertySerializerMap map, Class<?> type, SerializerProvider provider) throws JsonMappingException {\n            PropertySerializerMap.SerializerAndMapResult result =\n                    \n                    map.findAndAddKeySerializer(type, provider, null);\n            \n            if (map != result.map) {\n                _dynamicSerializers = result.map;\n            }\n            return result.serializer;\n        }\n    }\n\n    \n    public static class StringKeySerializer extends StdSerializer<Object> { public StringKeySerializer() { super(String.class, false); }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            g.writeFieldName((String) value);\n        }\n    }\n\n    \n\n\n        \n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.util.Calendar;\nimport java.util.Date;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.ser.impl.PropertySerializerMap;\nimport com.fasterxml.jackson.databind.util.EnumValues;\n\n@SuppressWarnings(\"serial\")\npublic class StdKeySerializers { protected final static JsonSerializer<Object> DEFAULT_KEY_SERIALIZER = new StdKeySerializer(); protected final static JsonSerializer<Object> DEFAULT_STRING_SERIALIZER = new StringKeySerializer(); private StdKeySerializers() { }\n\n    \n    public static JsonSerializer<Object> getStdKeySerializer(SerializationConfig config, Class<?> rawKeyType, boolean useDefault) {\n        \n        \n        \n\n        \n        \n        if ((rawKeyType == null) || (rawKeyType == Object.class)) {\n            return new Dynamic();\n        }\n        if (rawKeyType == String.class) {\n            return DEFAULT_STRING_SERIALIZER;\n        }\n        if (rawKeyType.isPrimitive() || Number.class.isAssignableFrom(rawKeyType)) {\n            return DEFAULT_KEY_SERIALIZER;\n        }\n        if (rawKeyType == Class.class) {\n            return new Default(Default.TYPE_CLASS, rawKeyType);\n        }\n        if (Date.class.isAssignableFrom(rawKeyType)) {\n            return new Default(Default.TYPE_DATE, rawKeyType);\n        }\n        if (Calendar.class.isAssignableFrom(rawKeyType)) {\n            return new Default(Default.TYPE_CALENDAR, rawKeyType);\n        }\n        \n        if (rawKeyType == java.util.UUID.class) {\n            return new Default(Default.TYPE_TO_STRING, rawKeyType);\n        }\n        return useDefault ? DEFAULT_KEY_SERIALIZER : null;\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType) {\n        if (rawKeyType != null) {\n            \n            \n            \n            \n            \n            \n            if (rawKeyType == Enum.class) {\n                return new Dynamic();\n            }\n            if (rawKeyType.isEnum()) {\n                return EnumKeySerializer.construct(rawKeyType,\n                        EnumValues.constructFromName(config, (Class<Enum<?>>) rawKeyType));\n            }\n        }\n        return DEFAULT_KEY_SERIALIZER;\n    }\n\n    \n    @Deprecated\n    public static JsonSerializer<Object> getDefault() {\n        return DEFAULT_KEY_SERIALIZER;\n    }\n\n    \n\n    \n    public static class Default extends StdSerializer<Object> { final static int TYPE_DATE = 1; final static int TYPE_CALENDAR = 2; final static int TYPE_CLASS = 3; final static int TYPE_ENUM = 4; final static int TYPE_TO_STRING = 5; protected final int _typeId; public Default(int typeId, Class<?> type) {\n            super(type, false);\n            _typeId = typeId;\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            switch (_typeId) {\n            case TYPE_DATE:\n                provider.defaultSerializeDateKey((Date)value, g);\n                break;\n            case TYPE_CALENDAR:\n                provider.defaultSerializeDateKey(((Calendar) value).getTimeInMillis(), g);\n                break;\n            case TYPE_CLASS:\n                g.writeFieldName(((Class<?>)value).getName());\n                break;\n            case TYPE_ENUM:\n                {\n                    String str = provider.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)\n                            ? value.toString() : ((Enum<?>) value).name();\n                    g.writeFieldName(str);\n                }\n                break;\n            case TYPE_TO_STRING:\n            default:\n                g.writeFieldName(value.toString());\n            }\n        }\n    }\n\n    \n    public static class Dynamic extends StdSerializer<Object> { protected transient PropertySerializerMap _dynamicSerializers; public Dynamic() {\n            super(String.class, false);\n            _dynamicSerializers = PropertySerializerMap.emptyForProperties();\n        }\n\n        Object readResolve() {\n            \n            _dynamicSerializers = PropertySerializerMap.emptyForProperties();\n            return this;\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            Class<?> cls = value.getClass();\n            PropertySerializerMap m = _dynamicSerializers;\n            JsonSerializer<Object> ser = m.serializerFor(cls);\n            if (ser == null) {\n                ser = _findAndAddDynamic(m, cls, provider);\n            }\n            ser.serialize(value, g, provider);\n        }\n\n        protected JsonSerializer<Object> _findAndAddDynamic(PropertySerializerMap map, Class<?> type, SerializerProvider provider) throws JsonMappingException {\n            PropertySerializerMap.SerializerAndMapResult result =\n                    \n                    map.findAndAddKeySerializer(type, provider, null);\n            \n            if (map != result.map) {\n                _dynamicSerializers = result.map;\n            }\n            return result.serializer;\n        }\n    }\n\n    \n    public static class StringKeySerializer extends StdSerializer<Object> { public StringKeySerializer() { super(String.class, false); }\n\n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n            g.writeFieldName((String) value);\n        }\n    }\n\n    \n    public static class EnumKeySerializer extends StdSerializer<Object> { protected final EnumValues _values; protected EnumKeySerializer(Class<?> enumType, EnumValues values) {\n            super(enumType, false);\n            _values = values;\n        }\n\n        public static EnumKeySerializer construct(Class<?> enumType, EnumValues enumValues) {\n            return new EnumKeySerializer(enumType, enumValues);\n        }\n        \n        @Override\n        public void serialize(Object value, JsonGenerator g, SerializerProvider serializers) throws IOException {\n            if (serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n                g.writeFieldName(value.toString());\n                return;\n            }\n            Enum<?> en = (Enum<?>) value;\n            g.writeFieldName(_values.serializedValueFor(en));\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public static JsonSerializer<Object> getStdKeySerializer(SerializationConfig config, Class<?> rawKeyType, boolean useDefault)",
+        "public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType)",
+        "public static JsonSerializer<Object> getDefault()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "public static class Dynamic extends StdSerializer<Object> { protected transient PropertySerializerMap _dynamicSerializers; public Dynamic()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "protected JsonSerializer<Object> _findAndAddDynamic(PropertySerializerMap map, Class<?> type, SerializerProvider provider) throws JsonMappingException",
+        "public static class StringKeySerializer extends StdSerializer<Object> { public StringKeySerializer()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public static JsonSerializer<Object> getStdKeySerializer(SerializationConfig config, Class<?> rawKeyType, boolean useDefault)",
+        "public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType)",
+        "public static JsonSerializer<Object> getDefault()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "public static class Dynamic extends StdSerializer<Object> { protected transient PropertySerializerMap _dynamicSerializers; public Dynamic()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "protected JsonSerializer<Object> _findAndAddDynamic(PropertySerializerMap map, Class<?> type, SerializerProvider provider) throws JsonMappingException",
+        "public static class StringKeySerializer extends StdSerializer<Object> { public StringKeySerializer()",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException",
+        "public static class EnumKeySerializer extends StdSerializer<Object> { protected final EnumValues _values; protected EnumKeySerializer(Class<?> enumType, EnumValues values)",
+        "public static EnumKeySerializer construct(Class<?> enumType, EnumValues enumValues)",
+        "public void serialize(Object value, JsonGenerator g, SerializerProvider serializers) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -7,6 +7,7 @@",
+            " import com.fasterxml.jackson.core.*;\n",
+            " import com.fasterxml.jackson.databind.*;\n",
+            " import com.fasterxml.jackson.databind.ser.impl.PropertySerializerMap;\n",
+            "+import com.fasterxml.jackson.databind.util.EnumValues;\n",
+            " \n",
+            " @SuppressWarnings(\"serial\")\n",
+            " public class StdKeySerializers\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType) {\n  if (rawKeyType != null) {\n  \n  \n  \n  \n  \n  \n  if (rawKeyType == Enum.class) {\n  return new Dynamic();\n  }\n  if (rawKeyType.isEnum()) {\n  return new Default(Default.TYPE_ENUM, rawKeyType);\n  }\n  }\n  return DEFAULT_KEY_SERIALIZER;\n  }",
+          "fixed_method": "  public static JsonSerializer<Object> getFallbackKeySerializer(SerializationConfig config, Class<?> rawKeyType) {\n  if (rawKeyType != null) {\n  \n  \n  \n  \n  \n  \n  if (rawKeyType == Enum.class) {\n  return new Dynamic();\n  }\n  if (rawKeyType.isEnum()) {\n  return EnumKeySerializer.construct(rawKeyType,\n  EnumValues.constructFromName(config, (Class<Enum<?>>) rawKeyType));\n  }\n  }\n  return DEFAULT_KEY_SERIALIZER;\n  }",
+          "diff": [
+            "@@ -79,7 +80,8 @@",
+            "                 return new Dynamic();\n",
+            "             }\n",
+            "             if (rawKeyType.isEnum()) {\n",
+            "-                return new Default(Default.TYPE_ENUM, rawKeyType);\n",
+            "+                return EnumKeySerializer.construct(rawKeyType,\n",
+            "+                        EnumValues.constructFromName(config, (Class<Enum<?>>) rawKeyType));\n",
+            "             }\n",
+            "         }\n",
+            "         return DEFAULT_KEY_SERIALIZER;\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n  g.writeFieldName((String) value);\n  }",
+          "fixed_method": "  public void serialize(Object value, JsonGenerator g, SerializerProvider provider) throws IOException {\n  g.writeFieldName((String) value);\n  }",
+          "diff": [
+            "@@ -212,7 +214,31 @@",
+            "      *\n",
+            "      * @since 2.8\n",
+            "      */\n",
+            "-\n",
+            "-\n",
+            "+    public static class EnumKeySerializer extends StdSerializer<Object>\n",
+            "+    {\n",
+            "+        protected final EnumValues _values;\n",
+            "+\n",
+            "+        protected EnumKeySerializer(Class<?> enumType, EnumValues values) {\n",
+            "+            super(enumType, false);\n",
+            "+            _values = values;\n",
+            "+        }\n",
+            "+\n",
+            "+        public static EnumKeySerializer construct(Class<?> enumType,\n",
+            "+                EnumValues enumValues)\n",
+            "+        {\n",
+            "+            return new EnumKeySerializer(enumType, enumValues);\n",
+            "+        }\n",
+            "         \n",
+            "+        @Override\n",
+            "+        public void serialize(Object value, JsonGenerator g, SerializerProvider serializers)\n",
+            "+                throws IOException\n",
+            "+        {\n",
+            "+            if (serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n",
+            "+                g.writeFieldName(value.toString());\n",
+            "+                return;\n",
+            "+            }\n",
+            "+            Enum<?> en = (Enum<?>) value;\n",
+            "+            g.writeFieldName(_values.serializedValueFor(en));\n",
+            "+        }\n",
+            "+    }\n",
+            " }\n"
+          ],
+          "changed_lines": 28
+        }
+      ]
+    }
+  ]
+}

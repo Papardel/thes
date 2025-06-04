@@ -1,0 +1,107 @@
+{
+  "bug_id": "5",
+  "failed_tests": {
+    "org.apache.commons.collections.list.TestSetUniqueList": [
+      {
+        "methodName": "testIntCollectionAddAll",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "First new element should be at index 0 expected:<2> but was:<1>",
+        "fail_line": "      assertEquals(\"First new element should be at index 0\", firstNewElement, list.get(0));",
+        "test_source": "  public void testIntCollectionAddAll() {\n  // make a SetUniqueList with one element\n  List list = new SetUniqueList(new ArrayList(), new HashSet());\n  final Integer existingElement = new Integer(1);\n  list.add(existingElement);\n\n  // add two new unique elements at index 0\n  final Integer firstNewElement = new Integer(2);\n  final Integer secondNewElement = new Integer(3);\n  collection = Arrays.asList(new Integer[] {firstNewElement, secondNewElement});\n  list.addAll(0, collection);\n  assertEquals(\"Unique elements should be added.\", 3, list.size());\n  assertEquals(\"First new element should be at index 0\", firstNewElement, list.get(0));\n  assertEquals(\"Second new element should be at index 1\", secondNewElement, list.get(1));\n  assertEquals(\"Existing element should shift to index 2\", existingElement, list.get(2));\n\n  // add a duplicate element and a unique element at index 0\n  final Integer thirdNewElement = new Integer(4);\n  collection = Arrays.asList(new Integer[] {existingElement, thirdNewElement});\n  list.addAll(0, collection);\n  assertEquals(\"Duplicate element should not be added, unique element should be added.\",\n  4, list.size());\n  assertEquals(\"Third new element should be at index 0\", thirdNewElement, list.get(0));\n  }",
+        "stack": [
+          "TestSetUniqueList.testIntCollectionAddAll line 160"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections/list/SetUniqueList.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections.list;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.ListIterator;\nimport java.util.Set;\n\nimport org.apache.commons.collections.iterators.AbstractIteratorDecorator;\nimport org.apache.commons.collections.iterators.AbstractListIteratorDecorator;\nimport org.apache.commons.collections.set.UnmodifiableSet;\n\n\npublic class SetUniqueList extends AbstractSerializableListDecorator {\n\n    \n    private static final long serialVersionUID = 7196982186153478694L;\n\n    \n    protected final Set set;\n\n    \n    public static SetUniqueList decorate(List list) {\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        if (list.isEmpty()) {\n            return new SetUniqueList(list, new HashSet());\n        } else {\n            List temp = new ArrayList(list);\n            list.clear();\n            SetUniqueList sl = new SetUniqueList(list, new HashSet());\n            sl.addAll(temp);\n            return sl;\n        }\n    }\n\n    \n    \n    protected SetUniqueList(List list, Set set) {\n        super(list);\n        if (set == null) {\n            throw new IllegalArgumentException(\"Set must not be null\");\n        }\n        this.set = set;\n    }\n\n    \n    \n    public Set asSet() {\n        return UnmodifiableSet.decorate(set);\n    }\n\n    \n    \n    public boolean add(Object object) {\n        \n        final int sizeBefore = size();\n\n        \n        add(size(), object);\n\n        \n        return (sizeBefore != size());\n    }\n\n    \n    public void add(int index, Object object) {\n        \n        if (set.contains(object) == false) {\n            super.add(index, object);\n            set.add(object);\n        }\n    }\n\n    \n    public boolean addAll(Collection coll) {\n        return addAll(size(), coll);\n    }\n\n    \n    public boolean addAll(int index, Collection coll) {\n        \n        final int sizeBefore = size();\n\n        \n        for (final Iterator it = coll.iterator(); it.hasNext();) {\n            add(it.next());\n            \n        }\n\n        \n        return sizeBefore != size();\n    }\n\n    \n    \n    public Object set(int index, Object object) {\n        int pos = indexOf(object);\n        Object removed = super.set(index, object);\n        if (pos == -1 || pos == index) {\n            return removed;\n        }\n        \n        \n        \n        super.remove(pos);  \n        set.remove(removed);  \n        return removed;  \n    }\n\n    public boolean remove(Object object) {\n        boolean result = super.remove(object);\n        set.remove(object);\n        return result;\n    }\n\n    public Object remove(int index) {\n        Object result = super.remove(index);\n        set.remove(result);\n        return result;\n    }\n\n    public boolean removeAll(Collection coll) {\n        boolean result = super.removeAll(coll);\n        set.removeAll(coll);\n        return result;\n    }\n\n    public boolean retainAll(Collection coll) {\n        boolean result = super.retainAll(coll);\n        set.retainAll(coll);\n        return result;\n    }\n\n    public void clear() {\n        super.clear();\n        set.clear();\n    }\n\n    public boolean contains(Object object) {\n        return set.contains(object);\n    }\n\n    public boolean containsAll(Collection coll) {\n        return set.containsAll(coll);\n    }\n\n    public Iterator iterator() {\n        return new SetListIterator(super.iterator(), set);\n    }\n\n    public ListIterator listIterator() {\n        return new SetListListIterator(super.listIterator(), set);\n    }\n\n    public ListIterator listIterator(int index) {\n        return new SetListListIterator(super.listIterator(index), set);\n    }\n\n    public List subList(int fromIndex, int toIndex) {\n        return new SetUniqueList(super.subList(fromIndex, toIndex), set);\n    }\n\n    \n    \n    static class SetListIterator extends AbstractIteratorDecorator {\n        \n        protected final Set set;\n        protected Object last = null;\n        \n        protected SetListIterator(Iterator it, Set set) {\n            super(it);\n            this.set = set;\n        }\n        \n        public Object next() {\n            last = super.next();\n            return last;\n        }\n\n        public void remove() {\n            super.remove();\n            set.remove(last);\n            last = null;\n        }\n    }\n    \n    \n    static class SetListListIterator extends AbstractListIteratorDecorator {\n        \n        protected final Set set;\n        protected Object last = null;\n        \n        protected SetListListIterator(ListIterator it, Set set) {\n            super(it);\n            this.set = set;\n        }\n        \n        public Object next() {\n            last = super.next();\n            return last;\n        }\n\n        public Object previous() {\n            last = super.previous();\n            return last;\n        }\n\n        public void remove() {\n            super.remove();\n            set.remove(last);\n            last = null;\n        }\n\n        public void add(Object object) {\n            if (set.contains(object) == false) {\n                super.add(object);\n                set.add(object);\n            }\n        }\n        \n        public void set(Object object) {\n            throw new UnsupportedOperationException(\"ListIterator does not support set\");\n        }\n    }\n    \n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections.list;\n\nimport java.util.ArrayList;\nimport java.util.Collection;\nimport java.util.HashSet;\nimport java.util.Iterator;\nimport java.util.List;\nimport java.util.ListIterator;\nimport java.util.Set;\n\nimport org.apache.commons.collections.iterators.AbstractIteratorDecorator;\nimport org.apache.commons.collections.iterators.AbstractListIteratorDecorator;\nimport org.apache.commons.collections.set.UnmodifiableSet;\n\n\npublic class SetUniqueList extends AbstractSerializableListDecorator {\n\n    \n    private static final long serialVersionUID = 7196982186153478694L;\n\n    \n    protected final Set set;\n\n    \n    public static SetUniqueList decorate(List list) {\n        if (list == null) {\n            throw new IllegalArgumentException(\"List must not be null\");\n        }\n        if (list.isEmpty()) {\n            return new SetUniqueList(list, new HashSet());\n        } else {\n            List temp = new ArrayList(list);\n            list.clear();\n            SetUniqueList sl = new SetUniqueList(list, new HashSet());\n            sl.addAll(temp);\n            return sl;\n        }\n    }\n\n    \n    \n    protected SetUniqueList(List list, Set set) {\n        super(list);\n        if (set == null) {\n            throw new IllegalArgumentException(\"Set must not be null\");\n        }\n        this.set = set;\n    }\n\n    \n    \n    public Set asSet() {\n        return UnmodifiableSet.decorate(set);\n    }\n\n    \n    \n    public boolean add(Object object) {\n        \n        final int sizeBefore = size();\n\n        \n        add(size(), object);\n\n        \n        return (sizeBefore != size());\n    }\n\n    \n    public void add(int index, Object object) {\n        \n        if (set.contains(object) == false) {\n            super.add(index, object);\n            set.add(object);\n        }\n    }\n\n    \n    public boolean addAll(Collection coll) {\n        return addAll(size(), coll);\n    }\n\n    \n    public boolean addAll(int index, Collection coll) {\n        \n        final int sizeBefore = size();\n\n        \n        for (final Iterator it = coll.iterator(); it.hasNext();) {\n            int sizeBeforeAddNext = size();\n            add(index, it.next());\n            \n            if (sizeBeforeAddNext != size()) {\n              index++;\n            }\n        }\n\n        \n        return sizeBefore != size();\n    }\n\n    \n    \n    public Object set(int index, Object object) {\n        int pos = indexOf(object);\n        Object removed = super.set(index, object);\n        if (pos == -1 || pos == index) {\n            return removed;\n        }\n        \n        \n        \n        super.remove(pos);  \n        set.remove(removed);  \n        return removed;  \n    }\n\n    public boolean remove(Object object) {\n        boolean result = super.remove(object);\n        set.remove(object);\n        return result;\n    }\n\n    public Object remove(int index) {\n        Object result = super.remove(index);\n        set.remove(result);\n        return result;\n    }\n\n    public boolean removeAll(Collection coll) {\n        boolean result = super.removeAll(coll);\n        set.removeAll(coll);\n        return result;\n    }\n\n    public boolean retainAll(Collection coll) {\n        boolean result = super.retainAll(coll);\n        set.retainAll(coll);\n        return result;\n    }\n\n    public void clear() {\n        super.clear();\n        set.clear();\n    }\n\n    public boolean contains(Object object) {\n        return set.contains(object);\n    }\n\n    public boolean containsAll(Collection coll) {\n        return set.containsAll(coll);\n    }\n\n    public Iterator iterator() {\n        return new SetListIterator(super.iterator(), set);\n    }\n\n    public ListIterator listIterator() {\n        return new SetListListIterator(super.listIterator(), set);\n    }\n\n    public ListIterator listIterator(int index) {\n        return new SetListListIterator(super.listIterator(index), set);\n    }\n\n    public List subList(int fromIndex, int toIndex) {\n        return new SetUniqueList(super.subList(fromIndex, toIndex), set);\n    }\n\n    \n    \n    static class SetListIterator extends AbstractIteratorDecorator {\n        \n        protected final Set set;\n        protected Object last = null;\n        \n        protected SetListIterator(Iterator it, Set set) {\n            super(it);\n            this.set = set;\n        }\n        \n        public Object next() {\n            last = super.next();\n            return last;\n        }\n\n        public void remove() {\n            super.remove();\n            set.remove(last);\n            last = null;\n        }\n    }\n    \n    \n    static class SetListListIterator extends AbstractListIteratorDecorator {\n        \n        protected final Set set;\n        protected Object last = null;\n        \n        protected SetListListIterator(ListIterator it, Set set) {\n            super(it);\n            this.set = set;\n        }\n        \n        public Object next() {\n            last = super.next();\n            return last;\n        }\n\n        public Object previous() {\n            last = super.previous();\n            return last;\n        }\n\n        public void remove() {\n            super.remove();\n            set.remove(last);\n            last = null;\n        }\n\n        public void add(Object object) {\n            if (set.contains(object) == false) {\n                super.add(object);\n                set.add(object);\n            }\n        }\n        \n        public void set(Object object) {\n            throw new UnsupportedOperationException(\"ListIterator does not support set\");\n        }\n    }\n    \n}\n",
+      "buggy_signatures": [
+        "public static SetUniqueList decorate(List list)",
+        "protected SetUniqueList(List list, Set set)",
+        "public Set asSet()",
+        "public boolean add(Object object)",
+        "public void add(int index, Object object)",
+        "public boolean addAll(Collection coll)",
+        "public boolean addAll(int index, Collection coll)",
+        "public Object set(int index, Object object)",
+        "public boolean remove(Object object)",
+        "public Object remove(int index)",
+        "public boolean removeAll(Collection coll)",
+        "public boolean retainAll(Collection coll)",
+        "public void clear()",
+        "public boolean contains(Object object)",
+        "public boolean containsAll(Collection coll)",
+        "public Iterator iterator()",
+        "public ListIterator listIterator()",
+        "public ListIterator listIterator(int index)",
+        "public List subList(int fromIndex, int toIndex)",
+        "protected SetListIterator(Iterator it, Set set)",
+        "public Object next()",
+        "public void remove()",
+        "protected SetListListIterator(ListIterator it, Set set)",
+        "public Object next()",
+        "public Object previous()",
+        "public void remove()",
+        "public void add(Object object)",
+        "public void set(Object object)"
+      ],
+      "fixed_signatures": [
+        "public static SetUniqueList decorate(List list)",
+        "protected SetUniqueList(List list, Set set)",
+        "public Set asSet()",
+        "public boolean add(Object object)",
+        "public void add(int index, Object object)",
+        "public boolean addAll(Collection coll)",
+        "public boolean addAll(int index, Collection coll)",
+        "public Object set(int index, Object object)",
+        "public boolean remove(Object object)",
+        "public Object remove(int index)",
+        "public boolean removeAll(Collection coll)",
+        "public boolean retainAll(Collection coll)",
+        "public void clear()",
+        "public boolean contains(Object object)",
+        "public boolean containsAll(Collection coll)",
+        "public Iterator iterator()",
+        "public ListIterator listIterator()",
+        "public ListIterator listIterator(int index)",
+        "public List subList(int fromIndex, int toIndex)",
+        "protected SetListIterator(Iterator it, Set set)",
+        "public Object next()",
+        "public void remove()",
+        "protected SetListListIterator(ListIterator it, Set set)",
+        "public Object next()",
+        "public Object previous()",
+        "public void remove()",
+        "public void add(Object object)",
+        "public void set(Object object)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public boolean addAll(int index, Collection coll) {\n  \n  final int sizeBefore = size();\n\n  \n  for (final Iterator it = coll.iterator(); it.hasNext();) {\n  add(it.next());\n  \n  }\n\n  \n  return sizeBefore != size();\n  }",
+          "fixed_method": "  public boolean addAll(int index, Collection coll) {\n  \n  final int sizeBefore = size();\n\n  \n  for (final Iterator it = coll.iterator(); it.hasNext();) {\n  int sizeBeforeAddNext = size();\n  add(index, it.next());\n  \n  if (sizeBeforeAddNext != size()) {\n  index++;\n  }\n  }\n\n  \n  return sizeBefore != size();\n  }",
+          "diff": [
+            "@@ -192,8 +192,12 @@",
+            " \n",
+            "         // adds all elements\n",
+            "         for (final Iterator it = coll.iterator(); it.hasNext();) {\n",
+            "-            add(it.next());\n",
+            "+            int sizeBeforeAddNext = size();\n",
+            "+            add(index, it.next());\n",
+            "             // if it was inserted, then increase the target index\n",
+            "+            if (sizeBeforeAddNext != size()) {\n",
+            "+              index++;\n",
+            "+            }\n",
+            "         }\n",
+            " \n",
+            "         // compares sizes to detect if collection changed\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

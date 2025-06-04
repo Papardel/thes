@@ -1,0 +1,10 @@
+{
+  "bug_id": "Jsoup_1_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "IMPORTANT: You must reply _exactly_ in this form: \nRESPONSE: <fully-qualified-class-name>\n -and nothing else. No extra text, no newlines before/after, no explanations.Bug ID: 1\nTest Class: org.jsoup.parser.ParserTest\nMethod: createsStructureFromBodySnippet\nError: junit.framework.AssertionFailedError\nMessage: expected:<[foo bar baz]> but was:<[bar baz foo]>\nFailing Line:         assertEquals (\"foo bar baz\", doc.text());\nTest Source:\n\nStack Trace:\nParserTest.createsStructureFromBodySnippet line 110\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n",
+      "response": "- the stack trace.\n- any other irrelevant information.\n\n```java\npackage org.jsoup.parser;\n\nimport org.jsoup.Jsoup;\nimport org.jsoup.nodes.Document;\nimport org.jsoup.select.Elements;\n\npublic class Parser {\n    public static void main(String[] args) {\n        String html = \"<html><body>foo bar baz</body></html>\";\n        Document doc = Jsoup.parse(html);\n        System.out.println(doc.text());\n    }\n}\n```\n\nRESPONSE: org.jsoup.parser.Parser\n```"
+    }
+  ]
+}

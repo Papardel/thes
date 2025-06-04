@@ -1,0 +1,95 @@
+{
+  "bug_id": "74",
+  "failed_tests": {
+    "org.jsoup.nodes.ElementTest": [
+      {
+        "methodName": "testNormalizesInvisiblesInText",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<This[isonelong]word> but was:<This[­is​one‌long‍]word>",
+        "fail_line": "        assertEquals(\"Thisisonelongword\", p.text()); // text is normalized",
+        "test_source": "",
+        "stack": [
+          "ElementTest.testNormalizesInvisiblesInText line 1212"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/helper/StringUtil.java",
+      "buggy_full_code": "package org.jsoup.helper;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\nimport java.util.Arrays;\nimport java.util.Collection;\nimport java.util.Iterator;\n\n\npublic final class StringUtil { static final String[] padding = {\"\", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \"}; public static String join(Collection strings, String sep) {\n        return join(strings.iterator(), sep);\n    }\n\n    \n    public static String join(Iterator strings, String sep) {\n        if (!strings.hasNext())\n            return \"\";\n\n        String start = strings.next().toString();\n        if (!strings.hasNext()) \n            return start;\n\n        StringBuilder sb = new StringBuilder(64).append(start);\n        while (strings.hasNext()) {\n            sb.append(sep);\n            sb.append(strings.next());\n        }\n        return sb.toString();\n    }\n\n    \n    public static String join(String[] strings, String sep) {\n        return join(Arrays.asList(strings), sep);\n    }\n\n    \n    public static String padding(int width) {\n        if (width < 0)\n            throw new IllegalArgumentException(\"width must be > 0\");\n\n        if (width < padding.length)\n            return padding[width];\n        char[] out = new char[width];\n        for (int i = 0; i < width; i++)\n            out[i] = ' ';\n        return String.valueOf(out);\n    }\n\n    \n    public static boolean isBlank(String string) {\n        if (string == null || string.length() == 0)\n            return true;\n\n        int l = string.length();\n        for (int i = 0; i < l; i++) {\n            if (!StringUtil.isWhitespace(string.codePointAt(i)))\n                return false;\n        }\n        return true;\n    }\n\n    \n    public static boolean isNumeric(String string) {\n        if (string == null || string.length() == 0)\n            return false;\n\n        int l = string.length();\n        for (int i = 0; i < l; i++) {\n            if (!Character.isDigit(string.codePointAt(i)))\n                return false;\n        }\n        return true;\n    }\n\n    \n    public static boolean isWhitespace(int c) {\n        return c == ' ' || c == '\\t' || c == '\\n' || c == '\\f' || c == '\\r';\n    }\n\n    \n    public static boolean isActuallyWhitespace(int c) {\n        return c == ' ' || c == '\\t' || c == '\\n' || c == '\\f' || c == '\\r' || c == 160;\n        \n    }\n\n        \n\n    \n    public static String normaliseWhitespace(String string) {\n        StringBuilder sb = StringUtil.stringBuilder();\n        appendNormalisedWhitespace(sb, string, false);\n        return sb.toString();\n    }\n\n    \n    public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading) {\n        boolean lastWasWhite = false;\n        boolean reachedNonWhite = false;\n\n        int len = string.length();\n        int c;\n        for (int i = 0; i < len; i+= Character.charCount(c)) {\n            c = string.codePointAt(i);\n            if (isActuallyWhitespace(c)) {\n                if ((stripLeading && !reachedNonWhite) || lastWasWhite)\n                    continue;\n                accum.append(' ');\n                lastWasWhite = true;\n            }\n            else {\n                accum.appendCodePoint(c);\n                lastWasWhite = false;\n                reachedNonWhite = true;\n            }\n        }\n    }\n\n    public static boolean in(final String needle, final String... haystack) {\n        final int len = haystack.length;\n        for (int i = 0; i < len; i++) {\n            if (haystack[i].equals(needle))\n            return true;\n        }\n        return false;\n    }\n\n    public static boolean inSorted(String needle, String[] haystack) {\n        return Arrays.binarySearch(haystack, needle) >= 0;\n    }\n\n    \n    public static URL resolve(URL base, String relUrl) throws MalformedURLException {\n        \n        if (relUrl.startsWith(\"?\"))\n            relUrl = base.getPath() + relUrl;\n        \n        if (relUrl.indexOf('.') == 0 && base.getFile().indexOf('/') != 0) {\n            base = new URL(base.getProtocol(), base.getHost(), base.getPort(), \"/\" + base.getFile());\n        }\n        return new URL(base, relUrl);\n    }\n\n    \n    public static String resolve(final String baseUrl, final String relUrl) {\n        URL base;\n        try {\n            try {\n                base = new URL(baseUrl);\n            } catch (MalformedURLException e) {\n                \n                URL abs = new URL(relUrl);\n                return abs.toExternalForm();\n            }\n            return resolve(base, relUrl).toExternalForm();\n        } catch (MalformedURLException e) {\n            return \"\";\n        }\n    }\n\n    \n    public static StringBuilder stringBuilder() {\n        StringBuilder sb = stringLocal.get();\n        if (sb.length() > MaxCachedBuilderSize) {\n            sb = new StringBuilder(MaxCachedBuilderSize);\n            stringLocal.set(sb);\n        } else {\n            sb.delete(0, sb.length());\n        }\n        return sb;\n\n    }\n\n    private static final int MaxCachedBuilderSize = 8 * 1024; private static final ThreadLocal<StringBuilder> stringLocal = new ThreadLocal<StringBuilder>() {\n        @Override\n        protected StringBuilder initialValue() {\n            return new StringBuilder(MaxCachedBuilderSize);\n        }\n    };\n\n\n}\n",
+      "fixed_full_code": "package org.jsoup.helper;\n\nimport java.net.MalformedURLException;\nimport java.net.URL;\nimport java.util.Arrays;\nimport java.util.Collection;\nimport java.util.Iterator;\n\n\npublic final class StringUtil { static final String[] padding = {\"\", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \", \" \"}; public static String join(Collection strings, String sep) {\n        return join(strings.iterator(), sep);\n    }\n\n    \n    public static String join(Iterator strings, String sep) {\n        if (!strings.hasNext())\n            return \"\";\n\n        String start = strings.next().toString();\n        if (!strings.hasNext()) \n            return start;\n\n        StringBuilder sb = new StringBuilder(64).append(start);\n        while (strings.hasNext()) {\n            sb.append(sep);\n            sb.append(strings.next());\n        }\n        return sb.toString();\n    }\n\n    \n    public static String join(String[] strings, String sep) {\n        return join(Arrays.asList(strings), sep);\n    }\n\n    \n    public static String padding(int width) {\n        if (width < 0)\n            throw new IllegalArgumentException(\"width must be > 0\");\n\n        if (width < padding.length)\n            return padding[width];\n        char[] out = new char[width];\n        for (int i = 0; i < width; i++)\n            out[i] = ' ';\n        return String.valueOf(out);\n    }\n\n    \n    public static boolean isBlank(String string) {\n        if (string == null || string.length() == 0)\n            return true;\n\n        int l = string.length();\n        for (int i = 0; i < l; i++) {\n            if (!StringUtil.isWhitespace(string.codePointAt(i)))\n                return false;\n        }\n        return true;\n    }\n\n    \n    public static boolean isNumeric(String string) {\n        if (string == null || string.length() == 0)\n            return false;\n\n        int l = string.length();\n        for (int i = 0; i < l; i++) {\n            if (!Character.isDigit(string.codePointAt(i)))\n                return false;\n        }\n        return true;\n    }\n\n    \n    public static boolean isWhitespace(int c) {\n        return c == ' ' || c == '\\t' || c == '\\n' || c == '\\f' || c == '\\r';\n    }\n\n    \n    public static boolean isActuallyWhitespace(int c) {\n        return c == ' ' || c == '\\t' || c == '\\n' || c == '\\f' || c == '\\r' || c == 160;\n        \n    }\n\n    public static boolean isInvisibleChar(int c) {\n        return Character.getType(c) == 16 && (c == 8203 || c == 8204 || c == 8205 || c == 173);\n        \n    }\n\n    \n    public static String normaliseWhitespace(String string) {\n        StringBuilder sb = StringUtil.stringBuilder();\n        appendNormalisedWhitespace(sb, string, false);\n        return sb.toString();\n    }\n\n    \n    public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading) {\n        boolean lastWasWhite = false;\n        boolean reachedNonWhite = false;\n\n        int len = string.length();\n        int c;\n        for (int i = 0; i < len; i+= Character.charCount(c)) {\n            c = string.codePointAt(i);\n            if (isActuallyWhitespace(c)) {\n                if ((stripLeading && !reachedNonWhite) || lastWasWhite)\n                    continue;\n                accum.append(' ');\n                lastWasWhite = true;\n            }\n            else if (!isInvisibleChar(c)) {\n                accum.appendCodePoint(c);\n                lastWasWhite = false;\n                reachedNonWhite = true;\n            }\n        }\n    }\n\n    public static boolean in(final String needle, final String... haystack) {\n        final int len = haystack.length;\n        for (int i = 0; i < len; i++) {\n            if (haystack[i].equals(needle))\n            return true;\n        }\n        return false;\n    }\n\n    public static boolean inSorted(String needle, String[] haystack) {\n        return Arrays.binarySearch(haystack, needle) >= 0;\n    }\n\n    \n    public static URL resolve(URL base, String relUrl) throws MalformedURLException {\n        \n        if (relUrl.startsWith(\"?\"))\n            relUrl = base.getPath() + relUrl;\n        \n        if (relUrl.indexOf('.') == 0 && base.getFile().indexOf('/') != 0) {\n            base = new URL(base.getProtocol(), base.getHost(), base.getPort(), \"/\" + base.getFile());\n        }\n        return new URL(base, relUrl);\n    }\n\n    \n    public static String resolve(final String baseUrl, final String relUrl) {\n        URL base;\n        try {\n            try {\n                base = new URL(baseUrl);\n            } catch (MalformedURLException e) {\n                \n                URL abs = new URL(relUrl);\n                return abs.toExternalForm();\n            }\n            return resolve(base, relUrl).toExternalForm();\n        } catch (MalformedURLException e) {\n            return \"\";\n        }\n    }\n\n    \n    public static StringBuilder stringBuilder() {\n        StringBuilder sb = stringLocal.get();\n        if (sb.length() > MaxCachedBuilderSize) {\n            sb = new StringBuilder(MaxCachedBuilderSize);\n            stringLocal.set(sb);\n        } else {\n            sb.delete(0, sb.length());\n        }\n        return sb;\n\n    }\n\n    private static final int MaxCachedBuilderSize = 8 * 1024; private static final ThreadLocal<StringBuilder> stringLocal = new ThreadLocal<StringBuilder>() {\n        @Override\n        protected StringBuilder initialValue() {\n            return new StringBuilder(MaxCachedBuilderSize);\n        }\n    };\n\n\n}\n",
+      "buggy_signatures": [
+        "public static String join(Iterator strings, String sep)",
+        "public static String join(String[] strings, String sep)",
+        "public static String padding(int width)",
+        "public static boolean isBlank(String string)",
+        "public static boolean isNumeric(String string)",
+        "public static boolean isWhitespace(int c)",
+        "public static boolean isActuallyWhitespace(int c)",
+        "public static String normaliseWhitespace(String string)",
+        "public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading)",
+        "public static boolean in(final String needle, final String... haystack)",
+        "public static boolean inSorted(String needle, String[] haystack)",
+        "public static URL resolve(URL base, String relUrl) throws MalformedURLException",
+        "public static String resolve(final String baseUrl, final String relUrl)",
+        "public static StringBuilder stringBuilder()",
+        "protected StringBuilder initialValue()"
+      ],
+      "fixed_signatures": [
+        "public static String join(Iterator strings, String sep)",
+        "public static String join(String[] strings, String sep)",
+        "public static String padding(int width)",
+        "public static boolean isBlank(String string)",
+        "public static boolean isNumeric(String string)",
+        "public static boolean isWhitespace(int c)",
+        "public static boolean isActuallyWhitespace(int c)",
+        "public static boolean isInvisibleChar(int c)",
+        "public static String normaliseWhitespace(String string)",
+        "public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading)",
+        "public static boolean in(final String needle, final String... haystack)",
+        "public static boolean inSorted(String needle, String[] haystack)",
+        "public static URL resolve(URL base, String relUrl) throws MalformedURLException",
+        "public static String resolve(final String baseUrl, final String relUrl)",
+        "public static StringBuilder stringBuilder()",
+        "protected StringBuilder initialValue()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static boolean isActuallyWhitespace(int c) {\n  return c == ' ' || c == '\\t' || c == '\\n' || c == '\\f' || c == '\\r' || c == 160;\n  \n  }",
+          "fixed_method": "  public static boolean isInvisibleChar(int c) {\n  return Character.getType(c) == 16 && (c == 8203 || c == 8204 || c == 8205 || c == 173);\n  \n  }",
+          "diff": [
+            "@@ -128,7 +128,10 @@",
+            "         // 160 is &nbsp; (non-breaking space). Not in the spec but expected.\n",
+            "     }\n",
+            " \n",
+            "+    public static boolean isInvisibleChar(int c) {\n",
+            "+        return Character.getType(c) == 16 && (c == 8203 || c == 8204 || c == 8205 || c == 173);\n",
+            "         // zero width sp, zw non join, zw join, soft hyphen\n",
+            "+    }\n",
+            " \n",
+            "     /**\n",
+            "      * Normalise the whitespace within this string; multiple spaces collapse to a single, and all whitespace characters\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading) {\n  boolean lastWasWhite = false;\n  boolean reachedNonWhite = false;\n\n  int len = string.length();\n  int c;\n  for (int i = 0; i < len; i+= Character.charCount(c)) {\n  c = string.codePointAt(i);\n  if (isActuallyWhitespace(c)) {\n  if ((stripLeading && !reachedNonWhite) || lastWasWhite)\n  continue;\n  accum.append(' ');\n  lastWasWhite = true;\n  }\n  else {\n  accum.appendCodePoint(c);\n  lastWasWhite = false;\n  reachedNonWhite = true;\n  }\n  }\n  }",
+          "fixed_method": "  public static void appendNormalisedWhitespace(StringBuilder accum, String string, boolean stripLeading) {\n  boolean lastWasWhite = false;\n  boolean reachedNonWhite = false;\n\n  int len = string.length();\n  int c;\n  for (int i = 0; i < len; i+= Character.charCount(c)) {\n  c = string.codePointAt(i);\n  if (isActuallyWhitespace(c)) {\n  if ((stripLeading && !reachedNonWhite) || lastWasWhite)\n  continue;\n  accum.append(' ');\n  lastWasWhite = true;\n  }\n  else if (!isInvisibleChar(c)) {\n  accum.appendCodePoint(c);\n  lastWasWhite = false;\n  reachedNonWhite = true;\n  }\n  }\n  }",
+          "diff": [
+            "@@ -162,7 +165,7 @@",
+            "                 accum.append(' ');\n",
+            "                 lastWasWhite = true;\n",
+            "             }\n",
+            "-            else {\n",
+            "+            else if (!isInvisibleChar(c)) {\n",
+            "                 accum.appendCodePoint(c);\n",
+            "                 lastWasWhite = false;\n",
+            "                 reachedNonWhite = true;\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

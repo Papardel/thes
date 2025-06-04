@@ -1,0 +1,72 @@
+{
+  "bug_id": "26",
+  "failed_tests": {
+    "org.apache.commons.collections4.keyvalue.MultiKeyTest": [
+      {
+        "methodName": "testEqualsAfterSerializationOfDerivedClass",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<3> but was:<0>",
+        "fail_line": "        assertEquals(mk.hashCode(), mk2.hashCode());",
+        "test_source": "  public void testEqualsAfterSerializationOfDerivedClass() throws IOException, ClassNotFoundException {\n  final DerivedMultiKey<?> mk = new DerivedMultiKey<String>(\"A\", \"B\");\n\n  // serialize\n  final ByteArrayOutputStream baos = new ByteArrayOutputStream();\n  final ObjectOutputStream out = new ObjectOutputStream(baos);\n  out.writeObject(mk);\n  out.close();\n\n  // deserialize\n  final ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());\n  final ObjectInputStream in = new ObjectInputStream(bais);\n  final DerivedMultiKey<?> mk2 = (DerivedMultiKey<?>)in.readObject();\n  in.close();\n\n  assertEquals(mk.hashCode(), mk2.hashCode());\n  }",
+        "stack": [
+          "MultiKeyTest.testEqualsAfterSerializationOfDerivedClass line 292"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/collections4/keyvalue/MultiKey.java",
+      "buggy_full_code": "\npackage org.apache.commons.collections4.keyvalue;\n\nimport java.io.Serializable;\nimport java.util.Arrays;\n\n\npublic class MultiKey<K> implements Serializable { private static final long serialVersionUID = 4465448607415788805L; private final K[] keys; private transient int hashCode; @SuppressWarnings(\"unchecked\") public MultiKey(final K key1, final K key2) {\n        this((K[]) new Object[] { key1, key2 }, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3) {\n        this((K[]) new Object[] {key1, key2, key3}, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3, final K key4) {\n        this((K[]) new Object[] {key1, key2, key3, key4}, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3, final K key4, final K key5) {\n        this((K[]) new Object[] {key1, key2, key3, key4, key5}, false);\n    }\n\n    \n    public MultiKey(final K[] keys) {\n        this(keys, true);\n    }\n\n    \n    public MultiKey(final K[] keys, final boolean makeClone) {\n        super();\n        if (keys == null) {\n            throw new IllegalArgumentException(\"The array of keys must not be null\");\n        }\n        if (makeClone) {\n            this.keys = keys.clone();\n        } else {\n            this.keys = keys;\n        }\n\n        calculateHashCode(keys);\n    }\n\n    \n    \n    public K[] getKeys() {\n        return keys.clone();\n    }\n\n    \n    public K getKey(final int index) {\n        return keys[index];\n    }\n\n    \n    public int size() {\n        return keys.length;\n    }\n\n    \n    \n    @Override\n    public boolean equals(final Object other) {\n        if (other == this) {\n            return true;\n        }\n        if (other instanceof MultiKey) {\n            final MultiKey<?> otherMulti = (MultiKey<?>) other;\n            return Arrays.equals(keys, otherMulti.keys);\n        }\n        return false;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return hashCode;\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"MultiKey\" + Arrays.toString(keys);\n    }\n\n    \n    private void calculateHashCode(final Object[] keys) {\n        int total = 0;\n        for (final Object key : keys) {\n            if (key != null) {\n                total ^= key.hashCode();\n            }\n        }\n        hashCode = total;\n    }\n\n    \n    private Object readResolve() {\n        calculateHashCode(keys);\n        return this;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.collections4.keyvalue;\n\nimport java.io.Serializable;\nimport java.util.Arrays;\n\n\npublic class MultiKey<K> implements Serializable { private static final long serialVersionUID = 4465448607415788805L; private final K[] keys; private transient int hashCode; @SuppressWarnings(\"unchecked\") public MultiKey(final K key1, final K key2) {\n        this((K[]) new Object[] { key1, key2 }, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3) {\n        this((K[]) new Object[] {key1, key2, key3}, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3, final K key4) {\n        this((K[]) new Object[] {key1, key2, key3, key4}, false);\n    }\n\n    \n    @SuppressWarnings(\"unchecked\")\n    public MultiKey(final K key1, final K key2, final K key3, final K key4, final K key5) {\n        this((K[]) new Object[] {key1, key2, key3, key4, key5}, false);\n    }\n\n    \n    public MultiKey(final K[] keys) {\n        this(keys, true);\n    }\n\n    \n    public MultiKey(final K[] keys, final boolean makeClone) {\n        super();\n        if (keys == null) {\n            throw new IllegalArgumentException(\"The array of keys must not be null\");\n        }\n        if (makeClone) {\n            this.keys = keys.clone();\n        } else {\n            this.keys = keys;\n        }\n\n        calculateHashCode(keys);\n    }\n\n    \n    \n    public K[] getKeys() {\n        return keys.clone();\n    }\n\n    \n    public K getKey(final int index) {\n        return keys[index];\n    }\n\n    \n    public int size() {\n        return keys.length;\n    }\n\n    \n    \n    @Override\n    public boolean equals(final Object other) {\n        if (other == this) {\n            return true;\n        }\n        if (other instanceof MultiKey) {\n            final MultiKey<?> otherMulti = (MultiKey<?>) other;\n            return Arrays.equals(keys, otherMulti.keys);\n        }\n        return false;\n    }\n\n    \n    @Override\n    public int hashCode() {\n        return hashCode;\n    }\n\n    \n    @Override\n    public String toString() {\n        return \"MultiKey\" + Arrays.toString(keys);\n    }\n\n    \n    private void calculateHashCode(final Object[] keys) {\n        int total = 0;\n        for (final Object key : keys) {\n            if (key != null) {\n                total ^= key.hashCode();\n            }\n        }\n        hashCode = total;\n    }\n\n    \n    protected Object readResolve() {\n        calculateHashCode(keys);\n        return this;\n    }\n}\n",
+      "buggy_signatures": [
+        "public MultiKey(final K key1, final K key2, final K key3)",
+        "public MultiKey(final K key1, final K key2, final K key3, final K key4)",
+        "public MultiKey(final K key1, final K key2, final K key3, final K key4, final K key5)",
+        "public MultiKey(final K[] keys)",
+        "public MultiKey(final K[] keys, final boolean makeClone)",
+        "public K[] getKeys()",
+        "public K getKey(final int index)",
+        "public int size()",
+        "public boolean equals(final Object other)",
+        "public int hashCode()",
+        "public String toString()",
+        "private void calculateHashCode(final Object[] keys)",
+        "private Object readResolve()"
+      ],
+      "fixed_signatures": [
+        "public MultiKey(final K key1, final K key2, final K key3)",
+        "public MultiKey(final K key1, final K key2, final K key3, final K key4)",
+        "public MultiKey(final K key1, final K key2, final K key3, final K key4, final K key5)",
+        "public MultiKey(final K[] keys)",
+        "public MultiKey(final K[] keys, final boolean makeClone)",
+        "public K[] getKeys()",
+        "public K getKey(final int index)",
+        "public int size()",
+        "public boolean equals(final Object other)",
+        "public int hashCode()",
+        "public String toString()",
+        "private void calculateHashCode(final Object[] keys)",
+        "protected Object readResolve()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private Object readResolve() {\n  calculateHashCode(keys);\n  return this;\n  }",
+          "fixed_method": "  protected Object readResolve() {\n  calculateHashCode(keys);\n  return this;\n  }",
+          "diff": [
+            "@@ -274,7 +274,7 @@",
+            "      * only stable for the same process).\n",
+            "      * @return the instance with recalculated hash code\n",
+            "      */\n",
+            "-    private Object readResolve() {\n",
+            "+    protected Object readResolve() {\n",
+            "         calculateHashCode(keys);\n",
+            "         return this;\n",
+            "     }\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "bug_id": "39",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.jsontype.TestPolymorphicWithDefaultImpl": [
+      {
+        "methodName": "testUnknownTypeIDRecovery",
+        "error": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+        "message": "Unrecognized field \"location\" (class com.fasterxml.jackson.databind.jsontype.TestPolymorphicWithDefaultImpl$CallRecord), not marked as ignorable (4 known properties: \"version\", \"item\", \"item2\", \"application\"])",
+        "fail_line": "        CallRecord r = reader.readValue(json);",
+        "test_source": "  public void testUnknownTypeIDRecovery() throws Exception {\n  ObjectReader reader = MAPPER.readerFor(CallRecord.class).without(\n  DeserializationFeature.FAIL_ON_INVALID_SUBTYPE);\n  String json = aposToQuotes(\"{'version':0.0,'application':'123',\"\n  +\"'item':{'type':'xevent','location':'location1'},\"\n  +\"'item2':{'type':'event','location':'location1'}}\");\n  // can't read item2 - which is valid\n  CallRecord r = reader.readValue(json);\n  assertNull(r.item);\n  assertNotNull(r.item2);\n\n  json = aposToQuotes(\"{'item':{'type':'xevent','location':'location1'}, 'version':0.0,'application':'123'}\");\n  CallRecord r3 = reader.readValue(json);\n  assertNull(r3.item);\n  assertEquals(\"123\", r3.application);\n  }",
+        "stack": [
+          "UnrecognizedPropertyException.from line 52, DeserializationContext.reportUnknownProperty line 839, StdDeserializer.handleUnknownProperty line 1045, BeanDeserializerBase.handleUnknownProperty line 1352, BeanDeserializerBase.handleUnknownVanilla line 1330, BeanDeserializer.vanillaDeserialize line 264, BeanDeserializer.deserialize line 125, ObjectReader._bindAndClose line 1511, ObjectReader.readValue line 1136, TestPolymorphicWithDefaultImpl.testUnknownTypeIDRecovery line 223"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/deser/std/NullifyingDeserializer.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.deser.std;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.jsontype.TypeDeserializer;\n\n\npublic class NullifyingDeserializer extends StdDeserializer<Object> { private static final long serialVersionUID = 1L; public final static NullifyingDeserializer instance = new NullifyingDeserializer(); public NullifyingDeserializer() { super(Object.class); }\n\n    \n    \n    @Override\n    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {\n        \n        \n            p.skipChildren();\n        return null;\n    }\n\n    @Override\n    public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {\n        \n\n        switch (p.getCurrentTokenId()) {\n        case JsonTokenId.ID_START_ARRAY:\n        case JsonTokenId.ID_START_OBJECT:\n        case JsonTokenId.ID_FIELD_NAME:\n            return typeDeserializer.deserializeTypedFromAny(p, ctxt);\n        default:\n            return null;\n        }\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.deser.std;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.jsontype.TypeDeserializer;\n\n\npublic class NullifyingDeserializer extends StdDeserializer<Object> { private static final long serialVersionUID = 1L; public final static NullifyingDeserializer instance = new NullifyingDeserializer(); public NullifyingDeserializer() { super(Object.class); }\n\n    \n    \n    @Override\n    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {\n        \n        \n        if (p.hasToken(JsonToken.FIELD_NAME)) {\n            while (true) {\n                JsonToken t = p.nextToken();\n                if ((t == null) || (t == JsonToken.END_OBJECT)) {\n                    break;\n                }\n                p.skipChildren();\n            }\n        } else {\n            p.skipChildren();\n        }\n        return null;\n    }\n\n    @Override\n    public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {\n        \n\n        switch (p.getCurrentTokenId()) {\n        case JsonTokenId.ID_START_ARRAY:\n        case JsonTokenId.ID_START_OBJECT:\n        case JsonTokenId.ID_FIELD_NAME:\n            return typeDeserializer.deserializeTypedFromAny(p, ctxt);\n        default:\n            return null;\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException",
+        "public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException",
+        "public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {\n  \n  \n  p.skipChildren();\n  return null;\n  }",
+          "fixed_method": "  public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {\n  \n  \n  if (p.hasToken(JsonToken.FIELD_NAME)) {\n  while (true) {\n  JsonToken t = p.nextToken();\n  if ((t == null) || (t == JsonToken.END_OBJECT)) {\n  break;\n  }\n  p.skipChildren();\n  }\n  } else {\n  p.skipChildren();\n  }\n  return null;\n  }",
+          "diff": [
+            "@@ -32,7 +32,17 @@",
+            "     {\n",
+            "         // 29-Jan-2016, tatu: Simple skipping for all other tokens, but FIELD_NAME bit\n",
+            "         //    special unfortunately\n",
+            "+        if (p.hasToken(JsonToken.FIELD_NAME)) {\n",
+            "+            while (true) {\n",
+            "+                JsonToken t = p.nextToken();\n",
+            "+                if ((t == null) || (t == JsonToken.END_OBJECT)) {\n",
+            "+                    break;\n",
+            "+                }\n",
+            "+                p.skipChildren();\n",
+            "+            }\n",
+            "+        } else {\n",
+            "             p.skipChildren();\n",
+            "+        }\n",
+            "         return null;\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 10
+        }
+      ]
+    }
+  ]
+}

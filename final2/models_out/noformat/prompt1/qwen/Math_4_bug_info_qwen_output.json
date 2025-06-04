@@ -1,0 +1,18 @@
+{
+  "bug_id": "Math_4_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 4\nTest Class: org.apache.commons.math3.geometry.euclidean.threed.SubLineTest\nMethod: testIntersectionNotIntersecting\nError: java.lang.NullPointerException\nMessage: \nFailing Line:         Assert.assertNull(sub1.intersection(sub2, true));\nTest Source:\npublic void testIntersectionNotIntersecting() throws MathIllegalArgumentException {\n  SubLine sub1 = new SubLine(new Vector3D(1, 1, 1), new Vector3D(1.5, 1, 1));\n  SubLine sub2 = new SubLine(new Vector3D(2, 3, 0), new Vector3D(2, 3, 0.5));\n  Assert.assertNull(sub1.intersection(sub2, true));\n  Assert.assertNull(sub1.intersection(sub2, false));\n  }\nStack Trace:\nLine.getAbscissa line 114, Line.toSubSpace line 129, SubLine.intersection line 116, SubLineTest.testIntersectionNotIntersecting line 160\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```\norg.apache.commons.math3.geometry.euclidean.threed.Line\n```"
+    },
+    {
+      "prompt_index": 2,
+      "prompt": "Bug ID: 4\nTest Class: org.apache.commons.math3.geometry.euclidean.twod.SubLineTest\nMethod: testIntersectionParallel\nError: java.lang.NullPointerException\nMessage: \nFailing Line:         Assert.assertNull(sub1.intersection(sub2, true));\nTest Source:\npublic void testIntersectionParallel() {\n  final SubLine sub1 = new SubLine(new Vector2D(0, 1), new Vector2D(0, 2));\n  final SubLine sub2 = new SubLine(new Vector2D(66, 3), new Vector2D(66, 4));\n  Assert.assertNull(sub1.intersection(sub2, true));\n  Assert.assertNull(sub1.intersection(sub2, false));\n  }\nStack Trace:\nLine.toSubSpace line 182, SubLine.intersection line 120, SubLineTest.testIntersectionParallel line 151\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```"
+    }
+  ],
+  "classes": [
+    "SubLine"
+  ]
+}

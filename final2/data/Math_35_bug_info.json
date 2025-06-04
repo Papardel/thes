@@ -1,0 +1,100 @@
+{
+  "bug_id": "35",
+  "failed_tests": {
+    "org.apache.commons.math3.genetics.ElitisticListPopulationTest": [
+      {
+        "methodName": "testChromosomeListConstructorTooLow",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: org.apache.commons.math3.exception.OutOfRangeException",
+        "fail_line": "",
+        "test_source": "  public void testChromosomeListConstructorTooLow() {\n  final List<Chromosome> chromosomes = Collections.emptyList();\n  final double rate = -0.25;\n  new ElitisticListPopulation(chromosomes, 100, rate);\n  }",
+        "stack": [
+          ""
+        ]
+      },
+      {
+        "methodName": "testConstructorTooHigh",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: org.apache.commons.math3.exception.OutOfRangeException",
+        "fail_line": "",
+        "test_source": "  public void testConstructorTooHigh() {\n  final double rate = 1.25;\n  new ElitisticListPopulation(100, rate);\n  }",
+        "stack": [
+          ""
+        ]
+      },
+      {
+        "methodName": "testConstructorTooLow",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: org.apache.commons.math3.exception.OutOfRangeException",
+        "fail_line": "",
+        "test_source": "  public void testConstructorTooLow() {\n  final double rate = -0.25;\n  new ElitisticListPopulation(100, rate);\n  }",
+        "stack": [
+          ""
+        ]
+      },
+      {
+        "methodName": "testChromosomeListConstructorTooHigh",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Expected exception: org.apache.commons.math3.exception.OutOfRangeException",
+        "fail_line": "",
+        "test_source": "  public void testChromosomeListConstructorTooHigh() {\n  final List<Chromosome> chromosomes = Collections.emptyList();\n  final double rate = 1.25;\n  new ElitisticListPopulation(chromosomes, 100, rate);\n  }",
+        "stack": [
+          ""
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math3/genetics/ElitisticListPopulation.java",
+      "buggy_full_code": "\npackage org.apache.commons.math3.genetics;\n\nimport java.util.Collections;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.OutOfRangeException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class ElitisticListPopulation extends ListPopulation { private double elitismRate = 0.9; public ElitisticListPopulation(final List<Chromosome> chromosomes, final int populationLimit, final double elitismRate) {\n        super(chromosomes, populationLimit);\n        this.elitismRate = elitismRate;\n    }\n\n    \n    public ElitisticListPopulation(final int populationLimit, final double elitismRate) {\n        super(populationLimit);\n        this.elitismRate = elitismRate;\n    }\n\n    \n    public Population nextGeneration() {\n        \n        ElitisticListPopulation nextGeneration = new ElitisticListPopulation(this.getPopulationLimit(), this.getElitismRate());\n\n        List<Chromosome> oldChromosomes = this.getChromosomes();\n        Collections.sort(oldChromosomes);\n\n        \n        int boundIndex = (int) FastMath.ceil((1.0 - this.getElitismRate()) * oldChromosomes.size());\n        for (int i=boundIndex; i<oldChromosomes.size(); i++) {\n            nextGeneration.addChromosome(oldChromosomes.get(i));\n        }\n        return nextGeneration;\n    }\n\n    \n    public void setElitismRate(final double elitismRate) {\n        if (elitismRate < 0 || elitismRate > 1) {\n            throw new OutOfRangeException(LocalizedFormats.ELITISM_RATE, elitismRate, 0, 1);\n        }\n        this.elitismRate = elitismRate;\n    }\n\n    \n    public double getElitismRate() {\n        return this.elitismRate;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math3.genetics;\n\nimport java.util.Collections;\nimport java.util.List;\n\nimport org.apache.commons.math3.exception.OutOfRangeException;\nimport org.apache.commons.math3.exception.util.LocalizedFormats;\nimport org.apache.commons.math3.util.FastMath;\n\n\npublic class ElitisticListPopulation extends ListPopulation { private double elitismRate = 0.9; public ElitisticListPopulation(final List<Chromosome> chromosomes, final int populationLimit, final double elitismRate) {\n        super(chromosomes, populationLimit);\n        setElitismRate(elitismRate);\n    }\n\n    \n    public ElitisticListPopulation(final int populationLimit, final double elitismRate) {\n        super(populationLimit);\n        setElitismRate(elitismRate);\n    }\n\n    \n    public Population nextGeneration() {\n        \n        ElitisticListPopulation nextGeneration = new ElitisticListPopulation(this.getPopulationLimit(), this.getElitismRate());\n\n        List<Chromosome> oldChromosomes = this.getChromosomes();\n        Collections.sort(oldChromosomes);\n\n        \n        int boundIndex = (int) FastMath.ceil((1.0 - this.getElitismRate()) * oldChromosomes.size());\n        for (int i=boundIndex; i<oldChromosomes.size(); i++) {\n            nextGeneration.addChromosome(oldChromosomes.get(i));\n        }\n        return nextGeneration;\n    }\n\n    \n    public void setElitismRate(final double elitismRate) {\n        if (elitismRate < 0 || elitismRate > 1) {\n            throw new OutOfRangeException(LocalizedFormats.ELITISM_RATE, elitismRate, 0, 1);\n        }\n        this.elitismRate = elitismRate;\n    }\n\n    \n    public double getElitismRate() {\n        return this.elitismRate;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public ElitisticListPopulation(final int populationLimit, final double elitismRate)",
+        "public Population nextGeneration()",
+        "public void setElitismRate(final double elitismRate)",
+        "public double getElitismRate()"
+      ],
+      "fixed_signatures": [
+        "public ElitisticListPopulation(final int populationLimit, final double elitismRate)",
+        "public Population nextGeneration()",
+        "public void setElitismRate(final double elitismRate)",
+        "public double getElitismRate()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public ElitisticListPopulation(final List<Chromosome> chromosomes, final int populationLimit, final double elitismRate) {\n  super(chromosomes, populationLimit);\n  this.elitismRate = elitismRate;\n  }",
+          "fixed_method": "  public ElitisticListPopulation(final List<Chromosome> chromosomes, final int populationLimit, final double elitismRate) {\n  super(chromosomes, populationLimit);\n  setElitismRate(elitismRate);\n  }",
+          "diff": [
+            "@@ -48,7 +48,7 @@",
+            "                                    final int populationLimit,\n",
+            "                                    final double elitismRate) {\n",
+            "         super(chromosomes, populationLimit);\n",
+            "-        this.elitismRate = elitismRate;\n",
+            "+        setElitismRate(elitismRate);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public ElitisticListPopulation(final int populationLimit, final double elitismRate) {\n  super(populationLimit);\n  this.elitismRate = elitismRate;\n  }",
+          "fixed_method": "  public ElitisticListPopulation(final int populationLimit, final double elitismRate) {\n  super(populationLimit);\n  setElitismRate(elitismRate);\n  }",
+          "diff": [
+            "@@ -62,7 +62,7 @@",
+            "      */\n",
+            "     public ElitisticListPopulation(final int populationLimit, final double elitismRate) {\n",
+            "         super(populationLimit);\n",
+            "-        this.elitismRate = elitismRate;\n",
+            "+        setElitismRate(elitismRate);\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

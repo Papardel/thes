@@ -1,0 +1,13 @@
+{
+  "bug_id": "JacksonDatabind_2_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 2\nTest Class: com.fasterxml.jackson.databind.node.TestConversions\nMethod: testConversionOfPojos\nError: junit.framework.AssertionFailedError\nMessage: Expected Object, got POJO\nFailing Line:         assertTrue(\"Expected Object, got \"+tree.getNodeType(), tree.isObject());\nTest Source:\npublic void testConversionOfPojos() throws Exception\n  {\n  final Issue467Bean input = new Issue467Bean(13);\n  final String EXP = \"{\\\"x\\\":13}\";\n  \n  \n  String json = MAPPER.writeValueAsString(input);\n  assertEquals(EXP, json);\n\n  \n  JsonNode tree = MAPPER.valueToTree(input);\n  assertTrue(\"Expected Object, got \"+tree.getNodeType(), tree.isObject());\n  assertEquals(EXP, MAPPER.writeValueAsString(tree));\n  }\nStack Trace:\nTestConversions.testConversionOfPojos line 263\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "```"
+    }
+  ],
+  "classes": [
+    "TokenBuffer"
+  ]
+}

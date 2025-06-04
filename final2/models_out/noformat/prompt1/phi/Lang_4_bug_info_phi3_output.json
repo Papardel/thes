@@ -1,0 +1,13 @@
+{
+  "bug_id": "Lang_4_bug_info",
+  "results": [
+    {
+      "prompt_index": 1,
+      "prompt": "Bug ID: 4\nTest Class: org.apache.commons.lang3.text.translate.LookupTranslatorTest\nMethod: testLang882\nError: junit.framework.AssertionFailedError\nMessage: Incorrect codepoint consumption expected:<3> but was:<0>\nFailing Line:         assertEquals(\"Incorrect codepoint consumption\", 3, result);\nTest Source:\npublic void testLang882() throws IOException {\n  final LookupTranslator lt = new LookupTranslator(new CharSequence[][] { { new StringBuffer(\"one\"), new StringBuffer(\"two\") } });\n  final StringWriter out = new StringWriter();\n  final int result = lt.translate(new StringBuffer(\"one\"), 0, out);\n  assertEquals(\"Incorrect codepoint consumption\", 3, result);\n  assertEquals(\"Incorrect value\", \"two\", out.toString());\n  }\nStack Trace:\nLookupTranslatorTest.testLang882 line 48\n\nReturn **only** the fully-qualified Java *source* class that contains the bug.\nDo **not** return:\n- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\nOutput just the class name on a single line - nothing else in this format:\nRESPONSE: <fully-qualified-class-name>\n",
+      "response": "Input:\nBUG ID: 4\n\nTest Class: org.apache.commons.lang3.text.translate.LookupTranslatorTest\nMethod: testLang882\nError: junit.framework.AssertionFailedError\nMessage: Incorrect codepoint consumption expected:<3> but was:<0>\nFailing Line:         assertEquals(\"Incorrect codepoint consumption\", 3, result);\nTest Source:\npublic void testLang882() throws IOException {\n  final LookupTranslator lt = new LookupTranslator(new CharSequence[][] { { new StringBuffer(\"one\"), new StringBuffer(\"two\") } });\n  final StringWriter out = new StringWriter();\n  final int result = lt.translate(new StringBuffer(\"one\"), 0, out);\n  assertEquals(\"Incorrect codepoint consumption\", 3, result);\n  assertEquals(\"Incorrect value\", \"two\", out.toString());\n  }\nStack Trace:\nLookupTranslatorTest.testLang882 line 48"
+    }
+  ],
+  "classes": [
+    "LookupTranslator"
+  ]
+}

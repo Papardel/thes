@@ -1,0 +1,74 @@
+{
+  "bug_id": "42",
+  "failed_tests": {
+    "org.jsoup.nodes.FormElementTest": [
+      {
+        "methodName": "createsFormData",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<6> but was:<7>",
+        "fail_line": "        assertEquals(6, data.size());",
+        "test_source": "",
+        "stack": [
+          "FormElementTest.createsFormData line 38"
+        ]
+      },
+      {
+        "methodName": "usesOnForCheckboxValueIfNoValueSet",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<[on]> but was:<[]>",
+        "fail_line": "        assertEquals(\"on\", data.get(0).value());",
+        "test_source": "",
+        "stack": [
+          "FormElementTest.usesOnForCheckboxValueIfNoValueSet line 122"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/FormElement.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.Connection;\nimport org.jsoup.Jsoup;\nimport org.jsoup.helper.HttpConnection;\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.Tag;\nimport org.jsoup.select.Elements;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class FormElement extends Element { private final Elements elements = new Elements(); public FormElement(Tag tag, String baseUri, Attributes attributes) {\n        super(tag, baseUri, attributes);\n    }\n\n    \n    public Elements elements() {\n        return elements;\n    }\n\n    \n    public FormElement addElement(Element element) {\n        elements.add(element);\n        return this;\n    }\n\n    \n    public Connection submit() {\n        String action = hasAttr(\"action\") ? absUrl(\"action\") : baseUri();\n        Validate.notEmpty(action, \"Could not determine a form action URL for submit. Ensure you set a base URI when parsing.\");\n        Connection.Method method = attr(\"method\").toUpperCase().equals(\"POST\") ?\n                Connection.Method.POST : Connection.Method.GET;\n\n        Connection con = Jsoup.connect(action)\n                .data(formData())\n                .method(method);\n\n        return con;\n    }\n\n    \n    public List<Connection.KeyVal> formData() {\n        ArrayList<Connection.KeyVal> data = new ArrayList<Connection.KeyVal>();\n\n        \n        for (Element el: elements) {\n            if (!el.tag().isFormSubmittable()) continue; \n            String name = el.attr(\"name\");\n            if (name.length() == 0) continue;\n            String type = el.attr(\"type\");\n\n            if (\"select\".equals(el.tagName())) {\n                Elements options = el.select(\"option[selected]\");\n                boolean set = false;\n                for (Element option: options) {\n                    data.add(HttpConnection.KeyVal.create(name, option.val()));\n                    set = true;\n                }\n                if (!set) {\n                    Element option = el.select(\"option\").first();\n                    if (option != null)\n                        data.add(HttpConnection.KeyVal.create(name, option.val()));\n                }\n            } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n                \n                if (el.hasAttr(\"checked\")) {\n                    final String val = el.val();\n                    data.add(HttpConnection.KeyVal.create(name, val));\n                }\n            } else {\n                data.add(HttpConnection.KeyVal.create(name, el.val()));\n            }\n        }\n        return data;\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        return super.equals(o);\n    }\n}\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.Connection;\nimport org.jsoup.Jsoup;\nimport org.jsoup.helper.HttpConnection;\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.Tag;\nimport org.jsoup.select.Elements;\n\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class FormElement extends Element { private final Elements elements = new Elements(); public FormElement(Tag tag, String baseUri, Attributes attributes) {\n        super(tag, baseUri, attributes);\n    }\n\n    \n    public Elements elements() {\n        return elements;\n    }\n\n    \n    public FormElement addElement(Element element) {\n        elements.add(element);\n        return this;\n    }\n\n    \n    public Connection submit() {\n        String action = hasAttr(\"action\") ? absUrl(\"action\") : baseUri();\n        Validate.notEmpty(action, \"Could not determine a form action URL for submit. Ensure you set a base URI when parsing.\");\n        Connection.Method method = attr(\"method\").toUpperCase().equals(\"POST\") ?\n                Connection.Method.POST : Connection.Method.GET;\n\n        Connection con = Jsoup.connect(action)\n                .data(formData())\n                .method(method);\n\n        return con;\n    }\n\n    \n    public List<Connection.KeyVal> formData() {\n        ArrayList<Connection.KeyVal> data = new ArrayList<Connection.KeyVal>();\n\n        \n        for (Element el: elements) {\n            if (!el.tag().isFormSubmittable()) continue; \n            if (el.hasAttr(\"disabled\")) continue; \n            String name = el.attr(\"name\");\n            if (name.length() == 0) continue;\n            String type = el.attr(\"type\");\n\n            if (\"select\".equals(el.tagName())) {\n                Elements options = el.select(\"option[selected]\");\n                boolean set = false;\n                for (Element option: options) {\n                    data.add(HttpConnection.KeyVal.create(name, option.val()));\n                    set = true;\n                }\n                if (!set) {\n                    Element option = el.select(\"option\").first();\n                    if (option != null)\n                        data.add(HttpConnection.KeyVal.create(name, option.val()));\n                }\n            } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n                \n                if (el.hasAttr(\"checked\")) {\n                    final String val = el.val().length() >  0 ? el.val() : \"on\";\n                    data.add(HttpConnection.KeyVal.create(name, val));\n                }\n            } else {\n                data.add(HttpConnection.KeyVal.create(name, el.val()));\n            }\n        }\n        return data;\n    }\n\n    @Override\n    public boolean equals(Object o) {\n        return super.equals(o);\n    }\n}\n",
+      "buggy_signatures": [
+        "public Elements elements()",
+        "public FormElement addElement(Element element)",
+        "public Connection submit()",
+        "public List<Connection.KeyVal> formData()",
+        "public boolean equals(Object o)"
+      ],
+      "fixed_signatures": [
+        "public Elements elements()",
+        "public FormElement addElement(Element element)",
+        "public Connection submit()",
+        "public List<Connection.KeyVal> formData()",
+        "public boolean equals(Object o)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public List<Connection.KeyVal> formData() {\n  ArrayList<Connection.KeyVal> data = new ArrayList<Connection.KeyVal>();\n\n  \n  for (Element el: elements) {\n  if (!el.tag().isFormSubmittable()) continue; \n  String name = el.attr(\"name\");\n  if (name.length() == 0) continue;\n  String type = el.attr(\"type\");\n\n  if (\"select\".equals(el.tagName())) {\n  Elements options = el.select(\"option[selected]\");\n  boolean set = false;\n  for (Element option: options) {\n  data.add(HttpConnection.KeyVal.create(name, option.val()));\n  set = true;\n  }\n  if (!set) {\n  Element option = el.select(\"option\").first();\n  if (option != null)\n  data.add(HttpConnection.KeyVal.create(name, option.val()));\n  }\n  } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n  \n  if (el.hasAttr(\"checked\")) {\n  final String val = el.val();\n  data.add(HttpConnection.KeyVal.create(name, val));\n  }\n  } else {\n  data.add(HttpConnection.KeyVal.create(name, el.val()));\n  }\n  }\n  return data;\n  }",
+          "fixed_method": "  public List<Connection.KeyVal> formData() {\n  ArrayList<Connection.KeyVal> data = new ArrayList<Connection.KeyVal>();\n\n  \n  for (Element el: elements) {\n  if (!el.tag().isFormSubmittable()) continue; \n  if (el.hasAttr(\"disabled\")) continue; \n  String name = el.attr(\"name\");\n  if (name.length() == 0) continue;\n  String type = el.attr(\"type\");\n\n  if (\"select\".equals(el.tagName())) {\n  Elements options = el.select(\"option[selected]\");\n  boolean set = false;\n  for (Element option: options) {\n  data.add(HttpConnection.KeyVal.create(name, option.val()));\n  set = true;\n  }\n  if (!set) {\n  Element option = el.select(\"option\").first();\n  if (option != null)\n  data.add(HttpConnection.KeyVal.create(name, option.val()));\n  }\n  } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n  \n  if (el.hasAttr(\"checked\")) {\n  final String val = el.val().length() >  0 ? el.val() : \"on\";\n  data.add(HttpConnection.KeyVal.create(name, val));\n  }\n  } else {\n  data.add(HttpConnection.KeyVal.create(name, el.val()));\n  }\n  }\n  return data;\n  }",
+          "diff": [
+            "@@ -77,6 +77,7 @@",
+            "         // iterate the form control elements and accumulate their values\n",
+            "         for (Element el: elements) {\n",
+            "             if (!el.tag().isFormSubmittable()) continue; // contents are form listable, superset of submitable\n",
+            "+            if (el.hasAttr(\"disabled\")) continue; // skip disabled form inputs\n",
+            "             String name = el.attr(\"name\");\n",
+            "             if (name.length() == 0) continue;\n",
+            "             String type = el.attr(\"type\");\n",
+            "@@ -96,7 +97,7 @@",
+            "             } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n",
+            "                 // only add checkbox or radio if they have the checked attribute\n",
+            "                 if (el.hasAttr(\"checked\")) {\n",
+            "-                    final String val = el.val();\n",
+            "+                    final String val = el.val().length() >  0 ? el.val() : \"on\";\n",
+            "                     data.add(HttpConnection.KeyVal.create(name, val));\n",
+            "                 }\n",
+            "             } else {\n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "bug_id": "3",
+  "failed_tests": {
+    "org.apache.commons.csv.CSVLexerTest": [
+      {
+        "methodName": "testEscapedMySqlNullValue",
+        "error": "junit.framework.AssertionFailedError:",
+        "message": "",
+        "fail_line": "        assertThat(lexer.nextToken(new Token()), hasContent(\"character\\\\NEscaped\"));",
+        "test_source": "  public void testEscapedMySqlNullValue() throws Exception {\n  // MySQL uses \\N to symbolize null values. We have to restore this\n  final Lexer lexer = getLexer(\"character\\\\NEscaped\", formatWithEscaping);\n  assertThat(lexer.nextToken(new Token()), hasContent(\"character\\\\NEscaped\"));\n  }",
+        "stack": [
+          "MatcherAssert.assertThat line 20, CSVLexerTest.testEscapedMySqlNullValue line 335"
+        ]
+      },
+      {
+        "methodName": "testEscapedCharacter",
+        "error": "junit.framework.AssertionFailedError:",
+        "message": "",
+        "fail_line": "        assertThat(lexer.nextToken(new Token()), hasContent(\"character\\\\aEscaped\"));",
+        "test_source": "  public void testEscapedCharacter() throws Exception {\n  final Lexer lexer = getLexer(\"character\\\\aEscaped\", formatWithEscaping);\n  assertThat(lexer.nextToken(new Token()), hasContent(\"character\\\\aEscaped\"));\n  }",
+        "stack": [
+          "MatcherAssert.assertThat line 20, CSVLexerTest.testEscapedCharacter line 341"
+        ]
+      }
+    ],
+    "org.apache.commons.csv.CSVParserTest": [
+      {
+        "methodName": "testBackslashEscaping",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "Records do not match expected result (entry 8): arrays first differed at element [1]; expected:<   \"quoted \"\" [/]\" / string\"   > but was:<   \"quoted \"\" []\" / string\"   >",
+        "fail_line": "        Utils.compare(\"Records do not match expected result\", res, records);",
+        "test_source": "  public void testBackslashEscaping() throws IOException {\n\n  // To avoid confusion over the need for escaping chars in java code,\n  // We will test with a forward slash as the escape char, and a single\n  // quote as the encapsulator.\n\n  final String code =\n  \"one,two,three\\n\" // 0\n  + \"'',''\\n\"  // 1) empty encapsulators\n  + \"/',/'\\n\"  // 2) single encapsulators\n  + \"'/'','/''\\n\"  // 3) single encapsulators encapsulated via escape\n  + \"'''',''''\\n\"  // 4) single encapsulators encapsulated via doubling\n  + \"/,,/,\\n\"  // 5) separator escaped\n  + \"//,//\\n\"  // 6) escape escaped\n  + \"'//','//'\\n\"  // 7) escape escaped in encapsulation\n  + \"  8  ,  \\\"quoted \\\"\\\" /\\\" // string\\\"  \\n\"  // don't eat spaces\n  + \"9,  /\\n  \\n\"  // escaped newline\n  + \"\";\n  final String[][] res = {\n  {\"one\", \"two\", \"three\"}, // 0\n  {\"\", \"\"},  // 1\n  {\"'\", \"'\"},  // 2\n  {\"'\", \"'\"},  // 3\n  {\"'\", \"'\"},  // 4\n  {\",\", \",\"},  // 5\n  {\"/\", \"/\"},  // 6\n  {\"/\", \"/\"},  // 7\n  {\"  8  \", \"  \\\"quoted \\\"\\\" /\\\" / string\\\"  \"},\n  {\"9\", \"  \\n  \"},\n  };\n\n\n  final CSVFormat format = CSVFormat.newBuilder(',').withQuoteChar('\\'').withEscape('/')\n  .withIgnoreEmptyLines(true).withRecordSeparator(CRLF).build();\n\n  final CSVParser parser = new CSVParser(code, format);\n  final List<CSVRecord> records = parser.getRecords();\n  assertTrue(records.size() > 0);\n\n  Utils.compare(\"Records do not match expected result\", res, records);\n  }",
+        "stack": [
+          "Utils.compare line 59, CSVParserTest.testBackslashEscaping line 322"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/csv/Lexer.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.csv;\n\nimport static org.apache.commons.csv.Constants.BACKSPACE; import static org.apache.commons.csv.Constants.CR; import static org.apache.commons.csv.Constants.END_OF_STREAM; import static org.apache.commons.csv.Constants.FF; import static org.apache.commons.csv.Constants.LF; import static org.apache.commons.csv.Constants.TAB; import static org.apache.commons.csv.Constants.UNDEFINED; import java.io.IOException; abstract class Lexer { private static final char DISABLED = '\\ufffe'; private final char delimiter; private final char escape; private final char quoteChar; private final char commmentStart; final boolean ignoreSurroundingSpaces; final boolean ignoreEmptyLines; final CSVFormat format; final ExtendedBufferedReader in; Lexer(final CSVFormat format, final ExtendedBufferedReader in) {\n        this.format = format;\n        this.in = in;\n        this.delimiter = format.getDelimiter();\n        this.escape = mapNullToDisabled(format.getEscape());\n        this.quoteChar = mapNullToDisabled(format.getQuoteChar());\n        this.commmentStart = mapNullToDisabled(format.getCommentStart());\n        this.ignoreSurroundingSpaces = format.getIgnoreSurroundingSpaces();\n        this.ignoreEmptyLines = format.getIgnoreEmptyLines();\n    }\n\n    private final char mapNullToDisabled(final Character c) {\n        return c == null ? DISABLED : c.charValue();\n    }\n\n    long getLineNumber() {\n        return in.getLineNumber();\n    }\n\n    \n    \n    int readEscape() throws IOException {\n        \n        final int c = in.read();\n        switch (c) {\n        case 'r':\n            return CR;\n        case 'n':\n            return LF;\n        case 't':\n            return TAB;\n        case 'b':\n            return BACKSPACE;\n        case 'f':\n            return FF;\n        case CR:\n        case LF:\n        case FF: \n        case TAB: \n        case BACKSPACE: \n            return c;\n        case END_OF_STREAM:\n            throw new IOException(\"EOF whilst processing escape sequence\");\n        default:\n            \n                return c;\n            \n        }\n    }\n\n    void trimTrailingSpaces(final StringBuilder buffer) {\n        int length = buffer.length();\n        while (length > 0 && Character.isWhitespace(buffer.charAt(length - 1))) {\n            length = length - 1;\n        }\n        if (length != buffer.length()) {\n            buffer.setLength(length);\n        }\n    }\n\n    \n    boolean readEndOfLine(int c) throws IOException {\n        \n        if (c == CR && in.lookAhead() == LF) {\n            \n            c = in.read();\n        }\n        return c == LF || c == CR;\n    }\n\n    abstract Token nextToken(Token reusableToken) throws IOException; boolean isWhitespace(final int c) {\n        return c != format.getDelimiter() && Character.isWhitespace((char) c);\n    }\n\n    \n    boolean isStartOfLine(final int c) {\n        return c == LF || c == CR || c == UNDEFINED;\n    }\n\n    \n    boolean isEndOfFile(final int c) {\n        return c == END_OF_STREAM;\n    }\n\n    boolean isDelimiter(final int c) {\n        return c == delimiter;\n    }\n\n    boolean isEscape(final int c) {\n        return c == escape;\n    }\n\n    boolean isQuoteChar(final int c) {\n        return c == quoteChar;\n    }\n\n    boolean isCommentStart(final int c) {\n        return c == commmentStart;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.csv;\n\nimport static org.apache.commons.csv.Constants.BACKSPACE; import static org.apache.commons.csv.Constants.CR; import static org.apache.commons.csv.Constants.END_OF_STREAM; import static org.apache.commons.csv.Constants.FF; import static org.apache.commons.csv.Constants.LF; import static org.apache.commons.csv.Constants.TAB; import static org.apache.commons.csv.Constants.UNDEFINED; import java.io.IOException; abstract class Lexer { private static final char DISABLED = '\\ufffe'; private final char delimiter; private final char escape; private final char quoteChar; private final char commmentStart; final boolean ignoreSurroundingSpaces; final boolean ignoreEmptyLines; final CSVFormat format; final ExtendedBufferedReader in; Lexer(final CSVFormat format, final ExtendedBufferedReader in) {\n        this.format = format;\n        this.in = in;\n        this.delimiter = format.getDelimiter();\n        this.escape = mapNullToDisabled(format.getEscape());\n        this.quoteChar = mapNullToDisabled(format.getQuoteChar());\n        this.commmentStart = mapNullToDisabled(format.getCommentStart());\n        this.ignoreSurroundingSpaces = format.getIgnoreSurroundingSpaces();\n        this.ignoreEmptyLines = format.getIgnoreEmptyLines();\n    }\n\n    private final char mapNullToDisabled(final Character c) {\n        return c == null ? DISABLED : c.charValue();\n    }\n\n    long getLineNumber() {\n        return in.getLineNumber();\n    }\n\n    \n    \n    int readEscape() throws IOException {\n        \n        final int c = in.read();\n        switch (c) {\n        case 'r':\n            return CR;\n        case 'n':\n            return LF;\n        case 't':\n            return TAB;\n        case 'b':\n            return BACKSPACE;\n        case 'f':\n            return FF;\n        case CR:\n        case LF:\n        case FF: \n        case TAB: \n        case BACKSPACE: \n            return c;\n        case END_OF_STREAM:\n            throw new IOException(\"EOF whilst processing escape sequence\");\n        default:\n            \n            if (isDelimiter(c) || isEscape(c) || isQuoteChar(c) || isCommentStart(c)) {\n                return c;\n            }\n            \n            return END_OF_STREAM;\n        }\n    }\n\n    void trimTrailingSpaces(final StringBuilder buffer) {\n        int length = buffer.length();\n        while (length > 0 && Character.isWhitespace(buffer.charAt(length - 1))) {\n            length = length - 1;\n        }\n        if (length != buffer.length()) {\n            buffer.setLength(length);\n        }\n    }\n\n    \n    boolean readEndOfLine(int c) throws IOException {\n        \n        if (c == CR && in.lookAhead() == LF) {\n            \n            c = in.read();\n        }\n        return c == LF || c == CR;\n    }\n\n    abstract Token nextToken(Token reusableToken) throws IOException; boolean isWhitespace(final int c) {\n        return c != format.getDelimiter() && Character.isWhitespace((char) c);\n    }\n\n    \n    boolean isStartOfLine(final int c) {\n        return c == LF || c == CR || c == UNDEFINED;\n    }\n\n    \n    boolean isEndOfFile(final int c) {\n        return c == END_OF_STREAM;\n    }\n\n    boolean isDelimiter(final int c) {\n        return c == delimiter;\n    }\n\n    boolean isEscape(final int c) {\n        return c == escape;\n    }\n\n    boolean isQuoteChar(final int c) {\n        return c == quoteChar;\n    }\n\n    boolean isCommentStart(final int c) {\n        return c == commmentStart;\n    }\n}\n",
+      "buggy_signatures": [
+        "private final char mapNullToDisabled(final Character c)",
+        "abstract Token nextToken(Token reusableToken) throws IOException; boolean isWhitespace(final int c)"
+      ],
+      "fixed_signatures": [
+        "private final char mapNullToDisabled(final Character c)",
+        "abstract Token nextToken(Token reusableToken) throws IOException; boolean isWhitespace(final int c)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private final char mapNullToDisabled(final Character c) {\n  return c == null ? DISABLED : c.charValue();\n  }",
+          "fixed_method": "  private final char mapNullToDisabled(final Character c) {\n  return c == null ? DISABLED : c.charValue();\n  }",
+          "diff": [
+            "@@ -108,8 +108,11 @@",
+            "             throw new IOException(\"EOF whilst processing escape sequence\");\n",
+            "         default:\n",
+            "             // Now check for meta-characters\n",
+            "+            if (isDelimiter(c) || isEscape(c) || isQuoteChar(c) || isCommentStart(c)) {\n",
+            "                 return c;\n",
+            "+            }\n",
+            "             // indicate unexpected char - available from in.getLastChar()\n",
+            "+            return END_OF_STREAM;\n",
+            "         }\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 3
+        }
+      ]
+    }
+  ]
+}

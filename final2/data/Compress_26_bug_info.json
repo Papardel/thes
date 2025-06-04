@@ -1,0 +1,79 @@
+{
+  "bug_id": "26",
+  "failed_tests": {
+    "org.apache.commons.compress.utils.IOUtilsTest": [
+      {
+        "methodName": "skipUsingRead",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<10> but was:<0>",
+        "fail_line": "        skip(new StreamWrapper() {",
+        "test_source": "  public void skipUsingRead() throws Exception {\n  skip(new StreamWrapper() {\n  public InputStream wrap(InputStream toWrap) {\n  return new FilterInputStream(toWrap) {\n  public long skip(long s) {\n  return 0;\n  }\n  };\n  }\n  });\n  }",
+        "stack": [
+          "IOUtilsTest.skip line 80, IOUtilsTest.skipUsingRead line 45"
+        ]
+      },
+      {
+        "methodName": "skipUsingSkipAndRead",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<10> but was:<5>",
+        "fail_line": "        skip(new StreamWrapper() {",
+        "test_source": "  public void skipUsingSkipAndRead() throws Exception {\n  skip(new StreamWrapper() {\n  public InputStream wrap(final InputStream toWrap) {\n  return new FilterInputStream(toWrap) {\n  boolean skipped;\n  public long skip(long s) throws IOException {\n  if (!skipped) {\n  toWrap.skip(5);\n  skipped = true;\n  return 5;\n  }\n  return 0;\n  }\n  };\n  }\n  });\n  }",
+        "stack": [
+          "IOUtilsTest.skip line 80, IOUtilsTest.skipUsingSkipAndRead line 58"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/utils/IOUtils.java",
+      "buggy_full_code": "\npackage org.apache.commons.compress.utils;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.Closeable;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.OutputStream;\n\n\npublic final class IOUtils { private static final int COPY_BUF_SIZE = 8024; private static final int SKIP_BUF_SIZE = 4096; private IOUtils() {\n    }\n\n    \n    public static long copy(final InputStream input, final OutputStream output) throws IOException {\n        return copy(input, output, COPY_BUF_SIZE);\n    }\n\n    \n    public static long copy(final InputStream input, final OutputStream output, int buffersize) throws IOException {\n        final byte[] buffer = new byte[buffersize];\n        int n = 0;\n        long count=0;\n        while (-1 != (n = input.read(buffer))) {\n            output.write(buffer, 0, n);\n            count += n;\n        }\n        return count;\n    }\n    \n    \n    public static long skip(InputStream input, long numToSkip) throws IOException {\n        long available = numToSkip;\n        while (numToSkip > 0) {\n            long skipped = input.skip(numToSkip);\n            if (skipped == 0) {\n                break;\n            }\n            numToSkip -= skipped;\n        }\n            \n        return available - numToSkip;\n    }\n\n    \n    public static int readFully(InputStream input, byte[] b) throws IOException {\n        return readFully(input, b, 0, b.length);\n    }\n\n    \n    public static int readFully(InputStream input, byte[] b, int offset, int len) throws IOException {\n        if (len < 0 || offset < 0 || len + offset > b.length) {\n            throw new IndexOutOfBoundsException();\n        }\n        int count = 0, x = 0;\n        while (count != len) {\n            x = input.read(b, offset + count, len - count);\n            if (x == -1) {\n                break;\n            }\n            count += x;\n        }\n        return count;\n    }\n\n    \n    \n    \n    \n    \n\n    \n    public static byte[] toByteArray(final InputStream input) throws IOException {\n        final ByteArrayOutputStream output = new ByteArrayOutputStream();\n        copy(input, output);\n        return output.toByteArray();\n    }\n\n    \n    public static void closeQuietly(Closeable c) {\n        if (c != null) {\n            try {\n                c.close();\n            } catch (IOException ignored) { \n            }\n        }\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.compress.utils;\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.Closeable;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.OutputStream;\n\n\npublic final class IOUtils { private static final int COPY_BUF_SIZE = 8024; private static final int SKIP_BUF_SIZE = 4096; private IOUtils() {\n    }\n\n    \n    public static long copy(final InputStream input, final OutputStream output) throws IOException {\n        return copy(input, output, COPY_BUF_SIZE);\n    }\n\n    \n    public static long copy(final InputStream input, final OutputStream output, int buffersize) throws IOException {\n        final byte[] buffer = new byte[buffersize];\n        int n = 0;\n        long count=0;\n        while (-1 != (n = input.read(buffer))) {\n            output.write(buffer, 0, n);\n            count += n;\n        }\n        return count;\n    }\n    \n    \n    public static long skip(InputStream input, long numToSkip) throws IOException {\n        long available = numToSkip;\n        while (numToSkip > 0) {\n            long skipped = input.skip(numToSkip);\n            if (skipped == 0) {\n                break;\n            }\n            numToSkip -= skipped;\n        }\n            \n        if (numToSkip > 0) {\n            byte[] skipBuf = new byte[SKIP_BUF_SIZE];\n            while (numToSkip > 0) {\n                int read = readFully(input, skipBuf, 0,\n                                     (int) Math.min(numToSkip, SKIP_BUF_SIZE));\n                if (read < 1) {\n                    break;\n                }\n                numToSkip -= read;\n            }\n        }\n        return available - numToSkip;\n    }\n\n    \n    public static int readFully(InputStream input, byte[] b) throws IOException {\n        return readFully(input, b, 0, b.length);\n    }\n\n    \n    public static int readFully(InputStream input, byte[] b, int offset, int len) throws IOException {\n        if (len < 0 || offset < 0 || len + offset > b.length) {\n            throw new IndexOutOfBoundsException();\n        }\n        int count = 0, x = 0;\n        while (count != len) {\n            x = input.read(b, offset + count, len - count);\n            if (x == -1) {\n                break;\n            }\n            count += x;\n        }\n        return count;\n    }\n\n    \n    \n    \n    \n    \n\n    \n    public static byte[] toByteArray(final InputStream input) throws IOException {\n        final ByteArrayOutputStream output = new ByteArrayOutputStream();\n        copy(input, output);\n        return output.toByteArray();\n    }\n\n    \n    public static void closeQuietly(Closeable c) {\n        if (c != null) {\n            try {\n                c.close();\n            } catch (IOException ignored) { \n            }\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public static long copy(final InputStream input, final OutputStream output) throws IOException",
+        "public static long copy(final InputStream input, final OutputStream output, int buffersize) throws IOException",
+        "public static long skip(InputStream input, long numToSkip) throws IOException",
+        "public static int readFully(InputStream input, byte[] b) throws IOException",
+        "public static int readFully(InputStream input, byte[] b, int offset, int len) throws IOException",
+        "public static byte[] toByteArray(final InputStream input) throws IOException",
+        "public static void closeQuietly(Closeable c)"
+      ],
+      "fixed_signatures": [
+        "public static long copy(final InputStream input, final OutputStream output) throws IOException",
+        "public static long copy(final InputStream input, final OutputStream output, int buffersize) throws IOException",
+        "public static long skip(InputStream input, long numToSkip) throws IOException",
+        "public static int readFully(InputStream input, byte[] b) throws IOException",
+        "public static int readFully(InputStream input, byte[] b, int offset, int len) throws IOException",
+        "public static byte[] toByteArray(final InputStream input) throws IOException",
+        "public static void closeQuietly(Closeable c)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static long skip(InputStream input, long numToSkip) throws IOException {\n  long available = numToSkip;\n  while (numToSkip > 0) {\n  long skipped = input.skip(numToSkip);\n  if (skipped == 0) {\n  break;\n  }\n  numToSkip -= skipped;\n  }\n  \n  return available - numToSkip;\n  }",
+          "fixed_method": "  public static long skip(InputStream input, long numToSkip) throws IOException {\n  long available = numToSkip;\n  while (numToSkip > 0) {\n  long skipped = input.skip(numToSkip);\n  if (skipped == 0) {\n  break;\n  }\n  numToSkip -= skipped;\n  }\n  \n  if (numToSkip > 0) {\n  byte[] skipBuf = new byte[SKIP_BUF_SIZE];\n  while (numToSkip > 0) {\n  int read = readFully(input, skipBuf, 0,\n  (int) Math.min(numToSkip, SKIP_BUF_SIZE));\n  if (read < 1) {\n  break;\n  }\n  numToSkip -= read;\n  }\n  }\n  return available - numToSkip;\n  }",
+          "diff": [
+            "@@ -101,6 +101,17 @@",
+            "             numToSkip -= skipped;\n",
+            "         }\n",
+            "             \n",
+            "+        if (numToSkip > 0) {\n",
+            "+            byte[] skipBuf = new byte[SKIP_BUF_SIZE];\n",
+            "+            while (numToSkip > 0) {\n",
+            "+                int read = readFully(input, skipBuf, 0,\n",
+            "+                                     (int) Math.min(numToSkip, SKIP_BUF_SIZE));\n",
+            "+                if (read < 1) {\n",
+            "+                    break;\n",
+            "+                }\n",
+            "+                numToSkip -= read;\n",
+            "+            }\n",
+            "+        }\n",
+            "         return available - numToSkip;\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 11
+        }
+      ]
+    }
+  ]
+}

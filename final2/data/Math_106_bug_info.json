@@ -1,0 +1,73 @@
+{
+  "bug_id": "106",
+  "failed_tests": {
+    "org.apache.commons.math.fraction.FractionFormatTest": [
+      {
+        "methodName": "testParseProperInvalidMinus",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "invalid minus in improper fraction.",
+        "fail_line": "            fail(\"invalid minus in improper fraction.\");",
+        "test_source": "  public void testParseProperInvalidMinus() {\n  String source = \"2 -2 / 3\";\n  try {\n  Fraction c = properFormat.parse(source);\n  fail(\"invalid minus in improper fraction.\");\n  } catch (ParseException ex) {\n  // expected\n  }\n  source = \"2 2 / -3\";\n  try {\n  Fraction c = properFormat.parse(source);\n  fail(\"invalid minus in improper fraction.\");\n  } catch (ParseException ex) {\n  // expected\n  }\n  }",
+        "stack": [
+          "FractionFormatTest.testParseProperInvalidMinus line 236"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/math/fraction/ProperFractionFormat.java",
+      "buggy_full_code": "\npackage org.apache.commons.math.fraction;\n\nimport java.text.FieldPosition;\nimport java.text.NumberFormat;\nimport java.text.ParsePosition;\n\nimport org.apache.commons.math.util.MathUtils;\n\n\npublic class ProperFractionFormat extends FractionFormat { private static final long serialVersionUID = -6337346779577272307L; private NumberFormat wholeFormat; public ProperFractionFormat() {\n        this(getDefaultNumberFormat());\n    }\n    \n    \n    public ProperFractionFormat(NumberFormat format) {\n        this(format, (NumberFormat)format.clone(), (NumberFormat)format.clone());\n    }\n    \n    \n    public ProperFractionFormat(NumberFormat wholeFormat, NumberFormat numeratorFormat, NumberFormat denominatorFormat) {\n        super(numeratorFormat, denominatorFormat);\n        setWholeFormat(wholeFormat);\n    }\n    \n    \n    public StringBuffer format(Fraction fraction, StringBuffer toAppendTo, FieldPosition pos) {\n        \n        pos.setBeginIndex(0);\n        pos.setEndIndex(0);\n\n        int num = fraction.getNumerator();\n        int den = fraction.getDenominator();\n        int whole = num / den;\n        num = num % den;\n        \n        if (whole != 0) {\n            getWholeFormat().format(whole, toAppendTo, pos);\n            toAppendTo.append(' ');\n            num = Math.abs(num);\n        }\n        getNumeratorFormat().format(num, toAppendTo, pos);\n        toAppendTo.append(\" / \");\n        getDenominatorFormat().format(den, toAppendTo,\n            pos);\n        \n        return toAppendTo;\n    }\n\n    \n    public NumberFormat getWholeFormat() {\n        return wholeFormat;\n    }\n    \n    \n    public Fraction parse(String source, ParsePosition pos) {\n        \n        Fraction ret = super.parse(source, pos);\n        if (ret != null) {\n            return ret;\n        }\n        \n        int initialIndex = pos.getIndex();\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n\n        \n        Number whole = getWholeFormat().parse(source, pos);\n        if (whole == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n        \n        \n        Number num = getNumeratorFormat().parse(source, pos);\n        if (num == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n        \n            \n\n        \n        int startIndex = pos.getIndex();\n        char c = parseNextCharacter(source, pos);\n        switch (c) {\n        case 0 :\n            \n            \n            return new Fraction(num.intValue(), 1);\n        case '/' :\n            \n            break;\n        default :\n            \n            \n            \n            pos.setIndex(initialIndex);\n            pos.setErrorIndex(startIndex);\n            return null;\n        }\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n\n        \n        Number den = getDenominatorFormat().parse(source, pos);\n        if (den == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n        \n            \n\n        int w = whole.intValue();\n        int n = num.intValue();\n        int d = den.intValue();\n        return new Fraction(((Math.abs(w) * d) + n) * MathUtils.sign(w), d);\n    }\n    \n    \n    public void setWholeFormat(NumberFormat format) {\n        if (format == null) {\n            throw new IllegalArgumentException(\n                \"whole format can not be null.\");\n        }\n        this.wholeFormat = format;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.math.fraction;\n\nimport java.text.FieldPosition;\nimport java.text.NumberFormat;\nimport java.text.ParsePosition;\n\nimport org.apache.commons.math.util.MathUtils;\n\n\npublic class ProperFractionFormat extends FractionFormat { private static final long serialVersionUID = -6337346779577272307L; private NumberFormat wholeFormat; public ProperFractionFormat() {\n        this(getDefaultNumberFormat());\n    }\n    \n    \n    public ProperFractionFormat(NumberFormat format) {\n        this(format, (NumberFormat)format.clone(), (NumberFormat)format.clone());\n    }\n    \n    \n    public ProperFractionFormat(NumberFormat wholeFormat, NumberFormat numeratorFormat, NumberFormat denominatorFormat) {\n        super(numeratorFormat, denominatorFormat);\n        setWholeFormat(wholeFormat);\n    }\n    \n    \n    public StringBuffer format(Fraction fraction, StringBuffer toAppendTo, FieldPosition pos) {\n        \n        pos.setBeginIndex(0);\n        pos.setEndIndex(0);\n\n        int num = fraction.getNumerator();\n        int den = fraction.getDenominator();\n        int whole = num / den;\n        num = num % den;\n        \n        if (whole != 0) {\n            getWholeFormat().format(whole, toAppendTo, pos);\n            toAppendTo.append(' ');\n            num = Math.abs(num);\n        }\n        getNumeratorFormat().format(num, toAppendTo, pos);\n        toAppendTo.append(\" / \");\n        getDenominatorFormat().format(den, toAppendTo,\n            pos);\n        \n        return toAppendTo;\n    }\n\n    \n    public NumberFormat getWholeFormat() {\n        return wholeFormat;\n    }\n    \n    \n    public Fraction parse(String source, ParsePosition pos) {\n        \n        Fraction ret = super.parse(source, pos);\n        if (ret != null) {\n            return ret;\n        }\n        \n        int initialIndex = pos.getIndex();\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n\n        \n        Number whole = getWholeFormat().parse(source, pos);\n        if (whole == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n        \n        \n        Number num = getNumeratorFormat().parse(source, pos);\n        if (num == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n        \n        if (num.intValue() < 0) {\n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n\n        \n        int startIndex = pos.getIndex();\n        char c = parseNextCharacter(source, pos);\n        switch (c) {\n        case 0 :\n            \n            \n            return new Fraction(num.intValue(), 1);\n        case '/' :\n            \n            break;\n        default :\n            \n            \n            \n            pos.setIndex(initialIndex);\n            pos.setErrorIndex(startIndex);\n            return null;\n        }\n\n        \n        parseAndIgnoreWhitespace(source, pos);\n\n        \n        Number den = getDenominatorFormat().parse(source, pos);\n        if (den == null) {\n            \n            \n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n        \n        if (den.intValue() < 0) {\n            \n            pos.setIndex(initialIndex);\n            return null;\n        }\n\n        int w = whole.intValue();\n        int n = num.intValue();\n        int d = den.intValue();\n        return new Fraction(((Math.abs(w) * d) + n) * MathUtils.sign(w), d);\n    }\n    \n    \n    public void setWholeFormat(NumberFormat format) {\n        if (format == null) {\n            throw new IllegalArgumentException(\n                \"whole format can not be null.\");\n        }\n        this.wholeFormat = format;\n    }\n}\n",
+      "buggy_signatures": [
+        "public ProperFractionFormat(NumberFormat format)",
+        "public ProperFractionFormat(NumberFormat wholeFormat, NumberFormat numeratorFormat, NumberFormat denominatorFormat)",
+        "public StringBuffer format(Fraction fraction, StringBuffer toAppendTo, FieldPosition pos)",
+        "public NumberFormat getWholeFormat()",
+        "public Fraction parse(String source, ParsePosition pos)",
+        "public void setWholeFormat(NumberFormat format)"
+      ],
+      "fixed_signatures": [
+        "public ProperFractionFormat(NumberFormat format)",
+        "public ProperFractionFormat(NumberFormat wholeFormat, NumberFormat numeratorFormat, NumberFormat denominatorFormat)",
+        "public StringBuffer format(Fraction fraction, StringBuffer toAppendTo, FieldPosition pos)",
+        "public NumberFormat getWholeFormat()",
+        "public Fraction parse(String source, ParsePosition pos)",
+        "public void setWholeFormat(NumberFormat format)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Fraction parse(String source, ParsePosition pos) {\n  \n  Fraction ret = super.parse(source, pos);\n  if (ret != null) {\n  return ret;\n  }\n  \n  int initialIndex = pos.getIndex();\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n\n  \n  Number whole = getWholeFormat().parse(source, pos);\n  if (whole == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n  \n  \n  Number num = getNumeratorFormat().parse(source, pos);\n  if (num == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n  \n  \n\n  \n  int startIndex = pos.getIndex();\n  char c = parseNextCharacter(source, pos);\n  switch (c) {\n  case 0 :\n  \n  \n  return new Fraction(num.intValue(), 1);\n  case '/' :\n  \n  break;\n  default :\n  \n  \n  \n  pos.setIndex(initialIndex);\n  pos.setErrorIndex(startIndex);\n  return null;\n  }\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n\n  \n  Number den = getDenominatorFormat().parse(source, pos);\n  if (den == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n  \n  \n\n  int w = whole.intValue();\n  int n = num.intValue();\n  int d = den.intValue();\n  return new Fraction(((Math.abs(w) * d) + n) * MathUtils.sign(w), d);\n  }",
+          "fixed_method": "  public Fraction parse(String source, ParsePosition pos) {\n  \n  Fraction ret = super.parse(source, pos);\n  if (ret != null) {\n  return ret;\n  }\n  \n  int initialIndex = pos.getIndex();\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n\n  \n  Number whole = getWholeFormat().parse(source, pos);\n  if (whole == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n  \n  \n  Number num = getNumeratorFormat().parse(source, pos);\n  if (num == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n  \n  if (num.intValue() < 0) {\n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n\n  \n  int startIndex = pos.getIndex();\n  char c = parseNextCharacter(source, pos);\n  switch (c) {\n  case 0 :\n  \n  \n  return new Fraction(num.intValue(), 1);\n  case '/' :\n  \n  break;\n  default :\n  \n  \n  \n  pos.setIndex(initialIndex);\n  pos.setErrorIndex(startIndex);\n  return null;\n  }\n\n  \n  parseAndIgnoreWhitespace(source, pos);\n\n  \n  Number den = getDenominatorFormat().parse(source, pos);\n  if (den == null) {\n  \n  \n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n  \n  if (den.intValue() < 0) {\n  \n  pos.setIndex(initialIndex);\n  return null;\n  }\n\n  int w = whole.intValue();\n  int n = num.intValue();\n  int d = den.intValue();\n  return new Fraction(((Math.abs(w) * d) + n) * MathUtils.sign(w), d);\n  }",
+          "diff": [
+            "@@ -162,7 +162,11 @@",
+            "             return null;\n",
+            "         }\n",
+            "         \n",
+            "+        if (num.intValue() < 0) {\n",
+            "             // minus signs should be leading, invalid expression\n",
+            "+            pos.setIndex(initialIndex);\n",
+            "+            return null;\n",
+            "+        }\n",
+            " \n",
+            "         // parse '/'\n",
+            "         int startIndex = pos.getIndex();\n",
+            "@@ -197,7 +201,11 @@",
+            "             return null;\n",
+            "         }\n",
+            "         \n",
+            "+        if (den.intValue() < 0) {\n",
+            "             // minus signs must be leading, invalid\n",
+            "+            pos.setIndex(initialIndex);\n",
+            "+            return null;\n",
+            "+        }\n",
+            " \n",
+            "         int w = whole.intValue();\n",
+            "         int n = num.intValue();\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

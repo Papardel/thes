@@ -1,0 +1,103 @@
+{
+  "bug_id": "10",
+  "failed_tests": {
+    "org.joda.time.TestDays": [
+      {
+        "methodName": "testFactory_daysBetween_RPartial_MonthDay",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        assertEquals(28, Days.daysBetween(start1, end2).getDays());",
+        "test_source": "  public void testFactory_daysBetween_RPartial_MonthDay() {\n  MonthDay start1 = new MonthDay(2, 1);\n  MonthDay start2 = new MonthDay(2, 28);\n  MonthDay end1 = new MonthDay(2, 28);\n  MonthDay end2 = new MonthDay(2, 29);\n  \n  assertEquals(27, Days.daysBetween(start1, end1).getDays());\n  assertEquals(28, Days.daysBetween(start1, end2).getDays());\n  assertEquals(0, Days.daysBetween(start2, end1).getDays());\n  assertEquals(1, Days.daysBetween(start2, end2).getDays());\n  \n  assertEquals(-27, Days.daysBetween(end1, start1).getDays());\n  assertEquals(-28, Days.daysBetween(end2, start1).getDays());\n  assertEquals(0, Days.daysBetween(end1, start2).getDays());\n  assertEquals(-1, Days.daysBetween(end2, start2).getDays());\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BaseChronology.set line 240, BaseSingleFieldPeriod.between line 104, Days.daysBetween line 141, TestDays.testFactory_daysBetween_RPartial_MonthDay line 130"
+        ]
+      }
+    ],
+    "org.joda.time.TestMonths": [
+      {
+        "methodName": "testFactory_monthsBetween_RPartial_MonthDay",
+        "error": "org.joda.time.IllegalFieldValueException",
+        "message": "Value 29 for dayOfMonth must be in the range [1,28]",
+        "fail_line": "        assertEquals(0, Months.monthsBetween(start, end2).getMonths());",
+        "test_source": "  public void testFactory_monthsBetween_RPartial_MonthDay() {\n  MonthDay start = new MonthDay(2, 1);\n  MonthDay end1 = new MonthDay(2, 28);\n  MonthDay end2 = new MonthDay(2, 29);\n  MonthDay end3 = new MonthDay(3, 1);\n  \n  assertEquals(0, Months.monthsBetween(start, end1).getMonths());\n  assertEquals(0, Months.monthsBetween(start, end2).getMonths());\n  assertEquals(1, Months.monthsBetween(start, end3).getMonths());\n  \n  assertEquals(0, Months.monthsBetween(end1, start).getMonths());\n  assertEquals(0, Months.monthsBetween(end2, start).getMonths());\n  assertEquals(-1, Months.monthsBetween(end3, start).getMonths());\n  }",
+        "stack": [
+          "FieldUtils.verifyValueBounds line 220, PreciseDurationDateTimeField.set line 78, BaseChronology.set line 240, BaseSingleFieldPeriod.between line 104, Months.monthsBetween line 161, TestMonths.testFactory_monthsBetween_RPartial_MonthDay line 137"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/joda/time/base/BaseSingleFieldPeriod.java",
+      "buggy_full_code": "\npackage org.joda.time.base;\n\nimport java.io.Serializable;\n\nimport org.joda.time.Chronology;\nimport org.joda.time.DateTimeUtils;\nimport org.joda.time.DurationField;\nimport org.joda.time.DurationFieldType;\nimport org.joda.time.MutablePeriod;\nimport org.joda.time.Period;\nimport org.joda.time.PeriodType;\nimport org.joda.time.ReadableInstant;\nimport org.joda.time.ReadablePartial;\nimport org.joda.time.ReadablePeriod;\nimport org.joda.time.chrono.ISOChronology;\nimport org.joda.time.field.FieldUtils;\n\n\npublic abstract class BaseSingleFieldPeriod implements ReadablePeriod, Comparable<BaseSingleFieldPeriod>, Serializable { private static final long serialVersionUID = 9386874258972L; private volatile int iPeriod; protected static int between(ReadableInstant start, ReadableInstant end, DurationFieldType field) {\n        if (start == null || end == null) {\n            throw new IllegalArgumentException(\"ReadableInstant objects must not be null\");\n        }\n        Chronology chrono = DateTimeUtils.getInstantChronology(start);\n        int amount = field.getField(chrono).getDifference(end.getMillis(), start.getMillis());\n        return amount;\n    }\n\n    \n    \n    protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance) {\n        if (start == null || end == null) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must not be null\");\n        }\n        if (start.size() != end.size()) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n        }\n        for (int i = 0, isize = start.size(); i < isize; i++) {\n            if (start.getFieldType(i) != end.getFieldType(i)) {\n                throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n            }\n        }\n        if (DateTimeUtils.isContiguous(start) == false) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n        }\n        Chronology chrono = DateTimeUtils.getChronology(start.getChronology()).withUTC();\n        int[] values = chrono.get(zeroInstance, chrono.set(start, 0L), chrono.set(end, 0L));\n        return values[0];\n    }\n\n    \n    protected static int standardPeriodIn(ReadablePeriod period, long millisPerUnit) {\n        if (period == null) {\n            return 0;\n        }\n        Chronology iso = ISOChronology.getInstanceUTC();\n        long duration = 0L;\n        for (int i = 0; i < period.size(); i++) {\n            int value = period.getValue(i);\n            if (value != 0) {\n                DurationField field = period.getFieldType(i).getField(iso);\n                if (field.isPrecise() == false) {\n                    throw new IllegalArgumentException(\n                            \"Cannot convert period to duration as \" + field.getName() +\n                            \" is not precise in the period \" + period);\n                }\n                duration = FieldUtils.safeAdd(duration, FieldUtils.safeMultiply(field.getUnitMillis(), value));\n            }\n        }\n        return FieldUtils.safeToInt(duration / millisPerUnit);\n    }\n\n    \n    \n    protected BaseSingleFieldPeriod(int period) {\n        super();\n        iPeriod = period;\n    }\n\n    \n    \n    protected int getValue() {\n        return iPeriod;\n    }\n\n    \n    protected void setValue(int value) {\n        iPeriod = value;\n    }\n\n    \n    \n    public abstract DurationFieldType getFieldType(); public abstract PeriodType getPeriodType(); public int size() {\n        return 1;\n    }\n\n    \n    public DurationFieldType getFieldType(int index) {\n        if (index != 0) {\n            throw new IndexOutOfBoundsException(String.valueOf(index));\n        }\n        return getFieldType();\n    }\n\n    \n    public int getValue(int index) {\n        if (index != 0) {\n            throw new IndexOutOfBoundsException(String.valueOf(index));\n        }\n        return getValue();\n    }\n\n    \n    public int get(DurationFieldType type) {\n        if (type == getFieldType()) {\n            return getValue();\n        }\n        return 0;\n    }\n\n    \n    public boolean isSupported(DurationFieldType type) {\n        return (type == getFieldType());\n    }\n\n    \n    \n    public Period toPeriod() {\n        return Period.ZERO.withFields(this);\n    }\n\n    \n    public MutablePeriod toMutablePeriod() {\n        MutablePeriod period = new MutablePeriod();\n        period.add(this);\n        return period;\n    }\n\n    \n    \n    public boolean equals(Object period) {\n        if (this == period) {\n            return true;\n        }\n        if (period instanceof ReadablePeriod == false) {\n            return false;\n        }\n        ReadablePeriod other = (ReadablePeriod) period;\n        return (other.getPeriodType() == getPeriodType() && other.getValue(0) == getValue());\n    }\n\n    \n    public int hashCode() {\n        int total = 17;\n        total = 27 * total + getValue();\n        total = 27 * total + getFieldType().hashCode();\n        return total;\n    }\n\n    \n    public int compareTo(BaseSingleFieldPeriod other) {\n        if (other.getClass() != getClass()) {\n            throw new ClassCastException(getClass() + \" cannot be compared to \" + other.getClass());\n        }\n        int otherValue = other.getValue();\n        int thisValue = getValue();\n        if (thisValue > otherValue) {\n            return 1;\n        }\n        if (thisValue < otherValue) {\n            return -1;\n        }\n        return 0;\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.joda.time.base;\n\nimport java.io.Serializable;\n\nimport org.joda.time.Chronology;\nimport org.joda.time.DateTimeUtils;\nimport org.joda.time.DurationField;\nimport org.joda.time.DurationFieldType;\nimport org.joda.time.MutablePeriod;\nimport org.joda.time.Period;\nimport org.joda.time.PeriodType;\nimport org.joda.time.ReadableInstant;\nimport org.joda.time.ReadablePartial;\nimport org.joda.time.ReadablePeriod;\nimport org.joda.time.chrono.ISOChronology;\nimport org.joda.time.field.FieldUtils;\n\n\npublic abstract class BaseSingleFieldPeriod implements ReadablePeriod, Comparable<BaseSingleFieldPeriod>, Serializable { private static final long serialVersionUID = 9386874258972L; private static final long START_1972 = 2L * 365L * 86400L * 1000L; private volatile int iPeriod; protected static int between(ReadableInstant start, ReadableInstant end, DurationFieldType field) {\n        if (start == null || end == null) {\n            throw new IllegalArgumentException(\"ReadableInstant objects must not be null\");\n        }\n        Chronology chrono = DateTimeUtils.getInstantChronology(start);\n        int amount = field.getField(chrono).getDifference(end.getMillis(), start.getMillis());\n        return amount;\n    }\n\n    \n    \n    protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance) {\n        if (start == null || end == null) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must not be null\");\n        }\n        if (start.size() != end.size()) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n        }\n        for (int i = 0, isize = start.size(); i < isize; i++) {\n            if (start.getFieldType(i) != end.getFieldType(i)) {\n                throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n            }\n        }\n        if (DateTimeUtils.isContiguous(start) == false) {\n            throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n        }\n        Chronology chrono = DateTimeUtils.getChronology(start.getChronology()).withUTC();\n        int[] values = chrono.get(zeroInstance, chrono.set(start, START_1972), chrono.set(end, START_1972));\n        return values[0];\n    }\n\n    \n    protected static int standardPeriodIn(ReadablePeriod period, long millisPerUnit) {\n        if (period == null) {\n            return 0;\n        }\n        Chronology iso = ISOChronology.getInstanceUTC();\n        long duration = 0L;\n        for (int i = 0; i < period.size(); i++) {\n            int value = period.getValue(i);\n            if (value != 0) {\n                DurationField field = period.getFieldType(i).getField(iso);\n                if (field.isPrecise() == false) {\n                    throw new IllegalArgumentException(\n                            \"Cannot convert period to duration as \" + field.getName() +\n                            \" is not precise in the period \" + period);\n                }\n                duration = FieldUtils.safeAdd(duration, FieldUtils.safeMultiply(field.getUnitMillis(), value));\n            }\n        }\n        return FieldUtils.safeToInt(duration / millisPerUnit);\n    }\n\n    \n    \n    protected BaseSingleFieldPeriod(int period) {\n        super();\n        iPeriod = period;\n    }\n\n    \n    \n    protected int getValue() {\n        return iPeriod;\n    }\n\n    \n    protected void setValue(int value) {\n        iPeriod = value;\n    }\n\n    \n    \n    public abstract DurationFieldType getFieldType(); public abstract PeriodType getPeriodType(); public int size() {\n        return 1;\n    }\n\n    \n    public DurationFieldType getFieldType(int index) {\n        if (index != 0) {\n            throw new IndexOutOfBoundsException(String.valueOf(index));\n        }\n        return getFieldType();\n    }\n\n    \n    public int getValue(int index) {\n        if (index != 0) {\n            throw new IndexOutOfBoundsException(String.valueOf(index));\n        }\n        return getValue();\n    }\n\n    \n    public int get(DurationFieldType type) {\n        if (type == getFieldType()) {\n            return getValue();\n        }\n        return 0;\n    }\n\n    \n    public boolean isSupported(DurationFieldType type) {\n        return (type == getFieldType());\n    }\n\n    \n    \n    public Period toPeriod() {\n        return Period.ZERO.withFields(this);\n    }\n\n    \n    public MutablePeriod toMutablePeriod() {\n        MutablePeriod period = new MutablePeriod();\n        period.add(this);\n        return period;\n    }\n\n    \n    \n    public boolean equals(Object period) {\n        if (this == period) {\n            return true;\n        }\n        if (period instanceof ReadablePeriod == false) {\n            return false;\n        }\n        ReadablePeriod other = (ReadablePeriod) period;\n        return (other.getPeriodType() == getPeriodType() && other.getValue(0) == getValue());\n    }\n\n    \n    public int hashCode() {\n        int total = 17;\n        total = 27 * total + getValue();\n        total = 27 * total + getFieldType().hashCode();\n        return total;\n    }\n\n    \n    public int compareTo(BaseSingleFieldPeriod other) {\n        if (other.getClass() != getClass()) {\n            throw new ClassCastException(getClass() + \" cannot be compared to \" + other.getClass());\n        }\n        int otherValue = other.getValue();\n        int thisValue = getValue();\n        if (thisValue > otherValue) {\n            return 1;\n        }\n        if (thisValue < otherValue) {\n            return -1;\n        }\n        return 0;\n    }\n\n}\n",
+      "buggy_signatures": [
+        "protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance)",
+        "protected static int standardPeriodIn(ReadablePeriod period, long millisPerUnit)",
+        "protected BaseSingleFieldPeriod(int period)",
+        "protected int getValue()",
+        "protected void setValue(int value)",
+        "public abstract DurationFieldType getFieldType(); public abstract PeriodType getPeriodType(); public int size()",
+        "public DurationFieldType getFieldType(int index)",
+        "public int getValue(int index)",
+        "public int get(DurationFieldType type)",
+        "public boolean isSupported(DurationFieldType type)",
+        "public Period toPeriod()",
+        "public MutablePeriod toMutablePeriod()",
+        "public boolean equals(Object period)",
+        "public int hashCode()",
+        "public int compareTo(BaseSingleFieldPeriod other)"
+      ],
+      "fixed_signatures": [
+        "protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance)",
+        "protected static int standardPeriodIn(ReadablePeriod period, long millisPerUnit)",
+        "protected BaseSingleFieldPeriod(int period)",
+        "protected int getValue()",
+        "protected void setValue(int value)",
+        "public abstract DurationFieldType getFieldType(); public abstract PeriodType getPeriodType(); public int size()",
+        "public DurationFieldType getFieldType(int index)",
+        "public int getValue(int index)",
+        "public int get(DurationFieldType type)",
+        "public boolean isSupported(DurationFieldType type)",
+        "public Period toPeriod()",
+        "public MutablePeriod toMutablePeriod()",
+        "public boolean equals(Object period)",
+        "public int hashCode()",
+        "public int compareTo(BaseSingleFieldPeriod other)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -49,6 +49,7 @@",
+            "     /** Serialization version. */\n",
+            "     private static final long serialVersionUID = 9386874258972L;\n",
+            "     /** The start of 1972. */\n",
+            "+    private static final long START_1972 = 2L * 365L * 86400L * 1000L;\n",
+            " \n",
+            "     /** The period in the units of this period. */\n",
+            "     private volatile int iPeriod;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance) {\n  if (start == null || end == null) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must not be null\");\n  }\n  if (start.size() != end.size()) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n  }\n  for (int i = 0, isize = start.size(); i < isize; i++) {\n  if (start.getFieldType(i) != end.getFieldType(i)) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n  }\n  }\n  if (DateTimeUtils.isContiguous(start) == false) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n  }\n  Chronology chrono = DateTimeUtils.getChronology(start.getChronology()).withUTC();\n  int[] values = chrono.get(zeroInstance, chrono.set(start, 0L), chrono.set(end, 0L));\n  return values[0];\n  }",
+          "fixed_method": "  protected static int between(ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance) {\n  if (start == null || end == null) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must not be null\");\n  }\n  if (start.size() != end.size()) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n  }\n  for (int i = 0, isize = start.size(); i < isize; i++) {\n  if (start.getFieldType(i) != end.getFieldType(i)) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must have the same set of fields\");\n  }\n  }\n  if (DateTimeUtils.isContiguous(start) == false) {\n  throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n  }\n  Chronology chrono = DateTimeUtils.getChronology(start.getChronology()).withUTC();\n  int[] values = chrono.get(zeroInstance, chrono.set(start, START_1972), chrono.set(end, START_1972));\n  return values[0];\n  }",
+          "diff": [
+            "@@ -101,7 +102,7 @@",
+            "             throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n",
+            "         }\n",
+            "         Chronology chrono = DateTimeUtils.getChronology(start.getChronology()).withUTC();\n",
+            "-        int[] values = chrono.get(zeroInstance, chrono.set(start, 0L), chrono.set(end, 0L));\n",
+            "+        int[] values = chrono.get(zeroInstance, chrono.set(start, START_1972), chrono.set(end, START_1972));\n",
+            "         return values[0];\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

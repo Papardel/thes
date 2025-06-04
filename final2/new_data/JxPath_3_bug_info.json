@@ -1,0 +1,130 @@
+{
+  "bug_id": "3",
+  "failed_tests": {
+    "org.apache.commons.jxpath.ri.model.beans.BadlyImplementedFactoryTest": [
+      {
+        "methodName": "testBadFactoryImplementation",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "",
+        "fail_line": "            assertTrue(e.getCause() instanceof JXPathAbstractFactoryException);",
+        "test_source": "  public void testBadFactoryImplementation() {\n  try {\n  context.createPath(\"foo/bar\");\n  fail(\"should fail with JXPathException caused by JXPathAbstractFactoryException\");\n  } catch (JXPathException e) {\n  assertTrue(e.getCause() instanceof JXPathAbstractFactoryException);\n  }\n  }",
+        "stack": [
+          "BadlyImplementedFactoryTest.testBadFactoryImplementation line 64"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/jxpath/ri/model/beans/NullPropertyPointer.java",
+      "buggy_full_code": "\npackage org.apache.commons.jxpath.ri.model.beans;\n\nimport org.apache.commons.jxpath.JXPathContext;\nimport org.apache.commons.jxpath.JXPathInvalidAccessException;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\n\n\npublic class NullPropertyPointer extends PropertyPointer { private String propertyName = \"*\"; private boolean byNameAttribute = false; public NullPropertyPointer(NodePointer parent) {\n        super(parent);\n    }\n\n    public QName getName() {\n        return new QName(propertyName);\n    }\n\n    public void setPropertyIndex(int index) {\n    }\n\n    public int getLength() {\n        return 0;\n    }\n\n    public Object getBaseValue() {\n        return null;\n    }\n\n    public Object getImmediateNode() {\n        return null;\n    }\n\n    public boolean isLeaf() {\n        return true;\n    }    \n\n    public NodePointer getValuePointer() {\n        return new NullPointer(this,  new QName(getPropertyName()));\n    }\n\n    protected boolean isActualProperty() {\n        return false;\n    }\n\n    public boolean isActual() {\n        return false;\n    }\n\n    public boolean isContainer() {\n        return true;\n    }\n\n    public void setValue(Object value) {\n        if (parent == null || parent.isContainer()) {\n            throw new JXPathInvalidAccessException(\n                \"Cannot set property \"\n                    + asPath()\n                    + \", the target object is null\");\n        }\n        else if (parent instanceof PropertyOwnerPointer &&\n                ((PropertyOwnerPointer) parent).\n                    isDynamicPropertyDeclarationSupported()){\n            \n            \n            PropertyPointer propertyPointer =\n                ((PropertyOwnerPointer) parent).getPropertyPointer();\n            propertyPointer.setPropertyName(propertyName);\n            propertyPointer.setValue(value);\n        }\n        else {\n            throw new JXPathInvalidAccessException(\n                \"Cannot set property \"\n                    + asPath()\n                    + \", path does not match a changeable location\");\n        }\n    }\n\n    public NodePointer createPath(JXPathContext context) {\n        NodePointer newParent = parent.createPath(context);\n        if (isAttribute()) {\n            return newParent.createAttribute(context, getName());\n        }\n        else {\n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            if (newParent instanceof PropertyOwnerPointer) {\n                PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n                newParent = pop.getPropertyPointer();\n            }\n            return newParent.createChild(context, getName(), getIndex());\n        }\n    }\n\n    public NodePointer createPath(JXPathContext context, Object value) {\n        NodePointer newParent = parent.createPath(context);\n        if (isAttribute()) {\n            NodePointer pointer = newParent.createAttribute(context, getName());\n            pointer.setValue(value);\n            return pointer;\n        }\n        else {\n            if (newParent instanceof PropertyOwnerPointer) {\n                PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n                newParent = pop.getPropertyPointer();\n            }\n            return newParent.createChild(context, getName(), index, value);\n        }\n    }\n    \n    public NodePointer createChild( JXPathContext context, QName name, int index) {\n        return createPath(context).createChild(context, name, index);\n    }\n        \n    public NodePointer createChild( JXPathContext context, QName name, int index, Object value) {\n        return createPath(context).createChild(context, name, index, value);\n    }\n\n    public String getPropertyName() {\n        return propertyName;\n    }\n\n    public void setPropertyName(String propertyName) {\n        this.propertyName = propertyName;\n    }\n\n    public void setNameAttributeValue(String attributeValue) {\n        this.propertyName = attributeValue;\n        byNameAttribute = true;\n    }\n\n    public boolean isCollection() {\n        return getIndex() != WHOLE_COLLECTION;\n    }\n\n    public int getPropertyCount() {\n        return 0;\n    }\n\n    public String[] getPropertyNames() {\n        return new String[0];\n    }\n\n    public String asPath() {\n        if (!byNameAttribute) {\n            return super.asPath();\n        }\n        else {\n            StringBuffer buffer = new StringBuffer();\n            buffer.append(getImmediateParentPointer().asPath());\n            buffer.append(\"[@name='\");\n            buffer.append(escape(getPropertyName()));\n            buffer.append(\"']\");\n            if (index != WHOLE_COLLECTION) {\n                buffer.append('[').append(index + 1).append(']');\n            }\n            return buffer.toString();\n        }\n    }\n\n    private String escape(String string) {\n        int index = string.indexOf('\\'');\n        while (index != -1) {\n            string =\n                string.substring(0, index)\n                    + \"&apos;\"\n                    + string.substring(index + 1);\n            index = string.indexOf('\\'');\n        }\n        index = string.indexOf('\\\"');\n        while (index != -1) {\n            string =\n                string.substring(0, index)\n                    + \"&quot;\"\n                    + string.substring(index + 1);\n            index = string.indexOf('\\\"');\n        }\n        return string;\n    }\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.jxpath.ri.model.beans;\n\nimport org.apache.commons.jxpath.AbstractFactory;\nimport org.apache.commons.jxpath.JXPathAbstractFactoryException;\nimport org.apache.commons.jxpath.JXPathContext;\nimport org.apache.commons.jxpath.JXPathInvalidAccessException;\nimport org.apache.commons.jxpath.ri.QName;\nimport org.apache.commons.jxpath.ri.model.NodePointer;\n\n\npublic class NullPropertyPointer extends PropertyPointer { private String propertyName = \"*\"; private boolean byNameAttribute = false; public NullPropertyPointer(NodePointer parent) {\n        super(parent);\n    }\n\n    public QName getName() {\n        return new QName(propertyName);\n    }\n\n    public void setPropertyIndex(int index) {\n    }\n\n    public int getLength() {\n        return 0;\n    }\n\n    public Object getBaseValue() {\n        return null;\n    }\n\n    public Object getImmediateNode() {\n        return null;\n    }\n\n    public boolean isLeaf() {\n        return true;\n    }    \n\n    public NodePointer getValuePointer() {\n        return new NullPointer(this,  new QName(getPropertyName()));\n    }\n\n    protected boolean isActualProperty() {\n        return false;\n    }\n\n    public boolean isActual() {\n        return false;\n    }\n\n    public boolean isContainer() {\n        return true;\n    }\n\n    public void setValue(Object value) {\n        if (parent == null || parent.isContainer()) {\n            throw new JXPathInvalidAccessException(\n                \"Cannot set property \"\n                    + asPath()\n                    + \", the target object is null\");\n        }\n        else if (parent instanceof PropertyOwnerPointer &&\n                ((PropertyOwnerPointer) parent).\n                    isDynamicPropertyDeclarationSupported()){\n            \n            \n            PropertyPointer propertyPointer =\n                ((PropertyOwnerPointer) parent).getPropertyPointer();\n            propertyPointer.setPropertyName(propertyName);\n            propertyPointer.setValue(value);\n        }\n        else {\n            throw new JXPathInvalidAccessException(\n                \"Cannot set property \"\n                    + asPath()\n                    + \", path does not match a changeable location\");\n        }\n    }\n\n    public NodePointer createPath(JXPathContext context) {\n        NodePointer newParent = parent.createPath(context);\n        if (isAttribute()) {\n            return newParent.createAttribute(context, getName());\n        }\n        else {\n            if (parent instanceof NullPointer && parent.equals(newParent)) {\n                throw createBadFactoryException(context.getFactory());\n            }\n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            \n            if (newParent instanceof PropertyOwnerPointer) {\n                PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n                newParent = pop.getPropertyPointer();\n            }\n            return newParent.createChild(context, getName(), getIndex());\n        }\n    }\n\n    public NodePointer createPath(JXPathContext context, Object value) {\n        NodePointer newParent = parent.createPath(context);\n        if (isAttribute()) {\n            NodePointer pointer = newParent.createAttribute(context, getName());\n            pointer.setValue(value);\n            return pointer;\n        }\n        else {\n            if (parent instanceof NullPointer && parent.equals(newParent)) {\n                throw createBadFactoryException(context.getFactory());\n            }\n            if (newParent instanceof PropertyOwnerPointer) {\n                PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n                newParent = pop.getPropertyPointer();\n            }\n            return newParent.createChild(context, getName(), index, value);\n        }\n    }\n    \n    public NodePointer createChild( JXPathContext context, QName name, int index) {\n        return createPath(context).createChild(context, name, index);\n    }\n        \n    public NodePointer createChild( JXPathContext context, QName name, int index, Object value) {\n        return createPath(context).createChild(context, name, index, value);\n    }\n\n    public String getPropertyName() {\n        return propertyName;\n    }\n\n    public void setPropertyName(String propertyName) {\n        this.propertyName = propertyName;\n    }\n\n    public void setNameAttributeValue(String attributeValue) {\n        this.propertyName = attributeValue;\n        byNameAttribute = true;\n    }\n\n    public boolean isCollection() {\n        return getIndex() != WHOLE_COLLECTION;\n    }\n\n    public int getPropertyCount() {\n        return 0;\n    }\n\n    public String[] getPropertyNames() {\n        return new String[0];\n    }\n\n    public String asPath() {\n        if (!byNameAttribute) {\n            return super.asPath();\n        }\n        else {\n            StringBuffer buffer = new StringBuffer();\n            buffer.append(getImmediateParentPointer().asPath());\n            buffer.append(\"[@name='\");\n            buffer.append(escape(getPropertyName()));\n            buffer.append(\"']\");\n            if (index != WHOLE_COLLECTION) {\n                buffer.append('[').append(index + 1).append(']');\n            }\n            return buffer.toString();\n        }\n    }\n\n    private String escape(String string) {\n        int index = string.indexOf('\\'');\n        while (index != -1) {\n            string =\n                string.substring(0, index)\n                    + \"&apos;\"\n                    + string.substring(index + 1);\n            index = string.indexOf('\\'');\n        }\n        index = string.indexOf('\\\"');\n        while (index != -1) {\n            string =\n                string.substring(0, index)\n                    + \"&quot;\"\n                    + string.substring(index + 1);\n            index = string.indexOf('\\\"');\n        }\n        return string;\n    }\n\n    private JXPathAbstractFactoryException createBadFactoryException(AbstractFactory factory) {\n        return new JXPathAbstractFactoryException(\"Factory \" + factory\n                + \" reported success creating object for path: \" + asPath()\n                + \" but object was null.  Terminating to avoid stack recursion.\");\n    }\n}",
+      "buggy_signatures": [
+        "public QName getName()",
+        "public void setPropertyIndex(int index)",
+        "public int getLength()",
+        "public Object getBaseValue()",
+        "public Object getImmediateNode()",
+        "public boolean isLeaf()",
+        "public NodePointer getValuePointer()",
+        "protected boolean isActualProperty()",
+        "public boolean isActual()",
+        "public boolean isContainer()",
+        "public void setValue(Object value)",
+        "public NodePointer createPath(JXPathContext context)",
+        "public NodePointer createPath(JXPathContext context, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index, Object value)",
+        "public String getPropertyName()",
+        "public void setPropertyName(String propertyName)",
+        "public void setNameAttributeValue(String attributeValue)",
+        "public boolean isCollection()",
+        "public int getPropertyCount()",
+        "public String[] getPropertyNames()",
+        "public String asPath()",
+        "private String escape(String string)"
+      ],
+      "fixed_signatures": [
+        "public QName getName()",
+        "public void setPropertyIndex(int index)",
+        "public int getLength()",
+        "public Object getBaseValue()",
+        "public Object getImmediateNode()",
+        "public boolean isLeaf()",
+        "public NodePointer getValuePointer()",
+        "protected boolean isActualProperty()",
+        "public boolean isActual()",
+        "public boolean isContainer()",
+        "public void setValue(Object value)",
+        "public NodePointer createPath(JXPathContext context)",
+        "public NodePointer createPath(JXPathContext context, Object value)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index)",
+        "public NodePointer createChild( JXPathContext context, QName name, int index, Object value)",
+        "public String getPropertyName()",
+        "public void setPropertyName(String propertyName)",
+        "public void setNameAttributeValue(String attributeValue)",
+        "public boolean isCollection()",
+        "public int getPropertyCount()",
+        "public String[] getPropertyNames()",
+        "public String asPath()",
+        "private String escape(String string)",
+        "private JXPathAbstractFactoryException createBadFactoryException(AbstractFactory factory)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public NodePointer createPath(JXPathContext context) {\n  NodePointer newParent = parent.createPath(context);\n  if (isAttribute()) {\n  return newParent.createAttribute(context, getName());\n  }\n  else {\n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  if (newParent instanceof PropertyOwnerPointer) {\n  PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n  newParent = pop.getPropertyPointer();\n  }\n  return newParent.createChild(context, getName(), getIndex());\n  }\n  }",
+          "fixed_method": "  public NodePointer createPath(JXPathContext context) {\n  NodePointer newParent = parent.createPath(context);\n  if (isAttribute()) {\n  return newParent.createAttribute(context, getName());\n  }\n  else {\n  if (parent instanceof NullPointer && parent.equals(newParent)) {\n  throw createBadFactoryException(context.getFactory());\n  }\n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  \n  if (newParent instanceof PropertyOwnerPointer) {\n  PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n  newParent = pop.getPropertyPointer();\n  }\n  return newParent.createChild(context, getName(), getIndex());\n  }\n  }",
+          "diff": [
+            "@@ -106,6 +108,9 @@",
+            "             return newParent.createAttribute(context, getName());\n",
+            "         }\n",
+            "         else {\n",
+            "+            if (parent instanceof NullPointer && parent.equals(newParent)) {\n",
+            "+                throw createBadFactoryException(context.getFactory());\n",
+            "+            }\n",
+            "             // Consider these two use cases:\n",
+            "             // 1. The parent pointer of NullPropertyPointer is \n",
+            "             //    a PropertyOwnerPointer other than NullPointer. When we call \n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  public NodePointer createPath(JXPathContext context, Object value) {\n  NodePointer newParent = parent.createPath(context);\n  if (isAttribute()) {\n  NodePointer pointer = newParent.createAttribute(context, getName());\n  pointer.setValue(value);\n  return pointer;\n  }\n  else {\n  if (newParent instanceof PropertyOwnerPointer) {\n  PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n  newParent = pop.getPropertyPointer();\n  }\n  return newParent.createChild(context, getName(), index, value);\n  }\n  }",
+          "fixed_method": "  public NodePointer createPath(JXPathContext context, Object value) {\n  NodePointer newParent = parent.createPath(context);\n  if (isAttribute()) {\n  NodePointer pointer = newParent.createAttribute(context, getName());\n  pointer.setValue(value);\n  return pointer;\n  }\n  else {\n  if (parent instanceof NullPointer && parent.equals(newParent)) {\n  throw createBadFactoryException(context.getFactory());\n  }\n  if (newParent instanceof PropertyOwnerPointer) {\n  PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n  newParent = pop.getPropertyPointer();\n  }\n  return newParent.createChild(context, getName(), index, value);\n  }\n  }",
+          "diff": [
+            "@@ -135,6 +140,9 @@",
+            "             return pointer;\n",
+            "         }\n",
+            "         else {\n",
+            "+            if (parent instanceof NullPointer && parent.equals(newParent)) {\n",
+            "+                throw createBadFactoryException(context.getFactory());\n",
+            "+            }\n",
+            "             if (newParent instanceof PropertyOwnerPointer) {\n",
+            "                 PropertyOwnerPointer pop = (PropertyOwnerPointer) newParent;\n",
+            "                 newParent = pop.getPropertyPointer();\n"
+          ],
+          "changed_lines": 3
+        },
+        {
+          "buggy_method": "  private String escape(String string) {\n  int index = string.indexOf('\\'');\n  while (index != -1) {\n  string =\n  string.substring(0, index)\n  + \"&apos;\"\n  + string.substring(index + 1);\n  index = string.indexOf('\\'');\n  }\n  index = string.indexOf('\\\"');\n  while (index != -1) {\n  string =\n  string.substring(0, index)\n  + \"&quot;\"\n  + string.substring(index + 1);\n  index = string.indexOf('\\\"');\n  }\n  return string;\n  }",
+          "fixed_method": "  private String escape(String string) {\n  int index = string.indexOf('\\'');\n  while (index != -1) {\n  string =\n  string.substring(0, index)\n  + \"&apos;\"\n  + string.substring(index + 1);\n  index = string.indexOf('\\'');\n  }\n  index = string.indexOf('\\\"');\n  while (index != -1) {\n  string =\n  string.substring(0, index)\n  + \"&quot;\"\n  + string.substring(index + 1);\n  index = string.indexOf('\\\"');\n  }\n  return string;\n  }",
+          "diff": [
+            "@@ -221,4 +229,10 @@",
+            "         }\n",
+            "         return string;\n",
+            "     }\n",
+            "-}\n",
+            "+\n",
+            "+    private JXPathAbstractFactoryException createBadFactoryException(AbstractFactory factory) {\n",
+            "+        return new JXPathAbstractFactoryException(\"Factory \" + factory\n",
+            "+                + \" reported success creating object for path: \" + asPath()\n",
+            "+                + \" but object was null.  Terminating to avoid stack recursion.\");\n",
+            "+    }\n",
+            "+}"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

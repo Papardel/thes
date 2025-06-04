@@ -1,0 +1,98 @@
+{
+  "bug_id": "26",
+  "failed_tests": {
+    "org.apache.commons.cli.OptionBuilderTest": [
+      {
+        "methodName": "testBuilderIsResettedAlways",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "we inherited a description",
+        "fail_line": "        assertNull(\"we inherited a description\", OptionBuilder.create('x').getDescription());",
+        "test_source": "  public void testBuilderIsResettedAlways() {\n  try\n  {\n  OptionBuilder.withDescription(\"JUnit\").create('\"');\n  fail(\"IllegalArgumentException expected\");\n  }\n  catch (IllegalArgumentException e)\n  {\n  // expected\n  }\n  assertNull(\"we inherited a description\", OptionBuilder.create('x').getDescription());\n\n  try\n  {\n  OptionBuilder.withDescription(\"JUnit\").create();\n  fail(\"IllegalArgumentException expected\");\n  }\n  catch (IllegalArgumentException e)\n  {\n  // expected\n  }\n  assertNull(\"we inherited a description\", OptionBuilder.create('x').getDescription());\n  }",
+        "stack": [
+          "OptionBuilderTest.testBuilderIsResettedAlways line 164"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/cli/OptionBuilder.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.cli;\n\n\npublic final class OptionBuilder { private static String longopt; private static String description; private static String argName; private static boolean required; private static int numberOfArgs = Option.UNINITIALIZED; private static Object type; private static boolean optionalArg; private static char valuesep; private static OptionBuilder instance = new OptionBuilder(); private OptionBuilder() {\n        \n    }\n\n    \n    private static void reset() {\n        description = null;\n        argName = \"arg\";\n        longopt = null;\n        type = null;\n        required = false;\n        numberOfArgs = Option.UNINITIALIZED;\n\n\n        \n        optionalArg = false;\n        valuesep = (char) 0;\n    }\n\n    \n    public static OptionBuilder withLongOpt(String newLongopt) {\n        OptionBuilder.longopt = newLongopt;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg() {\n        OptionBuilder.numberOfArgs = 1;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg(boolean hasArg) {\n        OptionBuilder.numberOfArgs = hasArg ? 1 : Option.UNINITIALIZED;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withArgName(String name) {\n        OptionBuilder.argName = name;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired() {\n        OptionBuilder.required = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator(char sep) {\n        OptionBuilder.valuesep = sep;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator() {\n        OptionBuilder.valuesep = '=';\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired(boolean newRequired) {\n        OptionBuilder.required = newRequired;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs(int num) {\n        OptionBuilder.numberOfArgs = num;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArg() {\n        OptionBuilder.numberOfArgs = 1;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs(int numArgs) {\n        OptionBuilder.numberOfArgs = numArgs;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withType(Object newType) {\n        OptionBuilder.type = newType;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withDescription(String newDescription) {\n        OptionBuilder.description = newDescription;\n\n        return instance;\n    }\n\n    \n    public static Option create(char opt) throws IllegalArgumentException {\n        return create(String.valueOf(opt));\n    }\n\n    \n    public static Option create() throws IllegalArgumentException {\n        if (longopt == null)\n        {\n            OptionBuilder.reset();\n            throw new IllegalArgumentException(\"must specify longopt\");\n        }\n\n        return create(null);\n    }\n\n    \n    public static Option create(String opt) throws IllegalArgumentException {\n            \n        Option option = new Option(opt, description);\n\n            \n            option.setLongOpt(longopt);\n            option.setRequired(required);\n            option.setOptionalArg(optionalArg);\n            option.setArgs(numberOfArgs);\n            option.setType(type);\n            option.setValueSeparator(valuesep);\n            option.setArgName(argName);\n            \n            OptionBuilder.reset();\n\n        \n        return option;\n    }\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.cli;\n\n\npublic final class OptionBuilder { private static String longopt; private static String description; private static String argName; private static boolean required; private static int numberOfArgs = Option.UNINITIALIZED; private static Object type; private static boolean optionalArg; private static char valuesep; private static OptionBuilder instance = new OptionBuilder(); private OptionBuilder() {\n        \n    }\n\n    \n    private static void reset() {\n        description = null;\n        argName = \"arg\";\n        longopt = null;\n        type = null;\n        required = false;\n        numberOfArgs = Option.UNINITIALIZED;\n\n\n        \n        optionalArg = false;\n        valuesep = (char) 0;\n    }\n\n    \n    public static OptionBuilder withLongOpt(String newLongopt) {\n        OptionBuilder.longopt = newLongopt;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg() {\n        OptionBuilder.numberOfArgs = 1;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArg(boolean hasArg) {\n        OptionBuilder.numberOfArgs = hasArg ? 1 : Option.UNINITIALIZED;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withArgName(String name) {\n        OptionBuilder.argName = name;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired() {\n        OptionBuilder.required = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator(char sep) {\n        OptionBuilder.valuesep = sep;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withValueSeparator() {\n        OptionBuilder.valuesep = '=';\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder isRequired(boolean newRequired) {\n        OptionBuilder.required = newRequired;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasArgs(int num) {\n        OptionBuilder.numberOfArgs = num;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArg() {\n        OptionBuilder.numberOfArgs = 1;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs() {\n        OptionBuilder.numberOfArgs = Option.UNLIMITED_VALUES;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder hasOptionalArgs(int numArgs) {\n        OptionBuilder.numberOfArgs = numArgs;\n        OptionBuilder.optionalArg = true;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withType(Object newType) {\n        OptionBuilder.type = newType;\n\n        return instance;\n    }\n\n    \n    public static OptionBuilder withDescription(String newDescription) {\n        OptionBuilder.description = newDescription;\n\n        return instance;\n    }\n\n    \n    public static Option create(char opt) throws IllegalArgumentException {\n        return create(String.valueOf(opt));\n    }\n\n    \n    public static Option create() throws IllegalArgumentException {\n        if (longopt == null)\n        {\n            OptionBuilder.reset();\n            throw new IllegalArgumentException(\"must specify longopt\");\n        }\n\n        return create(null);\n    }\n\n    \n    public static Option create(String opt) throws IllegalArgumentException {\n        Option option = null;\n        try {\n            \n            option = new Option(opt, description);\n\n            \n            option.setLongOpt(longopt);\n            option.setRequired(required);\n            option.setOptionalArg(optionalArg);\n            option.setArgs(numberOfArgs);\n            option.setType(type);\n            option.setValueSeparator(valuesep);\n            option.setArgName(argName);\n        } finally {\n            \n            OptionBuilder.reset();\n        }\n\n        \n        return option;\n    }\n}\n",
+      "buggy_signatures": [
+        "private static void reset()",
+        "public static OptionBuilder withLongOpt(String newLongopt)",
+        "public static OptionBuilder hasArg()",
+        "public static OptionBuilder hasArg(boolean hasArg)",
+        "public static OptionBuilder withArgName(String name)",
+        "public static OptionBuilder isRequired()",
+        "public static OptionBuilder withValueSeparator(char sep)",
+        "public static OptionBuilder withValueSeparator()",
+        "public static OptionBuilder isRequired(boolean newRequired)",
+        "public static OptionBuilder hasArgs()",
+        "public static OptionBuilder hasArgs(int num)",
+        "public static OptionBuilder hasOptionalArg()",
+        "public static OptionBuilder hasOptionalArgs()",
+        "public static OptionBuilder hasOptionalArgs(int numArgs)",
+        "public static OptionBuilder withType(Object newType)",
+        "public static OptionBuilder withDescription(String newDescription)",
+        "public static Option create(char opt) throws IllegalArgumentException",
+        "public static Option create() throws IllegalArgumentException",
+        "public static Option create(String opt) throws IllegalArgumentException"
+      ],
+      "fixed_signatures": [
+        "private static void reset()",
+        "public static OptionBuilder withLongOpt(String newLongopt)",
+        "public static OptionBuilder hasArg()",
+        "public static OptionBuilder hasArg(boolean hasArg)",
+        "public static OptionBuilder withArgName(String name)",
+        "public static OptionBuilder isRequired()",
+        "public static OptionBuilder withValueSeparator(char sep)",
+        "public static OptionBuilder withValueSeparator()",
+        "public static OptionBuilder isRequired(boolean newRequired)",
+        "public static OptionBuilder hasArgs()",
+        "public static OptionBuilder hasArgs(int num)",
+        "public static OptionBuilder hasOptionalArg()",
+        "public static OptionBuilder hasOptionalArgs()",
+        "public static OptionBuilder hasOptionalArgs(int numArgs)",
+        "public static OptionBuilder withType(Object newType)",
+        "public static OptionBuilder withDescription(String newDescription)",
+        "public static Option create(char opt) throws IllegalArgumentException",
+        "public static Option create() throws IllegalArgumentException",
+        "public static Option create(String opt) throws IllegalArgumentException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static Option create(String opt) throws IllegalArgumentException {\n  \n  Option option = new Option(opt, description);\n\n  \n  option.setLongOpt(longopt);\n  option.setRequired(required);\n  option.setOptionalArg(optionalArg);\n  option.setArgs(numberOfArgs);\n  option.setType(type);\n  option.setValueSeparator(valuesep);\n  option.setArgName(argName);\n  \n  OptionBuilder.reset();\n\n  \n  return option;\n  }",
+          "fixed_method": "  public static Option create(String opt) throws IllegalArgumentException {\n  Option option = null;\n  try {\n  \n  option = new Option(opt, description);\n\n  \n  option.setLongOpt(longopt);\n  option.setRequired(required);\n  option.setOptionalArg(optionalArg);\n  option.setArgs(numberOfArgs);\n  option.setType(type);\n  option.setValueSeparator(valuesep);\n  option.setArgName(argName);\n  } finally {\n  \n  OptionBuilder.reset();\n  }\n\n  \n  return option;\n  }",
+          "diff": [
+            "@@ -345,8 +345,10 @@",
+            "      */\n",
+            "     public static Option create(String opt) throws IllegalArgumentException\n",
+            "     {\n",
+            "+        Option option = null;\n",
+            "+        try {\n",
+            "             // create the option\n",
+            "-        Option option = new Option(opt, description);\n",
+            "+            option = new Option(opt, description);\n",
+            " \n",
+            "             // set the option properties\n",
+            "             option.setLongOpt(longopt);\n",
+            "@@ -356,8 +358,10 @@",
+            "             option.setType(type);\n",
+            "             option.setValueSeparator(valuesep);\n",
+            "             option.setArgName(argName);\n",
+            "+        } finally {\n",
+            "             // reset the OptionBuilder properties\n",
+            "             OptionBuilder.reset();\n",
+            "+        }\n",
+            " \n",
+            "         // return the Option instance\n",
+            "         return option;\n"
+          ],
+          "changed_lines": 6
+        }
+      ]
+    }
+  ]
+}

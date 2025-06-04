@@ -1,0 +1,53 @@
+{
+  "bug_id": "49",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.objectid.AlwaysAsReferenceFirstTest": [
+      {
+        "methodName": "testIssue1255",
+        "error": "com.fasterxml.jackson.databind.deser.UnresolvedForwardReference",
+        "message": "Unresolved forward references for: Object id [1] (for com.fasterxml.jackson.databind.objectid.AlwaysAsReferenceFirstTest$Bar) at [Source: {\"bar1\":1,\"bar2\":{\"@id\":2,\"value\":3}}; line: 1, column: 10].",
+        "fail_line": "        Foo result = mapper.readValue(json, Foo.class);",
+        "test_source": "  public void testIssue1255() throws Exception {\n  ObjectMapper mapper = new ObjectMapper();\n  Foo mo = new Foo();\n  mo.bar1 = new Bar();\n  mo.bar2 = mo.bar1;\n\n  String json = mapper.writeValueAsString(mo);\n\n  Foo result = mapper.readValue(json, Foo.class);\n  assertNotNull(result);\n  }",
+        "stack": [
+          "DefaultDeserializationContext.checkUnresolvedObjectId line 154, ObjectMapper._readMapAndClose line 3738, ObjectMapper.readValue line 2726, AlwaysAsReferenceFirstTest.testIssue1255 line 32"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/ser/impl/WritableObjectId.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.ser.impl;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.annotation.ObjectIdGenerator;\n\nimport com.fasterxml.jackson.core.JsonGenerator;\nimport com.fasterxml.jackson.core.SerializableString;\n\nimport com.fasterxml.jackson.databind.SerializerProvider;\n\n\npublic final class WritableObjectId { public final ObjectIdGenerator<?> generator; public Object id; protected boolean idWritten = false; public WritableObjectId(ObjectIdGenerator<?> generator) {\n        this.generator = generator;\n    }\n\n    public boolean writeAsId(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException {\n        if ((id != null) && (idWritten || w.alwaysAsId)) {\n            \n            if (gen.canWriteObjectId()) {\n                gen.writeObjectRef(String.valueOf(id));\n            } else {\n                w.serializer.serialize(id, gen, provider);\n            }\n            return true;\n        }\n        return false;\n    }\n    \n    public Object generateId(Object forPojo) {\n        \n        \n        \n            id = generator.generateId(forPojo);\n        return id;\n    }\n\n    \n    public void writeAsField(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException {\n        idWritten = true;\n\n        \n        if (gen.canWriteObjectId()) {\n            \n            gen.writeObjectId(String.valueOf(id));\n            return;\n        }\n        \n        SerializableString name = w.propertyName;\n        if (name != null) {\n            gen.writeFieldName(name);\n            w.serializer.serialize(id, gen, provider);\n        }\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.ser.impl;\n\nimport java.io.IOException;\n\nimport com.fasterxml.jackson.annotation.ObjectIdGenerator;\n\nimport com.fasterxml.jackson.core.JsonGenerator;\nimport com.fasterxml.jackson.core.SerializableString;\n\nimport com.fasterxml.jackson.databind.SerializerProvider;\n\n\npublic final class WritableObjectId { public final ObjectIdGenerator<?> generator; public Object id; protected boolean idWritten = false; public WritableObjectId(ObjectIdGenerator<?> generator) {\n        this.generator = generator;\n    }\n\n    public boolean writeAsId(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException {\n        if ((id != null) && (idWritten || w.alwaysAsId)) {\n            \n            if (gen.canWriteObjectId()) {\n                gen.writeObjectRef(String.valueOf(id));\n            } else {\n                w.serializer.serialize(id, gen, provider);\n            }\n            return true;\n        }\n        return false;\n    }\n    \n    public Object generateId(Object forPojo) {\n        \n        \n        \n        if (id == null) {\n            id = generator.generateId(forPojo);\n        }\n        return id;\n    }\n\n    \n    public void writeAsField(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException {\n        idWritten = true;\n\n        \n        if (gen.canWriteObjectId()) {\n            \n            gen.writeObjectId(String.valueOf(id));\n            return;\n        }\n        \n        SerializableString name = w.propertyName;\n        if (name != null) {\n            gen.writeFieldName(name);\n            w.serializer.serialize(id, gen, provider);\n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public boolean writeAsId(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException",
+        "public Object generateId(Object forPojo)",
+        "public void writeAsField(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public boolean writeAsId(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException",
+        "public Object generateId(Object forPojo)",
+        "public void writeAsField(JsonGenerator gen, SerializerProvider provider, ObjectIdWriter w) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public Object generateId(Object forPojo) {\n  \n  \n  \n  id = generator.generateId(forPojo);\n  return id;\n  }",
+          "fixed_method": "  public Object generateId(Object forPojo) {\n  \n  \n  \n  if (id == null) {\n  id = generator.generateId(forPojo);\n  }\n  return id;\n  }",
+          "diff": [
+            "@@ -47,7 +47,9 @@",
+            "         // 04-Jun-2016, tatu: As per [databind#1255], need to consider possibility of\n",
+            "         //    id being generated for \"alwaysAsId\", but not being written as POJO; regardless,\n",
+            "         //    need to use existing id if there is one:\n",
+            "+        if (id == null) {\n",
+            "             id = generator.generateId(forPojo);\n",
+            "+        }\n",
+            "         return id;\n",
+            "     }\n",
+            " \n"
+          ],
+          "changed_lines": 2
+        }
+      ]
+    }
+  ]
+}

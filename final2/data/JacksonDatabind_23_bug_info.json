@@ -1,0 +1,197 @@
+{
+  "bug_id": "23",
+  "failed_tests": {
+    "com.fasterxml.jackson.databind.ser.TestJsonSerialize2": [
+      {
+        "methodName": "testEmptyInclusionScalars",
+        "error": "junit.framework.ComparisonFailure",
+        "message": "expected:<{[]}> but was:<{[\"value\":0]}>",
+        "fail_line": "        assertEquals(\"{}\", defMapper.writeValueAsString(new NonEmptyInt(0)));",
+        "test_source": "  public void testEmptyInclusionScalars() throws IOException {\n  ObjectMapper defMapper = MAPPER;\n  ObjectMapper inclMapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);\n\n  // First, Strings\n  StringWrapper str = new StringWrapper(\"\");\n  assertEquals(\"{\\\"str\\\":\\\"\\\"}\", defMapper.writeValueAsString(str));\n  assertEquals(\"{}\", inclMapper.writeValueAsString(str));\n  assertEquals(\"{}\", inclMapper.writeValueAsString(new StringWrapper()));\n\n  assertEquals(\"{\\\"value\\\":\\\"x\\\"}\", defMapper.writeValueAsString(new NonEmptyString(\"x\")));\n  assertEquals(\"{}\", defMapper.writeValueAsString(new NonEmptyString(\"\")));\n\n  // Then numbers\n  assertEquals(\"{\\\"value\\\":12}\", defMapper.writeValueAsString(new NonEmptyInt(12)));\n  assertEquals(\"{}\", defMapper.writeValueAsString(new NonEmptyInt(0)));\n\n  assertEquals(\"{\\\"value\\\":1.25}\", defMapper.writeValueAsString(new NonEmptyDouble(1.25)));\n  assertEquals(\"{}\", defMapper.writeValueAsString(new NonEmptyDouble(0.0)));\n\n  IntWrapper zero = new IntWrapper(0);\n  assertEquals(\"{\\\"i\\\":0}\", defMapper.writeValueAsString(zero));\n  assertEquals(\"{}\", inclMapper.writeValueAsString(zero));\n  }",
+        "stack": [
+          "TestJsonSerialize2.testEmptyInclusionScalars line 237"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "com/fasterxml/jackson/databind/ser/std/NumberSerializers.java",
+      "buggy_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.util.Map;\n\nimport com.fasterxml.jackson.annotation.JsonFormat;\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.introspect.AnnotatedMember;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonIntegerFormatVisitor;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonNumberFormatVisitor;\nimport com.fasterxml.jackson.databind.jsontype.TypeSerializer;\nimport com.fasterxml.jackson.databind.ser.ContextualSerializer;\n\n\n@SuppressWarnings(\"serial\")\npublic class NumberSerializers { protected NumberSerializers() { }\n\n    public static void addAll(Map<String, JsonSerializer<?>> allDeserializers) {\n        final JsonSerializer<?> intS = new IntegerSerializer();\n        allDeserializers.put(Integer.class.getName(), intS);\n        allDeserializers.put(Integer.TYPE.getName(), intS);\n        allDeserializers.put(Long.class.getName(), LongSerializer.instance);\n        allDeserializers.put(Long.TYPE.getName(), LongSerializer.instance);\n        allDeserializers.put(Byte.class.getName(), IntLikeSerializer.instance);\n        allDeserializers.put(Byte.TYPE.getName(), IntLikeSerializer.instance);\n        allDeserializers.put(Short.class.getName(), ShortSerializer.instance);\n        allDeserializers.put(Short.TYPE.getName(), ShortSerializer.instance);\n\n        \n        allDeserializers.put(Float.class.getName(), FloatSerializer.instance);\n        allDeserializers.put(Float.TYPE.getName(), FloatSerializer.instance);\n        allDeserializers.put(Double.class.getName(), DoubleSerializer.instance);\n        allDeserializers.put(Double.TYPE.getName(), DoubleSerializer.instance);\n    }\n\n    \n\n    protected abstract static class Base<T> extends StdScalarSerializer<T> implements ContextualSerializer { protected final JsonParser.NumberType _numberType; protected final String _schemaType; protected final boolean _isInt; protected Base(Class<?> cls, JsonParser.NumberType numberType, String schemaType) {\n            super(cls, false);\n            _numberType = numberType;\n            _schemaType = schemaType;\n            _isInt = (numberType == JsonParser.NumberType.INT)\n                    || (numberType == JsonParser.NumberType.LONG)\n                    || (numberType == JsonParser.NumberType.BIG_INTEGER)\n                    ;\n        }\n\n        @Override\n        public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n            return createSchemaNode(_schemaType, true);\n        }\n\n        @Override\n        public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n            if (_isInt) {\n                JsonIntegerFormatVisitor v2 = visitor.expectIntegerFormat(typeHint);\n                if (v2 != null) {\n                    v2.numberType(_numberType);\n                }\n            } else {\n                JsonNumberFormatVisitor v2 = visitor.expectNumberFormat(typeHint);\n                if (v2 != null) {\n                    v2.numberType(_numberType);\n                }\n            }\n        }\n\n        @Override\n        public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property) throws JsonMappingException {\n            if (property != null) {\n                AnnotatedMember m = property.getMember();\n                if (m != null) {\n                    JsonFormat.Value format = prov.getAnnotationIntrospector().findFormat(m);\n                    if (format != null) {\n                        switch (format.getShape()) {\n                        case STRING:\n                            return ToStringSerializer.instance;\n                        default:\n                        }\n                    }\n                }\n            }\n            return this;\n        }\n    }\n    \n    \n\n    @JacksonStdImpl\n    public final static class ShortSerializer extends Base<Short> { final static ShortSerializer instance = new ShortSerializer(); public ShortSerializer() { super(Short.class, JsonParser.NumberType.INT, \"number\"); }\n\n\n        @Override\n        public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(value.shortValue());\n        }\n    }\n\n    \n    @JacksonStdImpl\n    public final static class IntegerSerializer extends Base<Object> { public IntegerSerializer() { super(Integer.class, JsonParser.NumberType.INT ,\"integer\"); }\n    \n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Integer) value).intValue());\n        }\n        \n        \n        @Override\n        public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {\n            \n            serialize(value, gen, provider);            \n        }\n\n    }\n\n    \n    @JacksonStdImpl\n    public final static class IntLikeSerializer extends Base<Number> { final static IntLikeSerializer instance = new IntLikeSerializer(); public IntLikeSerializer() {\n            super(Number.class, JsonParser.NumberType.INT, \"integer\");\n        }\n\n\n        @Override\n        public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(value.intValue());\n        }\n    }\n\n    @JacksonStdImpl\n    public final static class LongSerializer extends Base<Object> { final static LongSerializer instance = new LongSerializer(); public LongSerializer() { super(Long.class, JsonParser.NumberType.LONG, \"number\"); }\n\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Long) value).longValue());\n        }\n    }\n\n    @JacksonStdImpl\n    public final static class FloatSerializer extends Base<Object> { final static FloatSerializer instance = new FloatSerializer(); public FloatSerializer() { super(Float.class, JsonParser.NumberType.FLOAT, \"number\"); }\n\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Float) value).floatValue());\n        }\n    }\n\n    \n    @JacksonStdImpl\n    public final static class DoubleSerializer extends Base<Object> { final static DoubleSerializer instance = new DoubleSerializer(); public DoubleSerializer() { super(Double.class, JsonParser.NumberType.DOUBLE, \"number\"); }\n\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Double) value).doubleValue());\n        }\n\n        \n        @Override\n        public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {\n            \n            serialize(value, gen, provider);            \n        }\n    }\n}\n",
+      "fixed_full_code": "package com.fasterxml.jackson.databind.ser.std;\n\nimport java.io.IOException;\nimport java.lang.reflect.Type;\nimport java.util.Map;\n\nimport com.fasterxml.jackson.annotation.JsonFormat;\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.JacksonStdImpl;\nimport com.fasterxml.jackson.databind.introspect.AnnotatedMember;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonIntegerFormatVisitor;\nimport com.fasterxml.jackson.databind.jsonFormatVisitors.JsonNumberFormatVisitor;\nimport com.fasterxml.jackson.databind.jsontype.TypeSerializer;\nimport com.fasterxml.jackson.databind.ser.ContextualSerializer;\n\n\n@SuppressWarnings(\"serial\")\npublic class NumberSerializers { protected NumberSerializers() { }\n\n    public static void addAll(Map<String, JsonSerializer<?>> allDeserializers) {\n        final JsonSerializer<?> intS = new IntegerSerializer();\n        allDeserializers.put(Integer.class.getName(), intS);\n        allDeserializers.put(Integer.TYPE.getName(), intS);\n        allDeserializers.put(Long.class.getName(), LongSerializer.instance);\n        allDeserializers.put(Long.TYPE.getName(), LongSerializer.instance);\n        allDeserializers.put(Byte.class.getName(), IntLikeSerializer.instance);\n        allDeserializers.put(Byte.TYPE.getName(), IntLikeSerializer.instance);\n        allDeserializers.put(Short.class.getName(), ShortSerializer.instance);\n        allDeserializers.put(Short.TYPE.getName(), ShortSerializer.instance);\n\n        \n        allDeserializers.put(Float.class.getName(), FloatSerializer.instance);\n        allDeserializers.put(Float.TYPE.getName(), FloatSerializer.instance);\n        allDeserializers.put(Double.class.getName(), DoubleSerializer.instance);\n        allDeserializers.put(Double.TYPE.getName(), DoubleSerializer.instance);\n    }\n\n    \n\n    protected abstract static class Base<T> extends StdScalarSerializer<T> implements ContextualSerializer { protected final static Integer EMPTY_INTEGER = Integer.valueOf(0); protected final JsonParser.NumberType _numberType; protected final String _schemaType; protected final boolean _isInt; protected Base(Class<?> cls, JsonParser.NumberType numberType, String schemaType) {\n            super(cls, false);\n            _numberType = numberType;\n            _schemaType = schemaType;\n            _isInt = (numberType == JsonParser.NumberType.INT)\n                    || (numberType == JsonParser.NumberType.LONG)\n                    || (numberType == JsonParser.NumberType.BIG_INTEGER)\n                    ;\n        }\n\n        @Override\n        public JsonNode getSchema(SerializerProvider provider, Type typeHint) {\n            return createSchemaNode(_schemaType, true);\n        }\n\n        @Override\n        public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException {\n            if (_isInt) {\n                JsonIntegerFormatVisitor v2 = visitor.expectIntegerFormat(typeHint);\n                if (v2 != null) {\n                    v2.numberType(_numberType);\n                }\n            } else {\n                JsonNumberFormatVisitor v2 = visitor.expectNumberFormat(typeHint);\n                if (v2 != null) {\n                    v2.numberType(_numberType);\n                }\n            }\n        }\n\n        @Override\n        public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property) throws JsonMappingException {\n            if (property != null) {\n                AnnotatedMember m = property.getMember();\n                if (m != null) {\n                    JsonFormat.Value format = prov.getAnnotationIntrospector().findFormat(m);\n                    if (format != null) {\n                        switch (format.getShape()) {\n                        case STRING:\n                            return ToStringSerializer.instance;\n                        default:\n                        }\n                    }\n                }\n            }\n            return this;\n        }\n    }\n    \n    \n\n    @JacksonStdImpl\n    public final static class ShortSerializer extends Base<Short> { private final static Short EMPTY = (short) 0; final static ShortSerializer instance = new ShortSerializer(); public ShortSerializer() { super(Short.class, JsonParser.NumberType.INT, \"number\"); }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Short value) {\n            return EMPTY.equals(value);\n        }\n\n        @Override\n        public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(value.shortValue());\n        }\n    }\n\n    \n    @JacksonStdImpl\n    public final static class IntegerSerializer extends Base<Object> { public IntegerSerializer() { super(Integer.class, JsonParser.NumberType.INT ,\"integer\"); }\n    \n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Integer) value).intValue());\n        }\n        \n        \n        @Override\n        public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {\n            \n            serialize(value, gen, provider);            \n        }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Object value) {\n            return EMPTY_INTEGER.equals(value);\n        }\n    }\n\n    \n    @JacksonStdImpl\n    public final static class IntLikeSerializer extends Base<Number> { final static IntLikeSerializer instance = new IntLikeSerializer(); public IntLikeSerializer() {\n            super(Number.class, JsonParser.NumberType.INT, \"integer\");\n        }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Number value) {\n            return value.intValue() == 0;\n        }\n\n        @Override\n        public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(value.intValue());\n        }\n    }\n\n    @JacksonStdImpl\n    public final static class LongSerializer extends Base<Object> { private final static Long EMPTY = 0L; final static LongSerializer instance = new LongSerializer(); public LongSerializer() { super(Long.class, JsonParser.NumberType.LONG, \"number\"); }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Object value) {\n            return EMPTY.equals(value);\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Long) value).longValue());\n        }\n    }\n\n    @JacksonStdImpl\n    public final static class FloatSerializer extends Base<Object> { private final static Float EMPTY = 0f; final static FloatSerializer instance = new FloatSerializer(); public FloatSerializer() { super(Float.class, JsonParser.NumberType.FLOAT, \"number\"); }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Object value) {\n            return EMPTY.equals(value);\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Float) value).floatValue());\n        }\n    }\n\n    \n    @JacksonStdImpl\n    public final static class DoubleSerializer extends Base<Object> { private final static Double EMPTY = 0d; final static DoubleSerializer instance = new DoubleSerializer(); public DoubleSerializer() { super(Double.class, JsonParser.NumberType.DOUBLE, \"number\"); }\n\n        @Override\n        public boolean isEmpty(SerializerProvider prov, Object value) {\n            return EMPTY.equals(value);\n        }\n\n        @Override\n        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n            gen.writeNumber(((Double) value).doubleValue());\n        }\n\n        \n        @Override\n        public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {\n            \n            serialize(value, gen, provider);            \n        }\n    }\n}\n",
+      "buggy_signatures": [
+        "public class NumberSerializers { protected NumberSerializers()",
+        "public static void addAll(Map<String, JsonSerializer<?>> allDeserializers)",
+        "protected abstract static class Base<T> extends StdScalarSerializer<T> implements ContextualSerializer { protected final JsonParser.NumberType _numberType; protected final String _schemaType; protected final boolean _isInt; protected Base(Class<?> cls, JsonParser.NumberType numberType, String schemaType)",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException",
+        "public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property) throws JsonMappingException",
+        "public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public final static class IntegerSerializer extends Base<Object> { public IntegerSerializer()",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException",
+        "public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException"
+      ],
+      "fixed_signatures": [
+        "public class NumberSerializers { protected NumberSerializers()",
+        "public static void addAll(Map<String, JsonSerializer<?>> allDeserializers)",
+        "public JsonNode getSchema(SerializerProvider provider, Type typeHint)",
+        "public void acceptJsonFormatVisitor(JsonFormatVisitorWrapper visitor, JavaType typeHint) throws JsonMappingException",
+        "public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property) throws JsonMappingException",
+        "public boolean isEmpty(SerializerProvider prov, Short value)",
+        "public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public final static class IntegerSerializer extends Base<Object> { public IntegerSerializer()",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException",
+        "public boolean isEmpty(SerializerProvider prov, Object value)",
+        "public boolean isEmpty(SerializerProvider prov, Number value)",
+        "public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public boolean isEmpty(SerializerProvider prov, Object value)",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public boolean isEmpty(SerializerProvider prov, Object value)",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public boolean isEmpty(SerializerProvider prov, Object value)",
+        "public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException",
+        "public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static void addAll(Map<String, JsonSerializer<?>> allDeserializers) {\n  final JsonSerializer<?> intS = new IntegerSerializer();\n  allDeserializers.put(Integer.class.getName(), intS);\n  allDeserializers.put(Integer.TYPE.getName(), intS);\n  allDeserializers.put(Long.class.getName(), LongSerializer.instance);\n  allDeserializers.put(Long.TYPE.getName(), LongSerializer.instance);\n  allDeserializers.put(Byte.class.getName(), IntLikeSerializer.instance);\n  allDeserializers.put(Byte.TYPE.getName(), IntLikeSerializer.instance);\n  allDeserializers.put(Short.class.getName(), ShortSerializer.instance);\n  allDeserializers.put(Short.TYPE.getName(), ShortSerializer.instance);\n\n  \n  allDeserializers.put(Float.class.getName(), FloatSerializer.instance);\n  allDeserializers.put(Float.TYPE.getName(), FloatSerializer.instance);\n  allDeserializers.put(Double.class.getName(), DoubleSerializer.instance);\n  allDeserializers.put(Double.TYPE.getName(), DoubleSerializer.instance);\n  }",
+          "fixed_method": "  protected final static Integer EMPTY_INTEGER = Integer.valueOf(0); protected final JsonParser.NumberType _numberType; protected final String _schemaType; protected final boolean _isInt; protected Base(Class<?> cls, JsonParser.NumberType numberType, String schemaType) {\n  super(cls, false);\n  _numberType = numberType;\n  _schemaType = schemaType;\n  _isInt = (numberType == JsonParser.NumberType.INT)\n  || (numberType == JsonParser.NumberType.LONG)\n  || (numberType == JsonParser.NumberType.BIG_INTEGER)\n  ;\n  }",
+          "diff": [
+            "@@ -51,6 +51,7 @@",
+            "     protected abstract static class Base<T> extends StdScalarSerializer<T>\n",
+            "         implements ContextualSerializer\n",
+            "     {\n",
+            "+        protected final static Integer EMPTY_INTEGER = Integer.valueOf(0);\n",
+            " \n",
+            "         protected final JsonParser.NumberType _numberType;\n",
+            "         protected final String _schemaType;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n  gen.writeNumber(value.shortValue());\n  }",
+          "fixed_method": "  public boolean isEmpty(SerializerProvider prov, Short value) {\n  return EMPTY.equals(value);\n  }",
+          "diff": [
+            "@@ -117,10 +118,15 @@",
+            "     @JacksonStdImpl\n",
+            "     public final static class ShortSerializer extends Base<Short>\n",
+            "     {\n",
+            "+        private final static Short EMPTY = (short) 0;\n",
+            "         final static ShortSerializer instance = new ShortSerializer();\n",
+            " \n",
+            "         public ShortSerializer() { super(Short.class, JsonParser.NumberType.INT, \"number\"); }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Short value) {\n",
+            "+            return EMPTY.equals(value);\n",
+            "+        }\n",
+            " \n",
+            "         @Override\n",
+            "         public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n"
+          ],
+          "changed_lines": 5
+        },
+        {
+          "buggy_method": "  public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {\n  \n  serialize(value, gen, provider);  \n  }",
+          "fixed_method": "  public boolean isEmpty(SerializerProvider prov, Object value) {\n  return EMPTY_INTEGER.equals(value);\n  }",
+          "diff": [
+            "@@ -156,6 +162,10 @@",
+            "             serialize(value, gen, provider);            \n",
+            "         }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Object value) {\n",
+            "+            return EMPTY_INTEGER.equals(value);\n",
+            "+        }\n",
+            "     }\n",
+            " \n",
+            "     /**\n"
+          ],
+          "changed_lines": 4
+        },
+        {
+          "buggy_method": "  public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n  gen.writeNumber(value.intValue());\n  }",
+          "fixed_method": "  public boolean isEmpty(SerializerProvider prov, Number value) {\n  return value.intValue() == 0;\n  }",
+          "diff": [
+            "@@ -172,6 +182,10 @@",
+            "             super(Number.class, JsonParser.NumberType.INT, \"integer\");\n",
+            "         }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Number value) {\n",
+            "+            return value.intValue() == 0;\n",
+            "+        }\n",
+            " \n",
+            "         @Override\n",
+            "         public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n"
+          ],
+          "changed_lines": 4
+        },
+        {
+          "buggy_method": "  public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n  gen.writeNumber(((Long) value).longValue());\n  }",
+          "fixed_method": "  public boolean isEmpty(SerializerProvider prov, Object value) {\n  return EMPTY.equals(value);\n  }",
+          "diff": [
+            "@@ -182,11 +196,16 @@",
+            "     @JacksonStdImpl\n",
+            "     public final static class LongSerializer extends Base<Object>\n",
+            "     {\n",
+            "+        private final static Long EMPTY = 0L;\n",
+            " \n",
+            "         final static LongSerializer instance = new LongSerializer();\n",
+            "     \n",
+            "         public LongSerializer() { super(Long.class, JsonParser.NumberType.LONG, \"number\"); }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Object value) {\n",
+            "+            return EMPTY.equals(value);\n",
+            "+        }\n",
+            " \n",
+            "         @Override\n",
+            "         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n",
+            "@@ -197,11 +216,16 @@",
+            "     @JacksonStdImpl\n",
+            "     public final static class FloatSerializer extends Base<Object>\n",
+            "     {\n",
+            "+        private final static Float EMPTY = 0f;\n",
+            " \n",
+            "         final static FloatSerializer instance = new FloatSerializer();\n",
+            " \n",
+            "         public FloatSerializer() { super(Float.class, JsonParser.NumberType.FLOAT, \"number\"); }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Object value) {\n",
+            "+            return EMPTY.equals(value);\n",
+            "+        }\n",
+            " \n",
+            "         @Override\n",
+            "         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n",
+            "@@ -219,11 +243,16 @@",
+            "     @JacksonStdImpl\n",
+            "     public final static class DoubleSerializer extends Base<Object>\n",
+            "     {\n",
+            "+        private final static Double EMPTY = 0d;\n",
+            " \n",
+            "         final static DoubleSerializer instance = new DoubleSerializer();\n",
+            "     \n",
+            "         public DoubleSerializer() { super(Double.class, JsonParser.NumberType.DOUBLE, \"number\"); }\n",
+            " \n",
+            "+        @Override\n",
+            "+        public boolean isEmpty(SerializerProvider prov, Object value) {\n",
+            "+            return EMPTY.equals(value);\n",
+            "+        }\n",
+            " \n",
+            "         @Override\n",
+            "         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n"
+          ],
+          "changed_lines": 15
+        }
+      ]
+    }
+  ]
+}

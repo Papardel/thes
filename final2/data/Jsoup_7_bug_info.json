@@ -1,0 +1,140 @@
+{
+  "bug_id": "7",
+  "failed_tests": {
+    "org.jsoup.nodes.DocumentTest": [
+      {
+        "methodName": "testNormalisesStructure",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...</script><noscript><[/noscript></head><body><p>two</p><p>three</p></body]></html>> but was:<...</script><noscript><[body><p>two</p><body><p>three</p></body></body></noscript></head]></html>>",
+        "fail_line": "        assertEquals(\"<html><head><script>one</script><noscript></noscript></head><body><p>two</p><p>three</p></body></html>\", TextUtil.stripNewlines(doc.html()));",
+        "test_source": "",
+        "stack": [
+          "DocumentTest.testNormalisesStructure line 59"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/jsoup/nodes/Document.java",
+      "buggy_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.Tag;\n\nimport java.nio.charset.Charset;\nimport java.nio.charset.CharsetEncoder;\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class Document extends Element { private OutputSettings outputSettings = new OutputSettings(); public Document(String baseUri) {\n        super(Tag.valueOf(\"#root\"), baseUri);\n    }\n\n    \n    static public Document createShell(String baseUri) {\n        Validate.notNull(baseUri);\n\n        Document doc = new Document(baseUri);\n        Element html = doc.appendElement(\"html\");\n        html.appendElement(\"head\");\n        html.appendElement(\"body\");\n\n        return doc;\n    }\n\n    \n    public Element head() {\n        return findFirstElementByTagName(\"head\", this);\n    }\n\n    \n    public Element body() {\n        return findFirstElementByTagName(\"body\", this);\n    }\n\n    \n    public String title() {\n        Element titleEl = getElementsByTag(\"title\").first();\n        return titleEl != null ? titleEl.text().trim() : \"\";\n    }\n\n    \n    public void title(String title) {\n        Validate.notNull(title);\n        Element titleEl = getElementsByTag(\"title\").first();\n        if (titleEl == null) { \n            head().appendElement(\"title\").text(title);\n        } else {\n            titleEl.text(title);\n        }\n    }\n\n    \n    public Element createElement(String tagName) {\n        return new Element(Tag.valueOf(tagName), this.baseUri());\n    }\n\n    \n    public Document normalise() {\n        Element htmlEl = findFirstElementByTagName(\"html\", this);\n        if (htmlEl == null)\n            htmlEl = appendElement(\"html\");\n        if (head() == null)\n            htmlEl.prependElement(\"head\");\n        if (body() == null)\n            htmlEl.appendElement(\"body\");\n\n        \n        \n        normaliseTextNodes(head());\n        normaliseTextNodes(htmlEl);\n        normaliseTextNodes(this);\n\n        \n        return this;\n    }\n\n    \n    private void normaliseTextNodes(Element element) {\n        List<Node> toMove = new ArrayList<Node>();\n        for (Node node: element.childNodes) {\n            if (node instanceof TextNode) {\n                TextNode tn = (TextNode) node;\n                if (!tn.isBlank())\n                    toMove.add(tn);\n            }\n        }\n\n        for (int i = toMove.size()-1; i >= 0; i--) {\n            Node node = toMove.get(i);\n            element.removeChild(node);\n            body().prependChild(new TextNode(\" \", \"\"));\n            body().prependChild(node);\n        }\n    }\n\n    \n        \n\n    \n    private Element findFirstElementByTagName(String tag, Node node) {\n        if (node.nodeName().equals(tag))\n            return (Element) node;\n        else {\n            for (Node child: node.childNodes) {\n                Element found = findFirstElementByTagName(tag, child);\n                if (found != null)\n                    return found;\n            }\n        }\n        return null;\n    }\n\n    @Override\n    public String outerHtml() {\n        return super.html(); \n    }\n\n    \n    @Override\n    public Element text(String text) {\n        body().text(text); \n        return this;\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#document\";\n    }\n\n    \n    public class OutputSettings { private Entities.EscapeMode escapeMode = Entities.EscapeMode.base; private Charset charset = Charset.forName(\"UTF-8\"); private CharsetEncoder charsetEncoder = charset.newEncoder(); private boolean prettyPrint = true; private int indentAmount = 1; public OutputSettings() {}\n\n        \n        public Entities.EscapeMode escapeMode() {\n            return escapeMode;\n        }\n\n        \n        public OutputSettings escapeMode(Entities.EscapeMode escapeMode) {\n            this.escapeMode = escapeMode;\n            return this;\n        }\n\n        \n        public Charset charset() {\n            return charset;\n        }\n\n        \n        public OutputSettings charset(Charset charset) {\n            \n            this.charset = charset;\n            charsetEncoder = charset.newEncoder();\n            return this;\n        }\n\n        \n        public OutputSettings charset(String charset) {\n            charset(Charset.forName(charset));\n            return this;\n        }\n\n        CharsetEncoder encoder() {\n            return charsetEncoder;\n        }\n\n        \n        public boolean prettyPrint() {\n            return prettyPrint;\n        }\n\n        \n        public OutputSettings prettyPrint(boolean pretty) {\n            prettyPrint = pretty;\n            return this;\n        }\n\n        \n        public int indentAmount() {\n            return indentAmount;\n        }\n\n        \n        public OutputSettings indentAmount(int indentAmount) {\n            Validate.isTrue(indentAmount >= 0);\n            this.indentAmount = indentAmount;\n            return this;\n        }\n    }\n\n    \n    public OutputSettings outputSettings() {\n        return outputSettings;\n    }\n}\n\n",
+      "fixed_full_code": "package org.jsoup.nodes;\n\nimport org.jsoup.helper.Validate;\nimport org.jsoup.parser.Tag;\nimport org.jsoup.select.Elements;\n\nimport java.nio.charset.Charset;\nimport java.nio.charset.CharsetEncoder;\nimport java.util.ArrayList;\nimport java.util.List;\n\n\npublic class Document extends Element { private OutputSettings outputSettings = new OutputSettings(); public Document(String baseUri) {\n        super(Tag.valueOf(\"#root\"), baseUri);\n    }\n\n    \n    static public Document createShell(String baseUri) {\n        Validate.notNull(baseUri);\n\n        Document doc = new Document(baseUri);\n        Element html = doc.appendElement(\"html\");\n        html.appendElement(\"head\");\n        html.appendElement(\"body\");\n\n        return doc;\n    }\n\n    \n    public Element head() {\n        return findFirstElementByTagName(\"head\", this);\n    }\n\n    \n    public Element body() {\n        return findFirstElementByTagName(\"body\", this);\n    }\n\n    \n    public String title() {\n        Element titleEl = getElementsByTag(\"title\").first();\n        return titleEl != null ? titleEl.text().trim() : \"\";\n    }\n\n    \n    public void title(String title) {\n        Validate.notNull(title);\n        Element titleEl = getElementsByTag(\"title\").first();\n        if (titleEl == null) { \n            head().appendElement(\"title\").text(title);\n        } else {\n            titleEl.text(title);\n        }\n    }\n\n    \n    public Element createElement(String tagName) {\n        return new Element(Tag.valueOf(tagName), this.baseUri());\n    }\n\n    \n    public Document normalise() {\n        Element htmlEl = findFirstElementByTagName(\"html\", this);\n        if (htmlEl == null)\n            htmlEl = appendElement(\"html\");\n        if (head() == null)\n            htmlEl.prependElement(\"head\");\n        if (body() == null)\n            htmlEl.appendElement(\"body\");\n\n        \n        \n        normaliseTextNodes(head());\n        normaliseTextNodes(htmlEl);\n        normaliseTextNodes(this);\n\n        normaliseStructure(\"head\", htmlEl);\n        normaliseStructure(\"body\", htmlEl);\n        \n        return this;\n    }\n\n    \n    private void normaliseTextNodes(Element element) {\n        List<Node> toMove = new ArrayList<Node>();\n        for (Node node: element.childNodes) {\n            if (node instanceof TextNode) {\n                TextNode tn = (TextNode) node;\n                if (!tn.isBlank())\n                    toMove.add(tn);\n            }\n        }\n\n        for (int i = toMove.size()-1; i >= 0; i--) {\n            Node node = toMove.get(i);\n            element.removeChild(node);\n            body().prependChild(new TextNode(\" \", \"\"));\n            body().prependChild(node);\n        }\n    }\n\n    \n    private void normaliseStructure(String tag, Element htmlEl) {\n        Elements elements = this.getElementsByTag(tag);\n        Element master = elements.first(); \n        if (elements.size() > 1) { \n            List<Node> toMove = new ArrayList<Node>();\n            for (int i = 1; i < elements.size(); i++) {\n                Node dupe = elements.get(i);\n                for (Node node : dupe.childNodes)\n                    toMove.add(node);\n                dupe.remove();\n            }\n\n            for (Node dupe : toMove)\n                master.appendChild(dupe);\n        }\n        \n        if (!master.parent().equals(htmlEl)) {\n            htmlEl.appendChild(master); \n        }\n    }\n\n    \n    private Element findFirstElementByTagName(String tag, Node node) {\n        if (node.nodeName().equals(tag))\n            return (Element) node;\n        else {\n            for (Node child: node.childNodes) {\n                Element found = findFirstElementByTagName(tag, child);\n                if (found != null)\n                    return found;\n            }\n        }\n        return null;\n    }\n\n    @Override\n    public String outerHtml() {\n        return super.html(); \n    }\n\n    \n    @Override\n    public Element text(String text) {\n        body().text(text); \n        return this;\n    }\n\n    @Override\n    public String nodeName() {\n        return \"#document\";\n    }\n\n    \n    public class OutputSettings { private Entities.EscapeMode escapeMode = Entities.EscapeMode.base; private Charset charset = Charset.forName(\"UTF-8\"); private CharsetEncoder charsetEncoder = charset.newEncoder(); private boolean prettyPrint = true; private int indentAmount = 1; public OutputSettings() {}\n\n        \n        public Entities.EscapeMode escapeMode() {\n            return escapeMode;\n        }\n\n        \n        public OutputSettings escapeMode(Entities.EscapeMode escapeMode) {\n            this.escapeMode = escapeMode;\n            return this;\n        }\n\n        \n        public Charset charset() {\n            return charset;\n        }\n\n        \n        public OutputSettings charset(Charset charset) {\n            \n            this.charset = charset;\n            charsetEncoder = charset.newEncoder();\n            return this;\n        }\n\n        \n        public OutputSettings charset(String charset) {\n            charset(Charset.forName(charset));\n            return this;\n        }\n\n        CharsetEncoder encoder() {\n            return charsetEncoder;\n        }\n\n        \n        public boolean prettyPrint() {\n            return prettyPrint;\n        }\n\n        \n        public OutputSettings prettyPrint(boolean pretty) {\n            prettyPrint = pretty;\n            return this;\n        }\n\n        \n        public int indentAmount() {\n            return indentAmount;\n        }\n\n        \n        public OutputSettings indentAmount(int indentAmount) {\n            Validate.isTrue(indentAmount >= 0);\n            this.indentAmount = indentAmount;\n            return this;\n        }\n    }\n\n    \n    public OutputSettings outputSettings() {\n        return outputSettings;\n    }\n}\n\n",
+      "buggy_signatures": [
+        "static public Document createShell(String baseUri)",
+        "public Element head()",
+        "public Element body()",
+        "public String title()",
+        "public void title(String title)",
+        "public Element createElement(String tagName)",
+        "public Document normalise()",
+        "private void normaliseTextNodes(Element element)",
+        "private Element findFirstElementByTagName(String tag, Node node)",
+        "public String outerHtml()",
+        "public Element text(String text)",
+        "public String nodeName()",
+        "public Entities.EscapeMode escapeMode()",
+        "public OutputSettings escapeMode(Entities.EscapeMode escapeMode)",
+        "public Charset charset()",
+        "public OutputSettings charset(Charset charset)",
+        "public OutputSettings charset(String charset)",
+        "public boolean prettyPrint()",
+        "public OutputSettings prettyPrint(boolean pretty)",
+        "public int indentAmount()",
+        "public OutputSettings indentAmount(int indentAmount)",
+        "public OutputSettings outputSettings()"
+      ],
+      "fixed_signatures": [
+        "static public Document createShell(String baseUri)",
+        "public Element head()",
+        "public Element body()",
+        "public String title()",
+        "public void title(String title)",
+        "public Element createElement(String tagName)",
+        "public Document normalise()",
+        "private void normaliseTextNodes(Element element)",
+        "private void normaliseStructure(String tag, Element htmlEl)",
+        "private Element findFirstElementByTagName(String tag, Node node)",
+        "public String outerHtml()",
+        "public Element text(String text)",
+        "public String nodeName()",
+        "public Entities.EscapeMode escapeMode()",
+        "public OutputSettings escapeMode(Entities.EscapeMode escapeMode)",
+        "public Charset charset()",
+        "public OutputSettings charset(Charset charset)",
+        "public OutputSettings charset(String charset)",
+        "public boolean prettyPrint()",
+        "public OutputSettings prettyPrint(boolean pretty)",
+        "public int indentAmount()",
+        "public OutputSettings indentAmount(int indentAmount)",
+        "public OutputSettings outputSettings()"
+      ],
+      "methods": [
+        {
+          "buggy_method": "",
+          "fixed_method": "",
+          "diff": [
+            "@@ -2,6 +2,7 @@",
+            " \n",
+            " import org.jsoup.helper.Validate;\n",
+            " import org.jsoup.parser.Tag;\n",
+            "+import org.jsoup.select.Elements;\n",
+            " \n",
+            " import java.nio.charset.Charset;\n",
+            " import java.nio.charset.CharsetEncoder;\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public Document normalise() {\n  Element htmlEl = findFirstElementByTagName(\"html\", this);\n  if (htmlEl == null)\n  htmlEl = appendElement(\"html\");\n  if (head() == null)\n  htmlEl.prependElement(\"head\");\n  if (body() == null)\n  htmlEl.appendElement(\"body\");\n\n  \n  \n  normaliseTextNodes(head());\n  normaliseTextNodes(htmlEl);\n  normaliseTextNodes(this);\n\n  \n  return this;\n  }",
+          "fixed_method": "  public Document normalise() {\n  Element htmlEl = findFirstElementByTagName(\"html\", this);\n  if (htmlEl == null)\n  htmlEl = appendElement(\"html\");\n  if (head() == null)\n  htmlEl.prependElement(\"head\");\n  if (body() == null)\n  htmlEl.appendElement(\"body\");\n\n  \n  \n  normaliseTextNodes(head());\n  normaliseTextNodes(htmlEl);\n  normaliseTextNodes(this);\n\n  normaliseStructure(\"head\", htmlEl);\n  normaliseStructure(\"body\", htmlEl);\n  \n  return this;\n  }",
+          "diff": [
+            "@@ -110,6 +111,8 @@",
+            "         normaliseTextNodes(htmlEl);\n",
+            "         normaliseTextNodes(this);\n",
+            " \n",
+            "+        normaliseStructure(\"head\", htmlEl);\n",
+            "+        normaliseStructure(\"body\", htmlEl);\n",
+            "         \n",
+            "         return this;\n",
+            "     }\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  private Element findFirstElementByTagName(String tag, Node node) {\n  if (node.nodeName().equals(tag))\n  return (Element) node;\n  else {\n  for (Node child: node.childNodes) {\n  Element found = findFirstElementByTagName(tag, child);\n  if (found != null)\n  return found;\n  }\n  }\n  return null;\n  }",
+          "fixed_method": "  private void normaliseStructure(String tag, Element htmlEl) {\n  Elements elements = this.getElementsByTag(tag);\n  Element master = elements.first(); \n  if (elements.size() > 1) { \n  List<Node> toMove = new ArrayList<Node>();\n  for (int i = 1; i < elements.size(); i++) {\n  Node dupe = elements.get(i);\n  for (Node node : dupe.childNodes)\n  toMove.add(node);\n  dupe.remove();\n  }\n\n  for (Node dupe : toMove)\n  master.appendChild(dupe);\n  }\n  \n  if (!master.parent().equals(htmlEl)) {\n  htmlEl.appendChild(master); \n  }\n  }",
+          "diff": [
+            "@@ -134,7 +137,26 @@",
+            "     }\n",
+            " \n",
+            "     // merge multiple <head> or <body> contents into one, delete the remainder, and ensure they are owned by <html>\n",
+            "+    private void normaliseStructure(String tag, Element htmlEl) {\n",
+            "+        Elements elements = this.getElementsByTag(tag);\n",
+            "+        Element master = elements.first(); // will always be available as created above if not existent\n",
+            "+        if (elements.size() > 1) { // dupes, move contents to master\n",
+            "+            List<Node> toMove = new ArrayList<Node>();\n",
+            "+            for (int i = 1; i < elements.size(); i++) {\n",
+            "+                Node dupe = elements.get(i);\n",
+            "+                for (Node node : dupe.childNodes)\n",
+            "+                    toMove.add(node);\n",
+            "+                dupe.remove();\n",
+            "+            }\n",
+            "+\n",
+            "+            for (Node dupe : toMove)\n",
+            "+                master.appendChild(dupe);\n",
+            "+        }\n",
+            "         // ensure parented by <html>\n",
+            "+        if (!master.parent().equals(htmlEl)) {\n",
+            "+            htmlEl.appendChild(master); // includes remove()            \n",
+            "+        }\n",
+            "+    }\n",
+            " \n",
+            "     // fast method to get first by tag name, used for html, head, body finders\n",
+            "     private Element findFirstElementByTagName(String tag, Node node) {\n"
+          ],
+          "changed_lines": 19
+        }
+      ]
+    }
+  ]
+}

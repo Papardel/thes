@@ -1,0 +1,94 @@
+{
+  "bug_id": "39",
+  "failed_tests": {
+    "org.apache.commons.compress.ArchiveUtilsTest": [
+      {
+        "methodName": "sanitizeShortensString",
+        "error": "junit.framework.AssertionFailedError",
+        "message": "expected:<...23456789012345678901[...]> but was:<...23456789012345678901[234567890123456789012345678901234567890123456789]>",
+        "fail_line": "        assertEquals(expected, ArchiveUtils.sanitize(input));",
+        "test_source": "  public void sanitizeShortensString() {\n  String input = \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\";\n  String expected = \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901234567890123456789012345678901234567890123456789\"\n  + \"012345678901...\";\n  assertEquals(expected, ArchiveUtils.sanitize(input));\n  }",
+        "stack": [
+          "ArchiveUtilsTest.sanitizeShortensString line 82"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/compress/utils/ArchiveUtils.java",
+      "buggy_full_code": "\n\npackage org.apache.commons.compress.utils;\n\nimport java.io.UnsupportedEncodingException;\nimport java.util.Arrays;\n\nimport org.apache.commons.compress.archivers.ArchiveEntry;\n\n\npublic class ArchiveUtils { private ArchiveUtils() {\n    }\n\n    \n    public static String toString(final ArchiveEntry entry) {\n        final StringBuilder sb = new StringBuilder();\n        sb.append(entry.isDirectory()? 'd' : '-');\n        final String size = Long.toString(entry.getSize());\n        sb.append(' ');\n        \n        for(int i=7; i > size.length(); i--){\n            sb.append(' ');\n        }\n        sb.append(size);\n        sb.append(' ').append(entry.getName());\n        return sb.toString();\n    }\n\n    \n    public static boolean matchAsciiBuffer( final String expected, final byte[] buffer, final int offset, final int length) {\n        byte[] buffer1;\n        try {\n            buffer1 = expected.getBytes(CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n        return isEqual(buffer1, 0, buffer1.length, buffer, offset, length, false);\n    }\n\n    \n    public static boolean matchAsciiBuffer(final String expected, final byte[] buffer) {\n        return matchAsciiBuffer(expected, buffer, 0, buffer.length);\n    }\n\n    \n    public static byte[] toAsciiBytes(final String inputString) {\n        try {\n            return inputString.getBytes(CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n           throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static String toAsciiString(final byte[] inputBytes) {\n        try {\n            return new String(inputBytes, CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static String toAsciiString(final byte[] inputBytes, final int offset, final int length) {\n        try {\n            return new String(inputBytes, offset, length, CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2, final boolean ignoreTrailingNulls) {\n        final int minLen=length1 < length2 ? length1 : length2;\n        for (int i=0; i < minLen; i++){\n            if (buffer1[offset1+i] != buffer2[offset2+i]){\n                return false;\n            }\n        }\n        if (length1 == length2){\n            return true;\n        }\n        if (ignoreTrailingNulls){\n            if (length1 > length2){\n                for(int i = length2; i < length1; i++){\n                    if (buffer1[offset1+i] != 0){\n                        return false;\n                    }\n                }\n            } else {\n                for(int i = length1; i < length2; i++){\n                    if (buffer2[offset2+i] != 0){\n                        return false;\n                    }\n                }\n            }\n            return true;\n        }\n        return false;\n    }\n\n    \n    public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2) {\n        return isEqual(buffer1, offset1, length1, buffer2, offset2, length2, false);\n    }\n\n    \n    public static boolean isEqual(final byte[] buffer1, final byte[] buffer2 ) {\n        return isEqual(buffer1, 0, buffer1.length, buffer2, 0, buffer2.length, false);\n    }\n\n    \n    public static boolean isEqual(final byte[] buffer1, final byte[] buffer2, final boolean ignoreTrailingNulls) {\n        return isEqual(buffer1, 0, buffer1.length, buffer2, 0, buffer2.length, ignoreTrailingNulls);\n    }\n\n    \n    public static boolean isEqualWithNull( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2) {\n        return isEqual(buffer1, offset1, length1, buffer2, offset2, length2, true);\n    }\n    \n    \n    public static boolean isArrayZero(final byte[] a, final int size) {\n        for (int i = 0; i < size; i++) {\n            if (a[i] != 0) {\n                return false;\n            }\n        }\n        return true;\n    }\n\n    \n    public static String sanitize(String s) {\n        final char[] chars = s.toCharArray();\n        final int len = chars.length;\n        final StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < len; i++) {\n            final char c = chars[i];\n            if (!Character.isISOControl(c)) {\n                Character.UnicodeBlock block = Character.UnicodeBlock.of(c);\n                if (block != null && block != Character.UnicodeBlock.SPECIALS) {\n                    sb.append(c);\n                    continue;\n                }\n            }\n            sb.append('?');\n        }\n        return sb.toString();\n    }\n\n}\n",
+      "fixed_full_code": "\n\npackage org.apache.commons.compress.utils;\n\nimport java.io.UnsupportedEncodingException;\nimport java.util.Arrays;\n\nimport org.apache.commons.compress.archivers.ArchiveEntry;\n\n\npublic class ArchiveUtils { private static final int MAX_SANITIZED_NAME_LENGTH = 255; private ArchiveUtils() {\n    }\n\n    \n    public static String toString(final ArchiveEntry entry) {\n        final StringBuilder sb = new StringBuilder();\n        sb.append(entry.isDirectory()? 'd' : '-');\n        final String size = Long.toString(entry.getSize());\n        sb.append(' ');\n        \n        for(int i=7; i > size.length(); i--){\n            sb.append(' ');\n        }\n        sb.append(size);\n        sb.append(' ').append(entry.getName());\n        return sb.toString();\n    }\n\n    \n    public static boolean matchAsciiBuffer( final String expected, final byte[] buffer, final int offset, final int length) {\n        byte[] buffer1;\n        try {\n            buffer1 = expected.getBytes(CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n        return isEqual(buffer1, 0, buffer1.length, buffer, offset, length, false);\n    }\n\n    \n    public static boolean matchAsciiBuffer(final String expected, final byte[] buffer) {\n        return matchAsciiBuffer(expected, buffer, 0, buffer.length);\n    }\n\n    \n    public static byte[] toAsciiBytes(final String inputString) {\n        try {\n            return inputString.getBytes(CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n           throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static String toAsciiString(final byte[] inputBytes) {\n        try {\n            return new String(inputBytes, CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static String toAsciiString(final byte[] inputBytes, final int offset, final int length) {\n        try {\n            return new String(inputBytes, offset, length, CharsetNames.US_ASCII);\n        } catch (final UnsupportedEncodingException e) {\n            throw new RuntimeException(e); \n        }\n    }\n\n    \n    public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2, final boolean ignoreTrailingNulls) {\n        final int minLen=length1 < length2 ? length1 : length2;\n        for (int i=0; i < minLen; i++){\n            if (buffer1[offset1+i] != buffer2[offset2+i]){\n                return false;\n            }\n        }\n        if (length1 == length2){\n            return true;\n        }\n        if (ignoreTrailingNulls){\n            if (length1 > length2){\n                for(int i = length2; i < length1; i++){\n                    if (buffer1[offset1+i] != 0){\n                        return false;\n                    }\n                }\n            } else {\n                for(int i = length1; i < length2; i++){\n                    if (buffer2[offset2+i] != 0){\n                        return false;\n                    }\n                }\n            }\n            return true;\n        }\n        return false;\n    }\n\n    \n    public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2) {\n        return isEqual(buffer1, offset1, length1, buffer2, offset2, length2, false);\n    }\n\n    \n    public static boolean isEqual(final byte[] buffer1, final byte[] buffer2 ) {\n        return isEqual(buffer1, 0, buffer1.length, buffer2, 0, buffer2.length, false);\n    }\n\n    \n    public static boolean isEqual(final byte[] buffer1, final byte[] buffer2, final boolean ignoreTrailingNulls) {\n        return isEqual(buffer1, 0, buffer1.length, buffer2, 0, buffer2.length, ignoreTrailingNulls);\n    }\n\n    \n    public static boolean isEqualWithNull( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2) {\n        return isEqual(buffer1, offset1, length1, buffer2, offset2, length2, true);\n    }\n    \n    \n    public static boolean isArrayZero(final byte[] a, final int size) {\n        for (int i = 0; i < size; i++) {\n            if (a[i] != 0) {\n                return false;\n            }\n        }\n        return true;\n    }\n\n    \n    public static String sanitize(String s) {\n        final char[] cs = s.toCharArray();\n        final char[] chars = cs.length <= MAX_SANITIZED_NAME_LENGTH ? cs : Arrays.copyOf(cs, MAX_SANITIZED_NAME_LENGTH);\n        if (cs.length > MAX_SANITIZED_NAME_LENGTH) {\n            for (int i = MAX_SANITIZED_NAME_LENGTH - 3; i < MAX_SANITIZED_NAME_LENGTH; i++) {\n                chars[i] = '.';\n            }\n        }\n        final int len = chars.length;\n        final StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < len; i++) {\n            final char c = chars[i];\n            if (!Character.isISOControl(c)) {\n                Character.UnicodeBlock block = Character.UnicodeBlock.of(c);\n                if (block != null && block != Character.UnicodeBlock.SPECIALS) {\n                    sb.append(c);\n                    continue;\n                }\n            }\n            sb.append('?');\n        }\n        return sb.toString();\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class ArchiveUtils { private ArchiveUtils()",
+        "public static String toString(final ArchiveEntry entry)",
+        "public static boolean matchAsciiBuffer( final String expected, final byte[] buffer, final int offset, final int length)",
+        "public static boolean matchAsciiBuffer(final String expected, final byte[] buffer)",
+        "public static byte[] toAsciiBytes(final String inputString)",
+        "public static String toAsciiString(final byte[] inputBytes)",
+        "public static String toAsciiString(final byte[] inputBytes, final int offset, final int length)",
+        "public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2, final boolean ignoreTrailingNulls)",
+        "public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2)",
+        "public static boolean isEqual(final byte[] buffer1, final byte[] buffer2 )",
+        "public static boolean isEqual(final byte[] buffer1, final byte[] buffer2, final boolean ignoreTrailingNulls)",
+        "public static boolean isEqualWithNull( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2)",
+        "public static boolean isArrayZero(final byte[] a, final int size)",
+        "public static String sanitize(String s)"
+      ],
+      "fixed_signatures": [
+        "public static String toString(final ArchiveEntry entry)",
+        "public static boolean matchAsciiBuffer( final String expected, final byte[] buffer, final int offset, final int length)",
+        "public static boolean matchAsciiBuffer(final String expected, final byte[] buffer)",
+        "public static byte[] toAsciiBytes(final String inputString)",
+        "public static String toAsciiString(final byte[] inputBytes)",
+        "public static String toAsciiString(final byte[] inputBytes, final int offset, final int length)",
+        "public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2, final boolean ignoreTrailingNulls)",
+        "public static boolean isEqual( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2)",
+        "public static boolean isEqual(final byte[] buffer1, final byte[] buffer2 )",
+        "public static boolean isEqual(final byte[] buffer1, final byte[] buffer2, final boolean ignoreTrailingNulls)",
+        "public static boolean isEqualWithNull( final byte[] buffer1, final int offset1, final int length1, final byte[] buffer2, final int offset2, final int length2)",
+        "public static boolean isArrayZero(final byte[] a, final int size)",
+        "public static String sanitize(String s)"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  private ArchiveUtils() {\n  }",
+          "fixed_method": "  private ArchiveUtils() {\n  }",
+          "diff": [
+            "@@ -28,6 +28,7 @@",
+            "  */\n",
+            " public class ArchiveUtils {\n",
+            " \n",
+            "+    private static final int MAX_SANITIZED_NAME_LENGTH = 255;\n",
+            " \n",
+            "     /** Private constructor to prevent instantiation of this utility class. */\n",
+            "     private ArchiveUtils(){\n"
+          ],
+          "changed_lines": 1
+        },
+        {
+          "buggy_method": "  public static String sanitize(String s) {\n  final char[] chars = s.toCharArray();\n  final int len = chars.length;\n  final StringBuilder sb = new StringBuilder();\n  for (int i = 0; i < len; i++) {\n  final char c = chars[i];\n  if (!Character.isISOControl(c)) {\n  Character.UnicodeBlock block = Character.UnicodeBlock.of(c);\n  if (block != null && block != Character.UnicodeBlock.SPECIALS) {\n  sb.append(c);\n  continue;\n  }\n  }\n  sb.append('?');\n  }\n  return sb.toString();\n  }",
+          "fixed_method": "  public static String sanitize(String s) {\n  final char[] cs = s.toCharArray();\n  final char[] chars = cs.length <= MAX_SANITIZED_NAME_LENGTH ? cs : Arrays.copyOf(cs, MAX_SANITIZED_NAME_LENGTH);\n  if (cs.length > MAX_SANITIZED_NAME_LENGTH) {\n  for (int i = MAX_SANITIZED_NAME_LENGTH - 3; i < MAX_SANITIZED_NAME_LENGTH; i++) {\n  chars[i] = '.';\n  }\n  }\n  final int len = chars.length;\n  final StringBuilder sb = new StringBuilder();\n  for (int i = 0; i < len; i++) {\n  final char c = chars[i];\n  if (!Character.isISOControl(c)) {\n  Character.UnicodeBlock block = Character.UnicodeBlock.of(c);\n  if (block != null && block != Character.UnicodeBlock.SPECIALS) {\n  sb.append(c);\n  continue;\n  }\n  }\n  sb.append('?');\n  }\n  return sb.toString();\n  }",
+          "diff": [
+            "@@ -270,7 +271,13 @@",
+            "      * @since Compress 1.12\n",
+            "      */\n",
+            "     public static String sanitize(String s) {\n",
+            "-        final char[] chars = s.toCharArray();\n",
+            "+        final char[] cs = s.toCharArray();\n",
+            "+        final char[] chars = cs.length <= MAX_SANITIZED_NAME_LENGTH ? cs : Arrays.copyOf(cs, MAX_SANITIZED_NAME_LENGTH);\n",
+            "+        if (cs.length > MAX_SANITIZED_NAME_LENGTH) {\n",
+            "+            for (int i = MAX_SANITIZED_NAME_LENGTH - 3; i < MAX_SANITIZED_NAME_LENGTH; i++) {\n",
+            "+                chars[i] = '.';\n",
+            "+            }\n",
+            "+        }\n",
+            "         final int len = chars.length;\n",
+            "         final StringBuilder sb = new StringBuilder();\n",
+            "         for (int i = 0; i < len; i++) {\n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}

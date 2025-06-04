@@ -1,0 +1,107 @@
+{
+  "bug_id": "13",
+  "failed_tests": {
+    "org.apache.commons.lang3.SerializationUtilsTest": [
+      {
+        "methodName": "testPrimitiveTypeClassSerialization",
+        "error": "org.apache.commons.lang3.SerializationException",
+        "message": "ClassNotFoundException while reading cloned object data",
+        "fail_line": "            Class<?> clone = SerializationUtils.clone(primitiveType);",
+        "test_source": "  public void testPrimitiveTypeClassSerialization() {\n  Class<?>[] primitiveTypes = { byte.class, short.class, int.class, long.class, float.class, double.class,\n  boolean.class, char.class, void.class };\n\n  for (Class<?> primitiveType : primitiveTypes) {\n  Class<?> clone = SerializationUtils.clone(primitiveType);\n  assertEquals(primitiveType, clone);\n  }\n  }",
+        "stack": [
+          "SerializationUtils.clone line 99, SerializationUtilsTest.testPrimitiveTypeClassSerialization line 373, SerializationUtils$ClassLoaderAwareObjectInputStream.resolveClass line 268, SerializationUtils.clone line 95"
+        ]
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "org/apache/commons/lang3/SerializationUtils.java",
+      "buggy_full_code": "\npackage org.apache.commons.lang3;\n\nimport java.io.ByteArrayInputStream;\nimport java.io.ByteArrayOutputStream;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.ObjectStreamClass;\nimport java.io.OutputStream;\nimport java.io.Serializable;\nimport java.util.HashMap;\nimport java.util.Map;\n\n\npublic class SerializationUtils { public SerializationUtils() {\n        super();\n    }\n\n    \n    \n    \n    public static <T extends Serializable> T clone(T object) {\n        if (object == null) {\n            return null;\n        }\n        byte[] objectData = serialize(object);\n        ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n\n        ClassLoaderAwareObjectInputStream in = null;\n        try {\n            \n            in = new ClassLoaderAwareObjectInputStream(bais, object.getClass().getClassLoader());\n            \n            @SuppressWarnings(\"unchecked\") \n            T readObject = (T) in.readObject();\n            return readObject;\n\n        } catch (ClassNotFoundException ex) {\n            throw new SerializationException(\"ClassNotFoundException while reading cloned object data\", ex);\n        } catch (IOException ex) {\n            throw new SerializationException(\"IOException while reading cloned object data\", ex);\n        } finally {\n            try {\n                if (in != null) {\n                    in.close();\n                }\n            } catch (IOException ex) {\n                throw new SerializationException(\"IOException on closing cloned object data InputStream.\", ex);\n            }\n        }\n    }\n\n    \n    \n    \n    public static void serialize(Serializable obj, OutputStream outputStream) {\n        if (outputStream == null) {\n            throw new IllegalArgumentException(\"The OutputStream must not be null\");\n        }\n        ObjectOutputStream out = null;\n        try {\n            \n            out = new ObjectOutputStream(outputStream);\n            out.writeObject(obj);\n\n        } catch (IOException ex) {\n            throw new SerializationException(ex);\n        } finally {\n            try {\n                if (out != null) {\n                    out.close();\n                }\n            } catch (IOException ex) { \n                \n            }\n        }\n    }\n\n    \n    public static byte[] serialize(Serializable obj) {\n        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);\n        serialize(obj, baos);\n        return baos.toByteArray();\n    }\n\n    \n    \n    \n    public static Object deserialize(InputStream inputStream) {\n        if (inputStream == null) {\n            throw new IllegalArgumentException(\"The InputStream must not be null\");\n        }\n        ObjectInputStream in = null;\n        try {\n            \n            in = new ObjectInputStream(inputStream);\n            return in.readObject();\n\n        } catch (ClassNotFoundException ex) {\n            throw new SerializationException(ex);\n        } catch (IOException ex) {\n            throw new SerializationException(ex);\n        } finally {\n            try {\n                if (in != null) {\n                    in.close();\n                }\n            } catch (IOException ex) { \n                \n            }\n        }\n    }\n\n    \n    public static Object deserialize(byte[] objectData) {\n        if (objectData == null) {\n            throw new IllegalArgumentException(\"The byte[] must not be null\");\n        }\n        ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n        return deserialize(bais);\n    }\n\n    \n     static class ClassLoaderAwareObjectInputStream extends ObjectInputStream { private ClassLoader classLoader; public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n            super(in);\n            this.classLoader = classLoader;\n\n        }\n\n        \n        @Override\n        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {\n            String name = desc.getName();\n            try {\n                return Class.forName(name, false, classLoader);\n            } catch (ClassNotFoundException ex) {\n                    return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n            }\n        }\n\n    }\n\n}\n",
+      "fixed_full_code": "\npackage org.apache.commons.lang3;\n\nimport java.io.ByteArrayInputStream;\nimport java.io.ByteArrayOutputStream;\nimport java.io.IOException;\nimport java.io.InputStream;\nimport java.io.ObjectInputStream;\nimport java.io.ObjectOutputStream;\nimport java.io.ObjectStreamClass;\nimport java.io.OutputStream;\nimport java.io.Serializable;\nimport java.util.HashMap;\nimport java.util.Map;\n\n\npublic class SerializationUtils { public SerializationUtils() {\n        super();\n    }\n\n    \n    \n    \n    public static <T extends Serializable> T clone(T object) {\n        if (object == null) {\n            return null;\n        }\n        byte[] objectData = serialize(object);\n        ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n\n        ClassLoaderAwareObjectInputStream in = null;\n        try {\n            \n            in = new ClassLoaderAwareObjectInputStream(bais, object.getClass().getClassLoader());\n            \n            @SuppressWarnings(\"unchecked\") \n            T readObject = (T) in.readObject();\n            return readObject;\n\n        } catch (ClassNotFoundException ex) {\n            throw new SerializationException(\"ClassNotFoundException while reading cloned object data\", ex);\n        } catch (IOException ex) {\n            throw new SerializationException(\"IOException while reading cloned object data\", ex);\n        } finally {\n            try {\n                if (in != null) {\n                    in.close();\n                }\n            } catch (IOException ex) {\n                throw new SerializationException(\"IOException on closing cloned object data InputStream.\", ex);\n            }\n        }\n    }\n\n    \n    \n    \n    public static void serialize(Serializable obj, OutputStream outputStream) {\n        if (outputStream == null) {\n            throw new IllegalArgumentException(\"The OutputStream must not be null\");\n        }\n        ObjectOutputStream out = null;\n        try {\n            \n            out = new ObjectOutputStream(outputStream);\n            out.writeObject(obj);\n\n        } catch (IOException ex) {\n            throw new SerializationException(ex);\n        } finally {\n            try {\n                if (out != null) {\n                    out.close();\n                }\n            } catch (IOException ex) { \n                \n            }\n        }\n    }\n\n    \n    public static byte[] serialize(Serializable obj) {\n        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);\n        serialize(obj, baos);\n        return baos.toByteArray();\n    }\n\n    \n    \n    \n    public static Object deserialize(InputStream inputStream) {\n        if (inputStream == null) {\n            throw new IllegalArgumentException(\"The InputStream must not be null\");\n        }\n        ObjectInputStream in = null;\n        try {\n            \n            in = new ObjectInputStream(inputStream);\n            return in.readObject();\n\n        } catch (ClassNotFoundException ex) {\n            throw new SerializationException(ex);\n        } catch (IOException ex) {\n            throw new SerializationException(ex);\n        } finally {\n            try {\n                if (in != null) {\n                    in.close();\n                }\n            } catch (IOException ex) { \n                \n            }\n        }\n    }\n\n    \n    public static Object deserialize(byte[] objectData) {\n        if (objectData == null) {\n            throw new IllegalArgumentException(\"The byte[] must not be null\");\n        }\n        ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n        return deserialize(bais);\n    }\n\n    \n     static class ClassLoaderAwareObjectInputStream extends ObjectInputStream { private static final Map<String, Class<?>> primitiveTypes = new HashMap<String, Class<?>>(); private ClassLoader classLoader; public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n            super(in);\n            this.classLoader = classLoader;\n\n            primitiveTypes.put(\"byte\", byte.class);\n            primitiveTypes.put(\"short\", short.class);\n            primitiveTypes.put(\"int\", int.class);\n            primitiveTypes.put(\"long\", long.class);\n            primitiveTypes.put(\"float\", float.class);\n            primitiveTypes.put(\"double\", double.class);\n            primitiveTypes.put(\"boolean\", boolean.class);\n            primitiveTypes.put(\"char\", char.class);\n            primitiveTypes.put(\"void\", void.class);\n        }\n\n        \n        @Override\n        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {\n            String name = desc.getName();\n            try {\n                return Class.forName(name, false, classLoader);\n            } catch (ClassNotFoundException ex) {\n                try {\n                    return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n                } catch (ClassNotFoundException cnfe) {\n                    Class<?> cls = primitiveTypes.get(name);\n                    if (cls != null)\n                        return cls;\n                    else\n                        throw cnfe;\n                }\n            }\n        }\n\n    }\n\n}\n",
+      "buggy_signatures": [
+        "public class SerializationUtils { public SerializationUtils()",
+        "public static <T extends Serializable> T clone(T object)",
+        "public static void serialize(Serializable obj, OutputStream outputStream)",
+        "public static byte[] serialize(Serializable obj)",
+        "public static Object deserialize(InputStream inputStream)",
+        "public static Object deserialize(byte[] objectData)",
+        "static class ClassLoaderAwareObjectInputStream extends ObjectInputStream { private ClassLoader classLoader; public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException",
+        "protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException"
+      ],
+      "fixed_signatures": [
+        "public class SerializationUtils { public SerializationUtils()",
+        "public static <T extends Serializable> T clone(T object)",
+        "public static void serialize(Serializable obj, OutputStream outputStream)",
+        "public static byte[] serialize(Serializable obj)",
+        "public static Object deserialize(InputStream inputStream)",
+        "public static Object deserialize(byte[] objectData)",
+        "protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException"
+      ],
+      "methods": [
+        {
+          "buggy_method": "  public static Object deserialize(byte[] objectData) {\n  if (objectData == null) {\n  throw new IllegalArgumentException(\"The byte[] must not be null\");\n  }\n  ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n  return deserialize(bais);\n  }",
+          "fixed_method": "  public static Object deserialize(byte[] objectData) {\n  if (objectData == null) {\n  throw new IllegalArgumentException(\"The byte[] must not be null\");\n  }\n  ByteArrayInputStream bais = new ByteArrayInputStream(objectData);\n  return deserialize(bais);\n  }",
+          "diff": [
+            "@@ -236,6 +236,8 @@",
+            "      * class here is a workaround, see the JIRA issue LANG-626. </p>\n",
+            "      */\n",
+            "      static class ClassLoaderAwareObjectInputStream extends ObjectInputStream {\n",
+            "+        private static final Map<String, Class<?>> primitiveTypes = \n",
+            "+                new HashMap<String, Class<?>>();\n",
+            "         private ClassLoader classLoader;\n",
+            "         \n",
+            "         /**\n"
+          ],
+          "changed_lines": 2
+        },
+        {
+          "buggy_method": "  public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n  super(in);\n  this.classLoader = classLoader;\n\n  }",
+          "fixed_method": "  public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n  super(in);\n  this.classLoader = classLoader;\n\n  primitiveTypes.put(\"byte\", byte.class);\n  primitiveTypes.put(\"short\", short.class);\n  primitiveTypes.put(\"int\", int.class);\n  primitiveTypes.put(\"long\", long.class);\n  primitiveTypes.put(\"float\", float.class);\n  primitiveTypes.put(\"double\", double.class);\n  primitiveTypes.put(\"boolean\", boolean.class);\n  primitiveTypes.put(\"char\", char.class);\n  primitiveTypes.put(\"void\", void.class);\n  }",
+          "diff": [
+            "@@ -249,6 +251,15 @@",
+            "             super(in);\n",
+            "             this.classLoader = classLoader;\n",
+            " \n",
+            "+            primitiveTypes.put(\"byte\", byte.class);\n",
+            "+            primitiveTypes.put(\"short\", short.class);\n",
+            "+            primitiveTypes.put(\"int\", int.class);\n",
+            "+            primitiveTypes.put(\"long\", long.class);\n",
+            "+            primitiveTypes.put(\"float\", float.class);\n",
+            "+            primitiveTypes.put(\"double\", double.class);\n",
+            "+            primitiveTypes.put(\"boolean\", boolean.class);\n",
+            "+            primitiveTypes.put(\"char\", char.class);\n",
+            "+            primitiveTypes.put(\"void\", void.class);\n",
+            "         }\n",
+            " \n",
+            "         /**\n"
+          ],
+          "changed_lines": 9
+        },
+        {
+          "buggy_method": "  protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {\n  String name = desc.getName();\n  try {\n  return Class.forName(name, false, classLoader);\n  } catch (ClassNotFoundException ex) {\n  return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n  }\n  }",
+          "fixed_method": "  protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {\n  String name = desc.getName();\n  try {\n  return Class.forName(name, false, classLoader);\n  } catch (ClassNotFoundException ex) {\n  try {\n  return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n  } catch (ClassNotFoundException cnfe) {\n  Class<?> cls = primitiveTypes.get(name);\n  if (cls != null)\n  return cls;\n  else\n  throw cnfe;\n  }\n  }\n  }",
+          "diff": [
+            "@@ -265,7 +276,15 @@",
+            "             try {\n",
+            "                 return Class.forName(name, false, classLoader);\n",
+            "             } catch (ClassNotFoundException ex) {\n",
+            "+                try {\n",
+            "                     return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n",
+            "+                } catch (ClassNotFoundException cnfe) {\n",
+            "+                    Class<?> cls = primitiveTypes.get(name);\n",
+            "+                    if (cls != null)\n",
+            "+                        return cls;\n",
+            "+                    else\n",
+            "+                        throw cnfe;\n",
+            "+                }\n",
+            "             }\n",
+            "         }\n",
+            " \n"
+          ],
+          "changed_lines": 8
+        }
+      ]
+    }
+  ]
+}
