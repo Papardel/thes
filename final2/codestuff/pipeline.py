@@ -126,8 +126,8 @@ if __name__ == "__main__":
         json_path     = Path(f"{out_base}.json").resolve()   
         outdir        = Path(out_base).resolve()            
         outdir.mkdir(parents=True, exist_ok=True)
-        for aid in (1, 2, 3):
-            loader.attach_adapter(model, aid) 
+        #for aid in (1, 2, 3):
+            #loader.attach_adapter(model, aid) 
     except Exception as e:
         sys .exit(f"Error setting up pipeline: {e}")
     class_resp = None
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     try:
         class_file = getClass(json_path, tok, max_ctx, outdir) # makes prompt(s)
-        model = loader.attach_adapter(model, 1)
+        #model = loader.attach_adapter(model, 1)
         class_resp_path = infer("class", class_file, model, tok, device) # LLM
     except Exception as e:
         print(f"Error during class inference: {e}")
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     
     try:
         rank_file = getRank(json_path, tok, max_ctx, outdir)
-        model = loader.attach_adapter(model, 2)
+        #model = loader.attach_adapter(model, 2)
         rank_resp_path = infer("rank", rank_file, model, tok, device)
     except Exception as e:
         print(f"Error during rank inference: {e}")
@@ -163,8 +163,8 @@ if __name__ == "__main__":
         print(f"Error checking rank response: {e}")
     
     try:
-        source_file = getSource(json_path, tok, max_ctx, outdir, rank_resp)
-        model = loader.attach_adapter(model, 3)
+        source_file = getSource(json_path, tok, max_ctx, outdir, default_top5(json_path))
+        #model = loader.attach_adapter(model, 3)
         infer("source", source_file, model, tok, device)
     except Exception as e:
         print(f"Error during source inference: {e}")

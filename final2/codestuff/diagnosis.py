@@ -7,11 +7,7 @@ def infer(phase: str,
                   model,
                   tokenizer,
                   device: str,
-                  max_length: int = 512):
-    """
-    Reads each prompt file, performs model inference,
-    and writes the output to <prompt>.out.
-    """
+                  max_length: int = 256):
     if isinstance(prompt_files, Path):
         prompt_files = [prompt_files]
 
@@ -19,11 +15,9 @@ def infer(phase: str,
         text = prompt_file.read_text(encoding="utf-8")
         inputs = tokenizer(text, return_tensors="pt").to(device)
 
-        # Generate tokens
         output_ids = model.generate(**inputs, max_new_tokens=max_length, use_cache=False)
         result = tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
-        # Save result
         out_path = prompt_file.with_suffix(".out")
         out_path.write_text(result, encoding="utf-8")
 
