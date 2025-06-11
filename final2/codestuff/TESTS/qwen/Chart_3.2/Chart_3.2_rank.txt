@@ -1,0 +1,88 @@
+Source:
+public void testCreateCopy3() throws CloneNotSupportedException {
+  TimeSeries s1 = new TimeSeries("S1");
+  s1.add(new Year(2009), 100.0);
+  s1.add(new Year(2010), 101.0);
+  s1.add(new Year(2011), 102.0);
+  assertEquals(100.0, s1.getMinY(), EPSILON);
+  assertEquals(102.0, s1.getMaxY(), EPSILON);
+
+  TimeSeries s2 = s1.createCopy(0, 1);
+  assertEquals(100.0, s2.getMinY(), EPSILON);
+  assertEquals(101.0, s2.getMaxY(), EPSILON);
+
+  TimeSeries s3 = s1.createCopy(1, 2);
+  assertEquals(101.0, s3.getMinY(), EPSILON);
+  assertEquals(102.0, s3.getMaxY(), EPSILON);
+  }
+Stack:
+TimeSeriesTests.testCreateCopy3 line 607
+
+Candidate source classes and their method signatures (modifiers removed):
+
+### org.jfree.data.time.TimeSeries
+    - TimeSeries(Comparable name)
+    - TimeSeries(Comparable name, String domain, String range)
+    - String getDomainDescription()
+    - void setDomainDescription(String description)
+    - String getRangeDescription()
+    - void setRangeDescription(String description)
+    - int getItemCount()
+    - List getItems()
+    - int getMaximumItemCount()
+    - void setMaximumItemCount(int maximum)
+    - long getMaximumItemAge()
+    - void setMaximumItemAge(long periods)
+    - double getMinY()
+    - double getMaxY()
+    - Class getTimePeriodClass()
+    - TimeSeriesDataItem getDataItem(int index)
+    - TimeSeriesDataItem getDataItem(RegularTimePeriod period)
+    - RegularTimePeriod getTimePeriod(int index)
+    - RegularTimePeriod getNextTimePeriod()
+    - Collection getTimePeriods()
+    - Collection getTimePeriodsUniqueToOtherSeries(TimeSeries series)
+    - int getIndex(RegularTimePeriod period)
+    - Number getValue(int index)
+    - Number getValue(RegularTimePeriod period)
+    - void add(TimeSeriesDataItem item)
+    - void add(TimeSeriesDataItem item, boolean notify)
+    - void add(RegularTimePeriod period, double value)
+    - void add(RegularTimePeriod period, double value, boolean notify)
+    - void add(RegularTimePeriod period, Number value)
+    - void add(RegularTimePeriod period, Number value, boolean notify)
+    - void update(RegularTimePeriod period, Number value)
+    - void update(int index, Number value)
+    - TimeSeries addAndOrUpdate(TimeSeries series)
+    - TimeSeriesDataItem addOrUpdate(RegularTimePeriod period, double value)
+    - TimeSeriesDataItem addOrUpdate(RegularTimePeriod period, Number value)
+    - TimeSeriesDataItem addOrUpdate(TimeSeriesDataItem item)
+    - void removeAgedItems(boolean notify)
+    - void removeAgedItems(long latest, boolean notify)
+    - void clear()
+    - void delete(RegularTimePeriod period)
+    - void delete(int start, int end)
+    - void delete(int start, int end, boolean notify)
+    - Object clone() throws CloneNotSupportedException
+    - TimeSeries createCopy(int start, int end)
+    - TimeSeries createCopy(RegularTimePeriod start, RegularTimePeriod end)
+    - boolean equals(Object obj)
+    - int hashCode()
+    - void updateBoundsForAddedItem(TimeSeriesDataItem item)
+    - void updateBoundsForRemovedItem(TimeSeriesDataItem item)
+    - void findBoundsByIteration()
+    - double minIgnoreNaN(double a, double b)
+    - double maxIgnoreNaN(double a, double b)
+
+Your task:
+List the most likely methods that could cause the failure of the test cases above.
+Analyze the failing test(s) by looking at their code, the classes and methods they use, and the stack trace.
+IMPORTANT: You must reply _exactly_ in this form:
+RESPONSE:
+<signature-1>
+<signature-2>
+<signature-3>
+<signature-4>
+<signature-5>
+-and nothing else. No extra text, no newlines before/after, no explanations.
+

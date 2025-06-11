@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 STACK_RE = re.compile(
     r'^\s*at\s+([^\s]+)\.([^\s]+)\(([^:]+):(\d+)\)'
-)  # grp-1 = fqcn, grp-2 = method, grp-3 = file, grp-4 = line
+)
 
 DEFAULT_IGNORE_PREFIXES: Tuple[str, ...] = (
     "at junit.",
@@ -39,8 +39,6 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
         if not ln.startswith('--- '):
             i += 1
             continue
-
-        # header: --- fqcn::methodName
         header = ln[4:]
         if '::' in header:
             cls, mth = header.split('::', 1)

@@ -30,6 +30,14 @@ def _parse_method_signature(method_src: str) -> str:
             return line.rstrip("{").strip()
     raise ValueError("Empty method body provided")
 
+SIG_RX = re.compile(r"[A-Za-z_]\w*\s*\(.*")
+
+def trim_to_java_sig(text: str) -> str:
+    m = SIG_RX.search(text.strip())
+    if not m:
+        raise ValueError(f"Cannot parse Java signature from: {text!r}")
+    return m.group(0)
+
 def default(classes) -> List[str]:
     """Original behaviour: first five `buggy_signatures` of the first class."""
     for cls in classes:
@@ -81,10 +89,6 @@ def default_top5(json_path: Path) -> List[str]:
 
     return [primary_sig] + [f"{fqcn}.{s}" for s in other_sigs]
 
-# ------------------------------------------------------------------------------
-# Prompt-building functions
-# ------------------------------------------------------------------------------
-
 def build_class_prompt(json_path: Path, tokenizer, max_tokens: int) -> List[str]:
     with json_path.open('r', encoding='utf-8') as f:
         data = json.load(f)
@@ -104,9 +108,7 @@ def build_class_prompt(json_path: Path, tokenizer, max_tokens: int) -> List[str]
             source    = test.get('test_source', '')
             stack     = '\n'.join(test.get('stack', []))
 
-            # Remove multi-line comments
             source = re.sub(r'/\*[\s\S]*?\*/', '', source)
-            # Remove single-line comments
             source = re.sub(r'//.*', '', source)
             source = source.strip()
 
@@ -124,16 +126,20 @@ def build_class_prompt(json_path: Path, tokenizer, max_tokens: int) -> List[str]
             + '\n'.join(parts)
             + "\nIdentify the fully-qualified name of the non-test Java source classes that likely contain the bug causing the failure of the test cases above.\n"
             + "Analyze the test case sources, their stack traces, the error messages, and the failing lines to determine which classes are most likely responsible for the failure.\n"
-            + "Pay attention to what class names are mentioned in the stack traces, error messages, and failing lines.\n"
-        
-            + "\nReturn **only** the fully-qualified Java *source* classes.\n"
+            + "Pay attention to what class names are mentioned in the stack traces, error messages, and failing lines.\n"    
+            + "\nReturn **only** the fully-qualified Java *source* class names.\n"
             + "Do **not** return:\n"
             + "- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n"
             + "- any class whose simple name starts or ends with Test, Tests, ClassTest, TestUtils, or TestHelper,\n"
             + "- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n"
+            + "IMPORTANT: You must reply _exactly_ in this form:\n"
+                    "RESPONSE:\n"
+                    "<fully-qualified-class-name-1>\n"
+                    "<fully-qualified-class-name-2>\n"
+                    "<fully-qualified-class-name-3>\n"
+                    "-and nothing else. No extra text, no newlines before/after, no explanations.\n\n"
         )
 
-        # count tokens
         tok_ids = tokenizer(combined, return_tensors='pt').input_ids[0]
         if tok_ids.size(0) <= max_tokens - buffer:
             prompts.append(combined)
@@ -147,6 +153,12 @@ def build_class_prompt(json_path: Path, tokenizer, max_tokens: int) -> List[str]
                     + "- the test class itself (e.g. com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeIdWithEnum1328Test),\n"
                     + "- any class whose simple name starts or ends with Test, Tests, TestUtil, TestUtils, or TestHelper,\n"
                     + "- any test-utility class such as org.junit.Assert or org.junit.jupiter.api.Assertions.\n"
+                    + "IMPORTANT: You must reply _exactly_ in this form:\n"
+                    "RESPONSE:\n"
+                    "<fully-qualified-class-name-1>\n"
+                    "<fully-qualified-class-name-2>\n"
+                    "<fully-qualified-class-name-3>\n"
+                    "-and nothing else. No extra text, no newlines before/after, no explanations.\n\n"
                 )
                 prompts.append(single)
 
@@ -176,7 +188,7 @@ def build_method_prompt(
         "\nYour task:\n"
         "List the most likely methods that could cause the failure of the test cases above.\n"
         "Analyze the failing test(s) by looking at their code, the classes and methods they use, and the stack trace.\n"
-        "IMPORTANT: You must reply _exactly_ in this form:\n"
+        "IMPORTANT: Reply **ONLY** with the signatures, do not mention the class name. The arguments in the signatures must be the ones from the corresponding entry in the candidate list, **NOT** the source code. You **MUST** also return the type of the of the function, for example: **void MyClass** You must reply _exactly_ in this form:\n"
         "RESPONSE:\n"
         "<signature-1>\n"
         "<signature-2>\n"
@@ -243,10 +255,11 @@ def build_method_source_prompt(
         instructions = (
             "Analyse the failing test(s) above along with these candidate methods, these methods contain the causes of the test failures.\n"
             "Your task is to identify the most likely lines of code in these methods that could cause the failure of the test cases above.\n"
+            "Look at the test cases, their stack traces, and the error messages to determine which lines in these methods are most likely responsible for the failure.\n"
+            "Return the signature of the method and the lines of code that are most likely responsible for the failure.\n"
             "\nIMPORTANT: You must reply _exactly_ in this form:"
             "\nRESPONSE:\n<signature-1>: line of code\n line of code\n<signature-2>: line of code\n line of code\n<signature-3>: line of code\n line of code\n"
         )
-
         return (
             test_block
             + "\n"
@@ -255,26 +268,42 @@ def build_method_source_prompt(
         )
 
     pairs: List[tuple] = []
-    # Sort class names by length descending to match longest prefix first
     sorted_classes = sorted(classes.keys(), key=lambda k: -len(k))
 
-    for fq_sig in top5:
-        match = None
+    for sig in top5:
+        sig = sig.strip()
+        fqcn: str | None = None         
+        body:  str | None = None         
         for cls_name in sorted_classes:
-            prefix = cls_name + "."
-            if fq_sig.startswith(prefix):
-                match = cls_name
-                break
-        if match is None:
-            # fallback: split on last dot if no class match
-            fqcn, method_name = fq_sig.rsplit(".", 1)
-        else:
-            fqcn = match
-            method_name = fq_sig[len(match) + 1 :]
+            if sig.startswith(cls_name + "."):
+                fqcn        = cls_name
+                method_part = trim_to_java_sig(sig[len(cls_name) + 1 :])
+                code        = classes[fqcn]["buggy_full_code"]
+                body        = extract_method_by_sig(code, method_part)
+                break                                   
 
-        code = classes[fqcn]["buggy_full_code"]
-        body = extract_method_by_sig(code, method_name)
-        pairs.append((fq_sig, body))
+        if fqcn is None:
+            m = re.search(r"(\w+)\s*\(", sig)
+            if not m:
+                print(f"Cannot parse method name from '{sig}'")
+                continue
+            method_name = m.group(1)
+
+            for cls_name, cls_info in classes.items():
+                try:
+                    code = cls_info["buggy_full_code"]
+                    body        = extract_method_by_sig(code, trim_to_java_sig(sig))
+
+                    fqcn = cls_name
+                    break
+                except ValueError:
+                    continue
+
+        if fqcn is None or body is None:
+            print(f" Method '{sig}' not found in any class.")
+            continue
+
+        pairs.append((f"{fqcn}.{sig}" if "." not in sig else sig, body))
 
     big_prompt = _make_prompt(pairs)
     return [big_prompt]

@@ -1,16 +1,14 @@
 from __future__ import annotations
 from retrieval.cli import get_context
 import sys
-import argparse
 import json
-import random
+import random, shutil
 from pathlib import Path
 from typing import List
-from transformers import AutoTokenizer
-from build_prompts_from_json import build_class_prompt, build_method_prompt, build_method_source_prompt
-from diagnosis import infer
-from modelLoader import ModelLoader
-from input_normalizer import check_class_response, check_rank_response
+from utils.prompts.builders.build_prompts_from_json import build_class_prompt, build_method_prompt, build_method_source_prompt
+from LLM.diagnosis import infer_base
+from LLM.modelLoader import ModelLoader
+from utils.prompts.validators.input_normalizer import check_class_response, check_rank_response
 
 def _parse_method_signature(method_src: str) -> str:
     """Return the *declaration line* (no opening brace) of a Java method."""
@@ -116,11 +114,11 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         sys.exit("Usage: pipeline.py <MODEL> <PROJECT> <BUG_ID> <OUT> ['train full']")
     loader = None
-    try:
-        model, project, bug_id, out_base, *flag_parts = sys.argv[1:]
-        flags = " ".join(flag_parts)                    
-        get_context(project, bug_id, out_base, flags)
-        loader = ModelLoader(model)
+    modeName, project, bug_id, out_base, *flag_parts = sys.argv[1:]
+    flags = " ".join(flag_parts)            
+    buggy, fixed = get_context(project, bug_id, out_base, flags)
+    try:        
+        loader = ModelLoader(modeName)
         tok, model, device  = loader.loadModel()
         max_ctx = tok.model_max_length
         json_path     = Path(f"{out_base}.json").resolve()   
@@ -134,40 +132,23 @@ if __name__ == "__main__":
     rank_resp = None
 
 
-    try:
-        class_file = getClass(json_path, tok, max_ctx, outdir) # makes prompt(s)
-        #model = loader.attach_adapter(model, 1)
-        class_resp_path = infer("class", class_file, model, tok, device) # LLM
-    except Exception as e:
-        print(f"Error during class inference: {e}")
-    try:
-        class_resp = check_class_response(class_resp_path.read_text(encoding="utf-8"), json_path) # checkl
-    except Exception as e:
-        print(f"Error checking class response: {e}")
-
-
-   
+    class_file = getClass(json_path, tok, max_ctx, outdir)
+    #model = loader.attach_adapter(model, 1)
+    class_resp_path = infer_base("class", class_file, model, tok, device, max_ctx, modeName) # LLM
+    class_resp = check_class_response(class_resp_path.read_text(encoding="utf-8"), json_path) # checkl
+    print(f"Class response: {class_resp}")
     
-    try:
-        rank_file = getRank(json_path, tok, max_ctx, outdir)
-        #model = loader.attach_adapter(model, 2)
-        rank_resp_path = infer("rank", rank_file, model, tok, device)
-    except Exception as e:
-        print(f"Error during rank inference: {e}")
-    
+    rank_file = getRank(json_path, tok, max_ctx, outdir)
+    #model = loader.attach_adapter(model, 2)
+    rank_resp_path = infer_base("rank", rank_file, model, tok, device, max_ctx, modeName)
 
-    try:
-        rank_resp = check_rank_response(rank_resp_path.read_text(encoding="utf-8"), json_path)
-        print(f"Rank response: {rank_resp}")
-    except Exception as e:
-        print(f"Error checking rank response: {e}")
-    
-    try:
-        source_file = getSource(json_path, tok, max_ctx, outdir, default_top5(json_path))
-        #model = loader.attach_adapter(model, 3)
-        infer("source", source_file, model, tok, device)
-    except Exception as e:
-        print(f"Error during source inference: {e}")
+    rank_resp = check_rank_response(rank_resp_path.read_text(encoding="utf-8"), json_path)
+    print(f"Rank response: {rank_resp}")
 
-   
+    source_file = getSource(json_path, tok, max_ctx, outdir, rank_resp)
+    #model = loader.attach_adapter(model, 3)
+    infer_base("source", source_file, model, tok, device, max_ctx, modeName)
+    
+    shutil.rmtree(buggy)
+    shutil.rmtree(fixed)
 

@@ -1,0 +1,257 @@
+You are an AI programming assistant, utilizing the Deepseek Coder model, developed by Deepseek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer
+### Instruction:
+### Failing Test
+Test Source:
+```java
+public void testBug2849731_2() {
+  XYIntervalSeriesCollection d = new XYIntervalSeriesCollection();
+  XYIntervalSeries s = new XYIntervalSeries("S1");
+  s.add(1.0, Double.NaN, Double.NaN, Double.NaN, 1.5, Double.NaN);
+  d.addSeries(s);
+  Range r = DatasetUtilities.iterateDomainBounds(d);
+  assertEquals(1.0, r.getLowerBound(), EPSILON);
+  assertEquals(1.0, r.getUpperBound(), EPSILON);
+
+  s.add(1.0, 1.5, Double.NaN, Double.NaN, 1.5, Double.NaN);
+  r = DatasetUtilities.iterateDomainBounds(d);
+  assertEquals(1.0, r.getLowerBound(), EPSILON);
+  assertEquals(1.5, r.getUpperBound(), EPSILON);
+
+  s.add(1.0, Double.NaN, 0.5, Double.NaN, 1.5, Double.NaN);
+  r = DatasetUtilities.iterateDomainBounds(d);
+  assertEquals(0.5, r.getLowerBound(), EPSILON);
+  assertEquals(1.5, r.getUpperBound(), EPSILON);
+  }
+```
+Stack Trace:
+DatasetUtilitiesTests.testBug2849731_2 line 1276
+
+### Failing Test
+Test Source:
+```java
+public void testBug2849731_3() {
+  XYIntervalSeriesCollection d = new XYIntervalSeriesCollection();
+  XYIntervalSeries s = new XYIntervalSeries("S1");
+  s.add(1.0, Double.NaN, Double.NaN, 1.5, Double.NaN, Double.NaN);
+  d.addSeries(s);
+  Range r = DatasetUtilities.iterateRangeBounds(d);
+  assertEquals(1.5, r.getLowerBound(), EPSILON);
+  assertEquals(1.5, r.getUpperBound(), EPSILON);
+
+  s.add(1.0, 1.5, Double.NaN, Double.NaN, Double.NaN, 2.5);
+  r = DatasetUtilities.iterateRangeBounds(d);
+  assertEquals(1.5, r.getLowerBound(), EPSILON);
+  assertEquals(2.5, r.getUpperBound(), EPSILON);
+
+  s.add(1.0, Double.NaN, 0.5, Double.NaN, 3.5, Double.NaN);
+  r = DatasetUtilities.iterateRangeBounds(d);
+  assertEquals(1.5, r.getLowerBound(), EPSILON);
+  assertEquals(3.5, r.getUpperBound(), EPSILON);
+  }
+```
+Stack Trace:
+DatasetUtilitiesTests.testBug2849731_3 line 1299
+
+### Candidate Method 1
+```java
+// ‼ signature public static Range iterateDomainBounds(XYDataset dataset, not found
+```
+
+### Candidate Method 2
+```java
+public static Range findRangeBounds(XYDataset dataset,
+                                        boolean includeInterval) {
+        if (dataset == null) {
+            throw new IllegalArgumentException("Null 'dataset' argument.");
+        }
+        Range result = null;
+        if (dataset instanceof RangeInfo) {
+            RangeInfo info = (RangeInfo) dataset;
+            result = info.getRangeBounds(includeInterval);
+        }
+        else {
+            result = iterateRangeBounds(dataset, includeInterval);
+        }
+        return result;
+    }
+```
+
+### Candidate Method 3
+```java
+public static Range findStackedRangeBounds(CategoryDataset dataset) {
+        return findStackedRangeBounds(dataset, 0.0);
+    }
+```
+
+### Candidate Method 4
+```java
+public static Range findStackedRangeBounds(TableXYDataset dataset) {
+        return findStackedRangeBounds(dataset, 0.0);
+    }
+```
+
+### Candidate Method 5
+```java
+public static Range iterateRangeBounds(XYDataset dataset,
+            boolean includeInterval) {
+        double minimum = Double.POSITIVE_INFINITY;
+        double maximum = Double.NEGATIVE_INFINITY;
+        int seriesCount = dataset.getSeriesCount();
+
+        
+        if (includeInterval && dataset instanceof IntervalXYDataset) {
+            
+            IntervalXYDataset ixyd = (IntervalXYDataset) dataset;
+            for (int series = 0; series < seriesCount; series++) {
+                int itemCount = dataset.getItemCount(series);
+                for (int item = 0; item < itemCount; item++) {
+                    double lvalue = ixyd.getStartYValue(series, item);
+                    double uvalue = ixyd.getEndYValue(series, item);
+                    if (!Double.isNaN(lvalue)) {
+                        minimum = Math.min(minimum, lvalue);
+                    }
+                    if (!Double.isNaN(uvalue)) {
+                        maximum = Math.max(maximum, uvalue);
+                    }
+                }
+            }
+        }
+        else if (includeInterval && dataset instanceof OHLCDataset) {
+            
+            OHLCDataset ohlc = (OHLCDataset) dataset;
+            for (int series = 0; series < seriesCount; series++) {
+                int itemCount = dataset.getItemCount(series);
+                for (int item = 0; item < itemCount; item++) {
+                    double lvalue = ohlc.getLowValue(series, item);
+                    double uvalue = ohlc.getHighValue(series, item);
+                    if (!Double.isNaN(lvalue)) {
+                        minimum = Math.min(minimum, lvalue);
+                    }
+                    if (!Double.isNaN(uvalue)) {
+                        maximum = Math.max(maximum, uvalue);
+                    }
+                }
+            }
+        }
+        else {
+            
+            for (int series = 0; series < seriesCount; series++) {
+                int itemCount = dataset.getItemCount(series);
+                for (int item = 0; item < itemCount; item++) {
+                    double value = dataset.getYValue(series, item);
+                    if (!Double.isNaN(value)) {
+                        minimum = Math.min(minimum, value);
+                        maximum = Math.max(maximum, value);
+                    }
+                }
+            }
+        }
+        if (minimum == Double.POSITIVE_INFINITY) {
+            return null;
+        }
+        else {
+            return new Range(minimum, maximum);
+        }
+    }
+```
+Analyse the failing test(s) above along with these candidate methods, these methods contain the causes of the test failures.
+Your task is to identify the most likely lines of code in these methods that could cause the failure of the test cases above.
+Look at the test cases, their stack traces, and the error messages to determine which lines in these methods are most likely responsible for the failure.
+Return the signature of the method and the lines of code that are most likely responsible for the failure.
+
+IMPORTANT: You must reply _exactly_ in this form:
+RESPONSE:
+<signature-1>: line of code
+ line of code
+<signature-2>: line of code
+ line of code
+<signature-3>: line of code
+ line of code
+
+### Response:
+The failing test cases are caused by the `iterateDomainBounds` and `iterateRangeBounds` methods in the `DatasetUtilities` class. The methods are designed to iterate over the datasets and find the minimum and maximum values of the domain and range respectively. 
+
+In the failing test cases, the datasets are `XYIntervalSeriesCollection` and `XYIntervalSeries`. The `iterateDomainBounds` method is expected to return the minimum and maximum x-values of the series, while the `iterateRangeBounds` method is expected to return the minimum and maximum y-values of the series.
+
+However, the failing test cases are not passing because the `iterateDomainBounds` and `iterateRangeBounds` methods are not correctly implemented. The methods are not handling the case where the y-values are `Double.NaN`, which is causing the test cases to fail.
+
+Here is the most likely lines of code in the `iterateDomainBounds` and `iterateRangeBounds` methods:
+
+```java
+// iterateDomainBounds
+for (int series = 0; series < seriesCount; series++) {
+    int itemCount = dataset.getItemCount(series);
+    for (int item = 0; item < itemCount; item++) {
+        double value = dataset.getXValue(series, item);
+        if (!Double.isNaN(value)) {
+            minimum = Math.min(minimum, value);
+            maximum = Math.max(maximum, value);
+        }
+    }
+}
+
+// iterateRangeBounds
+for (int series = 0; series < seriesCount; series++) {
+    int itemCount = dataset.getItemCount(series);
+    for (int item = 0; item < itemCount; item++) {
+        double value = dataset.getYValue(series, item);
+        if (!Double.isNaN(value)) {
+            minimum = Math.min(minimum, value);
+            maximum = Math.max(maximum, value);
+        }
+    }
+}
+```
+
+So, the most likely lines of code in the `iterateDomainBounds` and `iterateRangeBounds` methods are:
+
+```
+RESPONSE:
+public static Range iterateDomainBounds(XYDataset dataset) {
+    double minimum = Double.POSITIVE_INFINITY;
+    double maximum = Double.NEGATIVE_INFINITY;
+    int seriesCount = dataset.getSeriesCount();
+
+    for (int series = 0; series < seriesCount; series++) {
+        int itemCount = dataset.getItemCount(series);
+        for (int item = 0; item < itemCount; item++) {
+            double value = dataset.getXValue(series, item);
+            if (!Double.isNaN(value)) {
+                minimum = Math.min(minimum, value);
+                maximum = Math.max(maximum, value);
+            }
+        }
+    }
+
+    if (minimum == Double.POSITIVE_INFINITY) {
+        return null;
+    }
+    else {
+        return new Range(minimum, maximum);
+    }
+}
+
+public static Range iterateRangeBounds(XYDataset dataset) {
+    double minimum = Double.POSITIVE_INFINITY;
+    double maximum = Double.NEGATIVE_INFINITY;
+    int seriesCount = dataset.getSeriesCount();
+
+    for (int series = 0; series < seriesCount; series++) {
+        int itemCount = dataset.getItemCount(series);
+        for (int item = 0; item < itemCount; item++) {
+            double value = dataset.getYValue(series, item);
+            if (!Double.isNaN(value)) {
+                minimum = Math.min(minimum, value);
+                maximum = Math.max(maximum, value);
+            }
+        }
+    }
+
+    if (minimum == Double.POSITIVE_INFINITY) {
+        return null;
+    }
+    else {
+        return new Range(minimum, maximum);
+    }
+}
+```

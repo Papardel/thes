@@ -7,10 +7,10 @@ import sys
 from pathlib import Path
 import logging
 
-from d4j import Defects4JFetcher
 from .utils            import read_lines
 from .source_extractor import gather_sources, gather_buggy_sources
 from .failure_parser   import parse_failing_tests
+from utils.datasets.d4j import Defects4JFetcher
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
@@ -40,8 +40,7 @@ def get_context(project: str, bug_id: str, out: str, flags: str = ""):
     out = Path(out + ".json")
     out.write_text(json.dumps(result, indent=2))
     LOGGER.info("Wrote %s", out)
-    shutil.rmtree(buggy)
-    shutil.rmtree(fixed)
+    return buggy, fixed
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and "-" in sys.argv[1]:

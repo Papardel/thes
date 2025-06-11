@@ -25,7 +25,6 @@ class Defects4JFetcher:
             [self.bin, "checkout", "-p", project, "-v", f"{bug_id}{version}", "-w", str(tgt)],
             check=True, capture_output=True, text=True,
         )
-        
         return tgt
     
     def test(self, project: str, bug_id: str, version: str):

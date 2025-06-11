@@ -1,0 +1,178 @@
+### Failing Test
+Test Source:
+```java
+public void test2947660() {
+  AbstractCategoryItemRenderer r = new LineAndShapeRenderer();
+  assertNotNull(r.getLegendItems());
+  assertEquals(0, r.getLegendItems().getItemCount());
+
+  DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+  CategoryPlot plot = new CategoryPlot();
+  plot.setDataset(dataset);
+  plot.setRenderer(r);
+  assertEquals(0, r.getLegendItems().getItemCount());
+
+  dataset.addValue(1.0, "S1", "C1");
+  LegendItemCollection lic = r.getLegendItems();
+  assertEquals(1, lic.getItemCount());
+  assertEquals("S1", lic.get(0).getLabel());
+  }
+```
+Stack Trace:
+AbstractCategoryItemRendererTests.test2947660 line 409
+
+### Candidate Method 1
+```java
+public LegendItemCollection getLegendItems() {
+        LegendItemCollection result = new LegendItemCollection();
+        if (this.plot == null) {
+            return result;
+        }
+        int index = this.plot.getIndexOf(this);
+        CategoryDataset dataset = this.plot.getDataset(index);
+        if (dataset != null) {
+            return result;
+        }
+        int seriesCount = dataset.getRowCount();
+        if (plot.getRowRenderingOrder().equals(SortOrder.ASCENDING)) {
+            for (int i = 0; i < seriesCount; i++) {
+                if (isSeriesVisibleInLegend(i)) {
+                    LegendItem item = getLegendItem(index, i);
+                    if (item != null) {
+                        result.add(item);
+                    }
+                }
+            }
+        }
+        else {
+            for (int i = seriesCount - 1; i >= 0; i--) {
+                if (isSeriesVisibleInLegend(i)) {
+                    LegendItem item = getLegendItem(index, i);
+                    if (item != null) {
+                        result.add(item);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+```
+
+### Candidate Method 2
+```java
+public CategoryPlot getPlot() {
+        return this.plot;
+    }
+```
+
+### Candidate Method 3
+```java
+public void drawDomainMarker(Graphics2D g2,
+                                 CategoryPlot plot,
+                                 CategoryAxis axis,
+                                 CategoryMarker marker,
+                                 Rectangle2D dataArea) {
+
+        Comparable category = marker.getKey();
+        CategoryDataset dataset = plot.getDataset(plot.getIndexOf(this));
+        int columnIndex = dataset.getColumnIndex(category);
+        if (columnIndex < 0) {
+            return;
+        }
+
+        final Composite savedComposite = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(
+                AlphaComposite.SRC_OVER, marker.getAlpha()));
+
+        PlotOrientation orientation = plot.getOrientation();
+        Rectangle2D bounds = null;
+        if (marker.getDrawAsLine()) {
+            double v = axis.getCategoryMiddle(columnIndex,
+                    dataset.getColumnCount(), dataArea,
+                    plot.getDomainAxisEdge());
+            Line2D line = null;
+            if (orientation == PlotOrientation.HORIZONTAL) {
+                line = new Line2D.Double(dataArea.getMinX(), v,
+                        dataArea.getMaxX(), v);
+            }
+            else if (orientation == PlotOrientation.VERTICAL) {
+                line = new Line2D.Double(v, dataArea.getMinY(), v,
+                        dataArea.getMaxY());
+            }
+            g2.setPaint(marker.getPaint());
+            g2.setStroke(marker.getStroke());
+            g2.draw(line);
+            bounds = line.getBounds2D();
+        }
+        else {
+            double v0 = axis.getCategoryStart(columnIndex,
+                    dataset.getColumnCount(), dataArea,
+                    plot.getDomainAxisEdge());
+            double v1 = axis.getCategoryEnd(columnIndex,
+                    dataset.getColumnCount(), dataArea,
+                    plot.getDomainAxisEdge());
+            Rectangle2D area = null;
+            if (orientation == PlotOrientation.HORIZONTAL) {
+                area = new Rectangle2D.Double(dataArea.getMinX(), v0,
+                        dataArea.getWidth(), (v1 - v0));
+            }
+            else if (orientation == PlotOrientation.VERTICAL) {
+                area = new Rectangle2D.Double(v0, dataArea.getMinY(),
+                        (v1 - v0), dataArea.getHeight());
+            }
+            g2.setPaint(marker.getPaint());
+            g2.fill(area);
+            bounds = area;
+        }
+
+        String label = marker.getLabel();
+        RectangleAnchor anchor = marker.getLabelAnchor();
+        if (label != null) {
+            Font labelFont = marker.getLabelFont();
+            g2.setFont(labelFont);
+            g2.setPaint(marker.getLabelPaint());
+            Point2D coordinates = calculateDomainMarkerTextAnchorPoint(
+                    g2, orientation, dataArea, bounds, marker.getLabelOffset(),
+                    marker.getLabelOffsetType(), anchor);
+            TextUtilities.drawAlignedString(label, g2,
+                    (float) coordinates.getX(), (float) coordinates.getY(),
+                    marker.getLabelTextAnchor());
+        }
+        g2.setComposite(savedComposite);
+    }
+```
+
+### Candidate Method 4
+```java
+protected ValueAxis getRangeAxis(CategoryPlot plot, int index) {
+        ValueAxis result = plot.getRangeAxis(index);
+        if (result == null) {
+            result = plot.getRangeAxis();
+        }
+        return result;
+    }
+```
+
+### Candidate Method 5
+```java
+public void drawOutline(Graphics2D g2,
+                            CategoryPlot plot,
+                            Rectangle2D dataArea) {
+
+        plot.drawOutline(g2, dataArea);
+
+    }
+```
+Analyse the failing test(s) above along with these candidate methods, these methods contain the causes of the test failures.
+Your task is to identify the most likely lines of code in these methods that could cause the failure of the test cases above.
+Look at the test cases, their stack traces, and the error messages to determine which lines in these methods are most likely responsible for the failure.
+Return the signature of the method and the lines of code that are most likely responsible for the failure.
+
+IMPORTANT: You must reply _exactly_ in this form:
+RESPONSE:
+<signature-1>: line of code
+ line of code
+<signature-2>: line of code
+ line of code
+<signature-3>: line of code
+ line of code
