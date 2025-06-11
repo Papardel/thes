@@ -8,7 +8,6 @@ FQCN_RE = re.compile(r"^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+$")
 def _looks_like_fqcn(token: str) -> bool:
     return bool(FQCN_RE.fullmatch(token.strip("`").rstrip(" ,;.")))
 
-
 def _find_response_marker(lines: List[str]) -> int | None:
 
     for i in reversed(range(len(lines))):

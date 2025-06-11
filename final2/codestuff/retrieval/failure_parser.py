@@ -22,14 +22,6 @@ DEFAULT_IGNORE_PREFIXES: Tuple[str, ...] = (
 )
 
 def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Parse Defects4J `failing_tests` output. If `repo` given,
-    always attach the full test-source, and attach the failing line
-    snippet only if a matching stack frame was found. Also summarize
-    the stack trace into a concise list.
-
-    Returns a dict mapping each test-class FQCN to its list of failures.
-    """
     failures: List[Dict[str, Any]] = []
     i = 0
     n = len(raw_lines)
@@ -64,7 +56,6 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
                 stack.append(raw_lines[j])
             j += 1
 
-        # build a concise summary of the stack trace
         summary_items: List[str] = []
         for frame in stack:
             m = STACK_RE.match(frame)
@@ -75,7 +66,6 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
             summary_items.append(f"{simple_cls}.{method_f} line {line_no_f}")
         summary = ", ".join(summary_items)
 
-        # find first matching frame for this test method
         fail_line: Optional[int] = None
         for frame in stack:
             m = STACK_RE.match(frame)
@@ -96,7 +86,6 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
             "stack":       [summary]
         }
 
-        # attach snippet and test_source if repo is provided
         if repo is not None:
             rel = Path(*cls.split('.')).with_suffix('.java')
             test_file = find_source_file(repo, rel)
@@ -104,13 +93,12 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
                 src = test_file.read_text(encoding="utf8", errors="replace")
                 lines = src.splitlines()
 
-                # snippet: only if we got a concrete fail_line
                 if fail_line is not None:
                     start = max(0, fail_line - 1)
                     end = min(len(lines), fail_line)
                     entry["fail_line"] = "\n".join(lines[start:end])
 
-                # ALWAYS extract the full test method by locating its declaration
+                # ALWAYS extract the full test (find decl)
                 method_re = re.compile(rf'^\s*public void {re.escape(mth)}\s*\(')
                 decl_line: Optional[int] = None
                 for idx, text in enumerate(lines, start=1):
@@ -121,10 +109,8 @@ def parse_failing_tests(raw_lines: List[str], repo: Optional[Path] = None) -> Di
                 if decl_line is not None:
                     entry["test_source"] = normalize_code(extract_method(src, decl_line))
                 else:
-                    # fallback: extract around the first line of the file
                     entry["test_source"] = normalize_code(extract_method(src, 1))
 
-        # stash the className for grouping, then drop it
         entry["_className"] = cls
         failures.append(entry)
         i = j

@@ -134,8 +134,8 @@ if __name__ == "__main__":
 
     class_file = getClass(json_path, tok, max_ctx, outdir)
     #model = loader.attach_adapter(model, 1)
-    class_resp_path = infer_base("class", class_file, model, tok, device, max_ctx, modeName) # LLM
-    class_resp = check_class_response(class_resp_path.read_text(encoding="utf-8"), json_path) # checkl
+    class_resp_path = infer_base("class", class_file, model, tok, device, max_ctx, modeName)
+    class_resp = check_class_response(class_resp_path.read_text(encoding="utf-8"), json_path) 
     print(f"Class response: {class_resp}")
     
     rank_file = getRank(json_path, tok, max_ctx, outdir)

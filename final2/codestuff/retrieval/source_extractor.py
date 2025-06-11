@@ -3,9 +3,6 @@ from pathlib import Path
 from typing import List
 from .utils import read_lines, find_source_file, normalize_code
 
-###############################################################################
-# Comment‑stripping helper                                                   #
-###############################################################################
 def extract_method_by_sig(source: str, simple_sig: str) -> str:
     """
     Return the full text of the first method/ctor whose header matches
@@ -13,7 +10,6 @@ def extract_method_by_sig(source: str, simple_sig: str) -> str:
     line-breaks and does NOT suffer from the “bad escape \\s” issue.
     """
 
-    # 1) escape meta-chars *except* blanks, then turn every blank into \s+
     esc = re.escape(simple_sig.strip())          # escapes ( ) [ ] etc.
     esc = esc.replace(r"\ ",  r"\s+")            # flexible spaces/tabs
     esc = esc.replace(r"\t", r"\s+")             # just in case tabs snuck through
