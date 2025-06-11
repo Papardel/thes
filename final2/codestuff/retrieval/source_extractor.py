@@ -4,16 +4,9 @@ from typing import List
 from .utils import read_lines, find_source_file, normalize_code
 
 def extract_method_by_sig(source: str, simple_sig: str) -> str:
-    """
-    Return the full text of the first method/ctor whose header matches
-    `simple_sig` (no class prefix).  Robust to arbitrary whitespace /
-    line-breaks and does NOT suffer from the “bad escape \\s” issue.
-    """
-
-    esc = re.escape(simple_sig.strip())          # escapes ( ) [ ] etc.
-    esc = esc.replace(r"\ ",  r"\s+")            # flexible spaces/tabs
-    esc = esc.replace(r"\t", r"\s+")             # just in case tabs snuck through
-    # 2) allow any whitespace *between* tokens, then look for the opening brace
+    esc = re.escape(simple_sig.strip())         
+    esc = esc.replace(r"\ ",  r"\s+")            
+    esc = esc.replace(r"\t", r"\s+")             
     header_re = re.compile(esc + r"\s*\{", re.MULTILINE)
 
     m = header_re.search(source)
@@ -21,7 +14,7 @@ def extract_method_by_sig(source: str, simple_sig: str) -> str:
         return f"// ‼ signature {simple_sig} not found"
 
     start = m.start()
-    idx   = m.end() - 1          # points at '{'
+    idx   = m.end() - 1          
     depth = 0
     while idx < len(source):
         if source[idx] == "{":
@@ -31,7 +24,6 @@ def extract_method_by_sig(source: str, simple_sig: str) -> str:
             if depth == 0:
                 return source[start:idx+1]
         idx += 1
-    # Fallback if braces unbalanced
     return source[start:]
 
 
@@ -40,15 +32,6 @@ def remove_comments(code: str) -> str:
     comment_pattern = re.compile(r"/\*[\s\S]*?\*/|//.*?$", re.MULTILINE)
     return re.sub(comment_pattern, "", code)
 
-###############################################################################
-# Robust method‑signature extraction                                         #
-###############################################################################
-# We need to recognise ANY Java access or control modifier, allow annotations
-# and parameter lists that span multiple lines, and stop at the first '{' or
-# ';'.  This purely‑regex approach is good enough for source‑code mining and
-# avoids a heavyweight Java parser.
-
-# Full modifier list (public etc.).  Keep this as a raw string so the \b works.
 MODIFIERS = (
     r"public|protected|private|static|abstract|native|"
     r"synchronized|strictfp"
@@ -61,11 +44,7 @@ def _clean_sig(sig: str) -> str:
     return sig[:cut].strip()
 
 def collect_signatures(code: str) -> List[str]:
-    """
-    Return every top-level method/constructor signature in `code`,
-    but skip any line where the '(' is coming from a 'new ...(...)' 
-    or other initializer (i.e. skip lines where '=' appears before the '(').
-    """
+
     signatures: List[str] = []
     buffer: List[str] = []
     paren_depth = 0
@@ -76,18 +55,12 @@ def collect_signatures(code: str) -> List[str]:
         if not line or line.startswith(("import ", "package ")):
             continue
 
-        # Detect a potential signature-start
         if not in_sig and SIG_START_RE.search(line):
-            # Make sure the '(' in this line is not part of "new X(...)"
-            # i.e. check substring up to the first '(':
             first_paren_idx = line.find("(")
             before_paren = line[:first_paren_idx]
             if "=" in before_paren:
-                # If there's an '=' before the '(', 
-                # it's likely an initializer, not a method header → skip
                 continue
 
-            # Otherwise, it's truly a method header
             in_sig = True
             buffer = [line]
             paren_depth = line.count("(") - line.count(")")
@@ -96,7 +69,6 @@ def collect_signatures(code: str) -> List[str]:
                 signatures.append(_clean_sig(" ".join(buffer)))
             continue
 
-        # If we’re already inside a multi-line signature, keep collecting
         if in_sig:
             buffer.append(line)
             paren_depth += line.count("(") - line.count(")")
@@ -106,9 +78,6 @@ def collect_signatures(code: str) -> List[str]:
 
     return signatures
 
-###############################################################################
-# Old extract_method helper (unchanged)                                      #
-###############################################################################
 
 def extract_method(src: str, line_no: int) -> str:
     """From a 1‑based line number near the change, return the enclosing method."""
@@ -142,9 +111,6 @@ def extract_method(src: str, line_no: int) -> str:
 
     return "\n".join(snippet)
 
-###############################################################################
-# Main gather_sources                                                         #
-###############################################################################
 
 def gather_sources(buggy: Path, fixed: Path) -> list[dict]:
     mods = read_lines(buggy / "classes.modified")
@@ -156,15 +122,12 @@ def gather_sources(buggy: Path, fixed: Path) -> list[dict]:
         bsrc = find_source_file(buggy, rel)
         fsrc = find_source_file(fixed, rel)
 
-        # Read original text (with comments) because diffs need them
         original_bcode = bsrc.read_text(encoding="utf8", errors="replace") if bsrc.exists() else ""
         original_fcode = fsrc.read_text(encoding="utf8", errors="replace") if fsrc.exists() else ""
 
-        # Comment‑stripped versions for signature extraction and normalisation
         bcode = remove_comments(original_bcode)
         fcode = remove_comments(original_fcode)
 
-        # ------------------------------------------------------------------ diff
         diff = list(
             difflib.unified_diff(
                 original_bcode.splitlines(keepends=True),
@@ -185,7 +148,6 @@ def gather_sources(buggy: Path, fixed: Path) -> list[dict]:
         if curr:
             hunks.append(curr)
 
-        # ---------------------------------------------------------------- methods
         methods: dict[str, dict] = {}
         for hunk in hunks:
             m = hunk_re.match(hunk[0])
@@ -227,20 +189,3 @@ def gather_sources(buggy: Path, fixed: Path) -> list[dict]:
         )
 
     return out
-
-###############################################################################
-# Compatibility shim                                                         #
-###############################################################################
-
-def gather_buggy_sources(buggy: Path, fixed: Path) -> list[dict]:
-    """Legacy helper that returns only the buggy methods list."""
-    full = gather_sources(buggy, fixed)
-    simplified: list[dict] = []
-    for cls in full:
-        simplified.append(
-            {
-                "name": cls["name"],
-                "methods": [{"buggy_method": m["buggy_method"]} for m in cls.get("methods", [])],
-            }
-        )
-    return simplified

@@ -8,7 +8,7 @@ from pathlib import Path
 import logging
 
 from .utils            import read_lines
-from .source_extractor import gather_sources, gather_buggy_sources
+from .source_extractor import gather_sources
 from .failure_parser   import parse_failing_tests
 from utils.datasets.d4j import Defects4JFetcher
 

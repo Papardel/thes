@@ -1,5 +1,4 @@
 
-# filepath: /home/victor/School/ThesisPipeV1/final2/modelLoader.py
 import os
 from typing import Optional, Tuple
 import torch
