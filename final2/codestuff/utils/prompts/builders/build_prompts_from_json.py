@@ -80,7 +80,7 @@ def default_top5(json_path: Path) -> List[str]:
     def _simple(s: str) -> str:
         return s.split(None, 1)[-1]
 
-    remaining = [s for s in candidates if _simple(s) not in primary_sig]
+    remaining = [s for s in candidates if s not in primary_sig]
     if len(remaining) < 4:
         pool = (remaining or candidates) * 5
     else:

@@ -4,17 +4,30 @@ from typing import List
 from .utils import read_lines, find_source_file, normalize_code
 
 def extract_method_by_sig(source: str, simple_sig: str) -> str:
-    esc = re.escape(simple_sig.strip())         
-    esc = esc.replace(r"\ ",  r"\s+")            
-    esc = esc.replace(r"\t", r"\s+")             
-    header_re = re.compile(esc + r"\s*\{", re.MULTILINE)
+    """
+    Return the full source of the first method whose *header* matches
+    `simple_sig`.  The match now tolerates an optional *throws* clause
+    and any whitespace / line-breaks before the opening brace.
+    """
+    # 1️⃣  turn the user-supplied signature into a flexible regex
+    esc = re.escape(simple_sig.strip())           # literal → escaped
+    esc = esc.replace(r"\ ",  r"\s+")             # 1+ spaces/tabs
+    esc = esc.replace(r"\t", r"\s+")              # (legacy)
 
+    # allow optional "throws ..." before the '{'
+    header_re = re.compile(
+        esc + r"(?:\s*throws\b[^{]+)?\s*\{",
+        re.MULTILINE | re.DOTALL
+    )
+
+    # 2️⃣  locate the header
     m = header_re.search(source)
     if not m:
         return f"// ‼ signature {simple_sig} not found"
 
+    # 3️⃣  balance braces to capture the whole body
     start = m.start()
-    idx   = m.end() - 1          
+    idx   = m.end() - 1           # points at the '{'
     depth = 0
     while idx < len(source):
         if source[idx] == "{":
@@ -22,9 +35,12 @@ def extract_method_by_sig(source: str, simple_sig: str) -> str:
         elif source[idx] == "}":
             depth -= 1
             if depth == 0:
-                return source[start:idx+1]
+                return source[start : idx + 1]
         idx += 1
+
+    # Fallback (shouldn’t happen unless braces are unbalanced)
     return source[start:]
+
 
 
 def remove_comments(code: str) -> str:

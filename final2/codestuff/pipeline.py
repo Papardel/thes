@@ -1,154 +1,195 @@
+#!/usr/bin/env python3
+"""
+pipeline.py
+
+End-to-end script:
+
+1. Build a **class** prompt → run model → validate → log.
+2. Build **method-ranking** prompts for ONLY the validated classes →
+   run model → validate → log.
+3. Build **source-inspection** prompts for the accepted buggy methods →
+   run model → extract most-likely lines → log.
+
+Every stage appends its response to `pipeline_responses.txt`.
+"""
+
 from __future__ import annotations
-from retrieval.cli import get_context
+
+import re
 import sys
 import json
-import random, shutil
+import random
+import shutil
 from pathlib import Path
 from typing import List
-from utils.prompts.builders.build_prompts_from_json import build_class_prompt, build_method_prompt, build_method_source_prompt
+
+from retrieval.cli import get_context
+from utils.prompts.builders.build_prompts_from_json import (
+    build_class_prompt,
+    build_method_prompt,
+    build_method_source_prompt,
+)
+from utils.prompts.validators.input_normalizer import (
+    check_class_response,
+    check_rank_response,
+    extract_line_response,
+)
 from LLM.diagnosis import infer_base
 from LLM.modelLoader import ModelLoader
-from utils.prompts.validators.input_normalizer import check_class_response, check_rank_response
 
-def _parse_method_signature(method_src: str) -> str:
-    """Return the *declaration line* (no opening brace) of a Java method."""
-    for line in method_src.splitlines():
-        line = line.strip()
-        if line:
-            return line.rstrip("{").strip()
+
+# ──────────────────────────────────────────────────────────────
+#  Helpers
+# ──────────────────────────────────────────────────────────────
+def _parse_method_signature(src: str) -> str:
+    for ln in src.splitlines():
+        ln = ln.strip()
+        if ln:
+            return ln.rstrip("{").strip()
     raise ValueError("Empty method body provided")
 
 
-def default_top5(json_path: Path) -> List[str]:
-    """Pick one *buggy* method + four random others from `buggy_signatures`."""
-
-    with json_path.open(encoding="utf-8") as fh:
-        data = json.load(fh)
-
-    classes = data.get("classes", [])
-    if not classes:
-        raise ValueError("No classes found in JSON")
-
-    primary_sig = None
-    for cls in classes:
-        methods = cls.get("methods") or []
-        if not methods:
-            continue
-        buggy_src = methods[0]["buggy_method"]
-        simple_sig = _parse_method_signature(buggy_src)
-        fqcn = cls["name"].replace("/", ".").rstrip(".java")
-        primary_sig = f"{fqcn}.{simple_sig}"
-        candidates = cls.get("buggy_signatures") or []
-        break
-
-    if primary_sig is None:
-        return default(classes)
-
-    def _simple(s: str) -> str:
-        return s.split(None, 1)[-1]
-
-    remaining = [s for s in candidates if _simple(s) not in primary_sig]
-    if len(remaining) < 4:
-        pool = (remaining or candidates) * 5
-    else:
-        pool = remaining
-    other_sigs = random.sample(pool, 4)
-
-    return [primary_sig] + [f"{fqcn}.{s}" for s in other_sigs]
-
-
-def default(classes) -> List[str]:
-    """Original behaviour: first five `buggy_signatures` of the first class."""
-    for cls in classes:
-        sigs = cls.get("buggy_signatures") or []
-        if sigs:
-            fqcn = cls["name"].replace("/", ".").rstrip(".java")
-            return [f"{fqcn}.{s}" for s in sigs[:5]]
-    raise ValueError("No signatures found in JSON – cannot build source prompt")
-
+# ──────────────────────────────────────────────────────────────
+#  Prompt builders (wrappers around utils.builders)
+# ──────────────────────────────────────────────────────────────
 def getClass(json_path: Path, tokenizer, ctx_limit: int, outdir: Path) -> Path:
     prompt = build_class_prompt(json_path, tokenizer, ctx_limit)[0]
     outdir.mkdir(parents=True, exist_ok=True)
-    dest = outdir / f"{json_path.stem}_class.txt"
-    dest.write_text(prompt, encoding="utf-8")
+    dst = outdir / f"{json_path.stem}_class.txt"
+    dst.write_text(prompt, encoding="utf-8")
     print(f"Generated class prompt for {json_path.stem}")
-    return dest
+    return dst
 
-def getRank(json_path: Path, tokenizer, ctx_limit: int, outdir: Path) -> List[Path]:
+
+def getRank(
+    json_path: Path,
+    tokenizer,
+    ctx_limit: int,
+    outdir: Path,
+    class_names: List[str] | None = None,
+) -> List[Path]:
+    """
+    Build ranking prompts, **filtering** so that each prompt references
+    at least one of the validated `class_names` (if provided).
+    """
     prompts = build_method_prompt(json_path, tokenizer, ctx_limit)
     outdir.mkdir(parents=True, exist_ok=True)
 
+    if class_names:
+        # keep only the prompt chunks that mention one of the classes
+        filtered = []
+        for pr in prompts:
+            if any(re.search(rf"\b{re.escape(c)}\b", pr) for c in class_names):
+                filtered.append(pr)
+        if filtered:
+            prompts = filtered  # fallback to all if filter emptied list
+
     paths: List[Path] = []
     if len(prompts) == 1:
-        pth = outdir / f"{json_path.stem}_rank.txt"
-        pth.write_text(prompts[0], encoding="utf-8")
-        paths.append(pth)
+        p = outdir / f"{json_path.stem}_rank.txt"
+        p.write_text(prompts[0], encoding="utf-8")
+        paths.append(p)
     else:
         for idx, pr in enumerate(prompts, 1):
-            pth = outdir / f"{json_path.stem}_rank_{idx}.txt"
-            pth.write_text(pr, encoding="utf-8")
-            paths.append(pth)
+            p = outdir / f"{json_path.stem}_rank_{idx}.txt"
+            p.write_text(pr, encoding="utf-8")
+            paths.append(p)
 
     print(f"Generated {len(paths)} ranking prompts for {json_path.stem}")
     return paths
 
-def getSource(json_path: Path, tokenizer, ctx_limit: int, outdir: Path,
-              top5: List[str] | None = None) -> List[Path]:
-    sigs = top5 or default_top5(json_path)
+
+def getSource(
+    json_path: Path,
+    tokenizer,
+    ctx_limit: int,
+    outdir: Path,
+    sigs: List[str],
+) -> List[Path]:
+    if not sigs:
+        raise ValueError("No method signatures provided for source prompt.")
     prompts = build_method_source_prompt(json_path, sigs, tokenizer, ctx_limit)
     outdir.mkdir(parents=True, exist_ok=True)
+
     paths: List[Path] = []
     if len(prompts) == 1:
-        pth = outdir / f"{json_path.stem}_source.txt"
-        pth.write_text(prompts[0], encoding="utf-8")
-        paths.append(pth)
+        p = outdir / f"{json_path.stem}_source.txt"
+        p.write_text(prompts[0], encoding="utf-8")
+        paths.append(p)
     else:
-        for idx, p in enumerate(prompts, 1):
-            pth = outdir / f"{json_path.stem}_source_{idx}.txt"
-            pth.write_text(p, encoding="utf-8")
-            paths.append(pth)
+        for idx, pr in enumerate(prompts, 1):
+            p = outdir / f"{json_path.stem}_source_{idx}.txt"
+            p.write_text(pr, encoding="utf-8")
+            paths.append(p)
+
     print(f"Generated {len(paths)} source prompts for {json_path.stem}")
     return paths
 
+
+def cleanup(buggy_dir: Path, fixed_dir: Path) -> None:
+    shutil.rmtree(buggy_dir)
+    shutil.rmtree(fixed_dir)
+
+# ──────────────────────────────────────────────────────────────
+#  Main pipeline
+# ──────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         sys.exit("Usage: pipeline.py <MODEL> <PROJECT> <BUG_ID> <OUT> ['train full']")
-    loader = None
-    modeName, project, bug_id, out_base, *flag_parts = sys.argv[1:]
-    flags = " ".join(flag_parts)            
-    buggy, fixed = get_context(project, bug_id, out_base, flags)
-    try:        
-        loader = ModelLoader(modeName)
-        tok, model, device  = loader.loadModel()
-        max_ctx = tok.model_max_length
-        json_path     = Path(f"{out_base}.json").resolve()   
-        outdir        = Path(out_base).resolve()            
-        outdir.mkdir(parents=True, exist_ok=True)
-        #for aid in (1, 2, 3):
-            #loader.attach_adapter(model, aid) 
+
+    model_name, project, bug_id, out_base, *flag_parts = sys.argv[1:]
+    flags = " ".join(flag_parts)
+
+    buggy_dir, fixed_dir = get_context(project, bug_id, out_base, flags)
+
+    try:
+        loader = ModelLoader(model_name)
+        tokenizer, model, device = loader.loadModel()
+        max_ctx = tokenizer.model_max_length
     except Exception as e:
-        sys .exit(f"Error setting up pipeline: {e}")
-    class_resp = None
-    rank_resp = None
+        sys.exit(f"Error loading model: {e}")
 
+    json_path = Path(f"{out_base}.json").resolve()
+    outdir = Path(out_base).resolve()
+    outdir.mkdir(parents=True, exist_ok=True)
+    LOG_PATH = outdir / "pipeline_responses.txt"
 
-    class_file = getClass(json_path, tok, max_ctx, outdir)
-    #model = loader.attach_adapter(model, 1)
-    class_resp_path = infer_base("class", class_file, model, tok, device, max_ctx, modeName)
-    class_resp = check_class_response(class_resp_path.read_text(encoding="utf-8"), json_path) 
-    print(f"Class response: {class_resp}")
+    class_prompt = getClass(json_path, tokenizer, max_ctx, outdir)
+    class_resp_path = infer_base(
+        "class", class_prompt, model, tokenizer, device, max_ctx, model_name
+    )
+    class_resp, ok = check_class_response(
+        class_resp_path.read_text(encoding="utf-8"),
+        json_path,
+        log_path=LOG_PATH,
+    )
+    print(f"Validated classes: {class_resp}")
+    if( not ok):
+        cleanup(buggy_dir, fixed_dir)
+        sys.exit("No valid classes found. Exiting pipeline.")
     
-    rank_file = getRank(json_path, tok, max_ctx, outdir)
-    #model = loader.attach_adapter(model, 2)
-    rank_resp_path = infer_base("rank", rank_file, model, tok, device, max_ctx, modeName)
 
-    rank_resp = check_rank_response(rank_resp_path.read_text(encoding="utf-8"), json_path)
-    print(f"Rank response: {rank_resp}")
+    rank_prompts = getRank(json_path, tokenizer, max_ctx, outdir, class_resp)
+    rank_resp_path = infer_base(
+        "rank", rank_prompts, model, tokenizer, device, max_ctx, model_name
+    )
+    rank_resp = check_rank_response(
+        rank_resp_path.read_text(encoding="utf-8"),
+        json_path,
+        log_path=LOG_PATH,
+    )
+    print(f"Validated buggy signatures: {rank_resp}")
 
-    source_file = getSource(json_path, tok, max_ctx, outdir, rank_resp)
-    #model = loader.attach_adapter(model, 3)
-    infer_base("source", source_file, model, tok, device, max_ctx, modeName)
-    
-    shutil.rmtree(buggy)
-    shutil.rmtree(fixed)
+    try:
+        source_prompts = getSource(json_path, tokenizer, max_ctx, outdir, rank_resp)
+        source_resp_path = infer_base(
+            "source", source_prompts, model, tokenizer, device, max_ctx, model_name
+        )
+        line_resp = extract_line_response(
+            source_resp_path.read_text(encoding="utf-8"), log_path=LOG_PATH
+        )
+        print(f"Line response: {line_resp}")
+    except ValueError as e:
+        sys.exit(f"Error generating source prompt: {e}")
 
+    cleanup(buggy_dir, fixed_dir)
